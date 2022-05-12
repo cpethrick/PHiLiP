@@ -117,7 +117,8 @@ void AllParameters::declare_parameters (dealii::ParameterHandler &prm)
                       " dual_weighted_residual_mesh_adaptation | "
                       " taylor_green_vortex_energy_check | "
                       " taylor_green_vortex_restart_check | "
-                      " time_refinement_study"),
+                      " time_refinement_study | "
+                      " time_refinement_study_reference"),
                       "The type of test we want to solve. "
                       "Choices are (only run control has been coded up for now)" 
                       " <run_control | " 
@@ -145,7 +146,8 @@ void AllParameters::declare_parameters (dealii::ParameterHandler &prm)
                       "  dual_weighted_residual_mesh_adaptation | "
                       "  taylor_green_vortex_energy_check | "
                       "  taylor_green_vortex_restart_check | "
-                      "  time_refinement_study>.");
+                      "  time_refinement_study | "
+                      "  time_refinement_study_reference>.");
 
     prm.declare_entry("pde_type", "advection",
                       dealii::Patterns::Selection(
@@ -246,6 +248,7 @@ void AllParameters::parse_parameters (dealii::ParameterHandler &prm)
     else if (test_string == "taylor_green_vortex_energy_check")         { test_type = taylor_green_vortex_energy_check; }
     else if (test_string == "taylor_green_vortex_restart_check")        { test_type = taylor_green_vortex_restart_check; }
     else if (test_string == "time_refinement_study")                    { test_type = time_refinement_study; }
+    else if (test_string == "time_refinement_study_reference")          { test_type = time_refinement_study_reference; }
 
     const std::string pde_string = prm.get("pde_type");
     if (pde_string == "advection") {
