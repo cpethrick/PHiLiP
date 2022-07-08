@@ -39,7 +39,9 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
             this->solution_update,
             this->ODESolverBase<dim,real,MeshType>::all_parameters->linear_solver_param);
 
-    linesearch();
+    //linesearch();
+    this->dg->solution.add(1.0, this->solution_update);
+    //this->dg->assemble_residual ();
 
     this->update_norm = this->solution_update.l2_norm();
     ++(this->current_iteration);

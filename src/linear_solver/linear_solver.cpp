@@ -176,6 +176,8 @@ solve_linear (
 
     Parameters::LinearSolverParam::LinearSolverEnum direct_type = Parameters::LinearSolverParam::LinearSolverEnum::direct;
     Parameters::LinearSolverParam::LinearSolverEnum gmres_type = Parameters::LinearSolverParam::LinearSolverEnum::gmres;
+    bool is_verbose = (param.linear_solver_output == Parameters::OutputEnum::verbose);
+    (void) is_verbose; //so compiler doesn't complain
 
     //if (param.linear_solver_output == Parameters::OutputEnum::verbose) {
     //    dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
@@ -213,16 +215,19 @@ solve_linear (
         solver.SetAztecOption(AZ_kspace, param.restart_number);
         solver.SetRHS(&b);
         solver.SetLHS(&x);
-
+        
+        if (!is_verbose) {solver.SetAztecOption(AZ_output, AZ_none);}
 
         const double rhs_norm = right_hand_side.l2_norm();
         const double linear_residual = param.linear_residual * rhs_norm;//1e-4;
         const int max_iterations = param.max_iterations;//200
         solver.SetUserMatrix(const_cast<Epetra_CrsMatrix *>(&system_matrix.trilinos_matrix()));
         dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
-        pcout << " Solving linear system with max_iterations = " << max_iterations
-              << " and linear residual tolerance: " << linear_residual << std::endl;
-
+        
+        if (is_verbose){
+            pcout << " Solving linear system with max_iterations = " << max_iterations
+                  << " and linear residual tolerance: " << linear_residual << std::endl;
+        }
 
         //solver.SetAztecOption(AZ_orthog, AZ_modified);
         solver.SetAztecOption(AZ_orthog, AZ_classic);
@@ -265,16 +270,20 @@ solve_linear (
             solver.Iterate(max_iterations,
                            linear_residual);
             n_iterations += solver.NumIters();
-            pcout << " Solve #" << i_solve + 1 << " out of " << n_solves << "."
-                  << " Linear solver took " << solver.NumIters()
-                  << " iterations resulting in a linear residual of " << solver.ScaledResidual()
-                  << std::endl;
+            if (is_verbose){
+                pcout << " Solve #" << i_solve + 1 << " out of " << n_solves << "."
+                      << " Linear solver took " << solver.NumIters()
+                      << " iterations resulting in a linear residual of " << solver.ScaledResidual()
+                      << std::endl;
+            }
         }
-
-        pcout << " Totalling " << n_iterations
-              << " iterations resulting in a linear residual of " << solver.ScaledResidual() << std::endl
-              << " Current RHS norm: " << right_hand_side.l2_norm()
-              << " Linear solution norm: " << solution.l2_norm() << std::endl;
+        
+        if (is_verbose){
+            pcout << " Totalling " << n_iterations
+                  << " iterations resulting in a linear residual of " << solver.ScaledResidual() << std::endl
+                  << " Current RHS norm: " << right_hand_side.l2_norm()
+                  << " Linear solution norm: " << solution.l2_norm() << std::endl;
+        }
 
         //n_vmult += 3*solver.NumIters();
         //dRdW_mult += 3*solver.NumIters();

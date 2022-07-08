@@ -31,6 +31,9 @@ public:
 protected:
     /// Runge-Kutta order
     const int rk_order;
+
+    /// Flag for implicit RK
+    const bool implicit_flag;
     
     /// Storage for the derivative at each Runge-Kutta stage
     std::vector<dealii::LinearAlgebra::distributed::Vector<double>> rk_stage;
