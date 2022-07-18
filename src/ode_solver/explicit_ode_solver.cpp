@@ -54,14 +54,14 @@ void ExplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
                 // w = w + dw
                 dealii::LinearAlgebra::distributed::Vector<double> temp_u(this->dg->solution.size());
 
-                this->dg->system_matrix *= -1.0/butcher_tableau_a[i][i];
+                this->dg->system_matrix *= -1.0/butcher_tableau_a[i][i]; //system_matrix = -1/a_ii*dRdW
 
-                this->dg->add_mass_matrices(1.0/butcher_tableau_a[i][i]/dt);
+                this->dg->add_mass_matrices(1.0/butcher_tableau_a[i][i]/dt); //system_matrix = -1/a_ii*dRdW + M/dt/a_ii = A
 
-                solve_linear (
-                        this->dg->system_matrix,
-                        this->dg->right_hand_side,
-                        temp_u,
+                solve_linear ( //Solve Ax=b using Aztec00 gmres
+                        this->dg->system_matrix, //A = -1/a_ii*dRdW + M/dt/a_ii
+                        this->dg->right_hand_side, //b = R
+                        temp_u, // result,  x = dw
                         this->ODESolverBase<dim,real,MeshType>::all_parameters->linear_solver_param);
 
                 this->rk_stage[i].add(1.0, temp_u);
@@ -88,8 +88,6 @@ void ExplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
 
     ++(this->current_iteration);
     this->current_time += dt;
-
-
 }
 
 template <int dim, typename real, typename MeshType>

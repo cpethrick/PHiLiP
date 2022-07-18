@@ -45,6 +45,40 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
 
     this->update_norm = this->solution_update.l2_norm();
     ++(this->current_iteration);
+/*
+
+    /// JFNK Version
+    // #include <deal.II/lac/solver_gmres.h>
+    // #include <deal.II/lac/precondition.h>
+    // System : M dw/dt = R ---> transform to dw/dt = IMM * R
+    // Want to solve 0 = f(w) = dw/dt - IMM*R(w)
+    // Implicit Euler:
+    // 0 = (w-w_n)/dt - IMM*R(w) = f(w)
+    // QUESTION: is it better to use mass matrix? Doesn't make a difference computationally, just changes the definition of f(w)
+    // Therefore JFNK will be
+    // J(w_k) * dw = -f(w)
+    // where J(wk) is defined by a jacobian-vector product, Jv = 1/eps * (f(wk + eps*v)-f(wk))
+    
+    
+    const int max_iter = 1000;
+    const double gmres_tol = 1E-6;
+    SolverControl solver_control(max_iter, gmres_tol);
+    SolverGMRES<vector...> solver(solver_control);
+
+    JacobianVectorProduct Jv(un, eps, dt, dg); //should move this to store in the class
+    vector dxk=0;
+
+    while (mag_dxk > newton_tol){
+        
+        b = -f(wk) = -(w_k - w_n)/dt - IMM * R(w_k);
+        solver.solve(Jv, dxk, b, PreconditionIdentity()); //GMRES solve of J(x_k)*dxk = f(x_k)
+        
+        // 
+        xk = xk + dxk;
+        k += 1;
+        mag_dxk = dxk.l2_norm();
+    }
+*/
 }
 
 template <int dim, typename real, typename MeshType>
