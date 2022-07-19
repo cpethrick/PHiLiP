@@ -12,15 +12,12 @@ template <int dim, typename real, typename MeshType>
 class JacobianVectorProduct{
 public:
 
-    JacobianVectorProduct(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input
-                          double dt_input,
-                          double epsilon_input,
-                          dealii::LinearAlgebra::distributed::Vector<double> previous_step_solution_input);
+    JacobianVectorProduct(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input);
 
     ~JacobianVectorProduct() {};
 
-    void reinit_for_next_timestep(dt_input,
-                epsilon_input,
+    void reinit_for_next_timestep(double dt_input,
+                double epsilon_input,
                 dealii::LinearAlgebra::distributed::Vector<double> previous_step_solution_input);
 
     void reinit_for_next_Newton_iter(dealii::LinearAlgebra::distributed::Vector<double> current_solution_estimate_input);
@@ -43,16 +40,16 @@ protected:
     dealii::LinearAlgebra::distributed::Vector<double> previous_step_solution;
     
     /// Unsteady residual = dw/dt - R
-    dealii::LinearAlgebra::distributed::Vector<double> compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> solution);
+    dealii::LinearAlgebra::distributed::Vector<double> compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> solution) const;
 
     //wtonKrylovRHS RHS;
     
     /// current estimate for the solution
     dealii::LinearAlgebra::distributed::Vector<double> current_solution_estimate;
-
-
-
-}
+    
+    /// current estimate for the solution
+    dealii::LinearAlgebra::distributed::Vector<double> current_solution_estimate_residual;
+};
 /*
 //probably overkill to make another class here, especially with the confusing signs
 class NewtonKrylovRHS{
@@ -67,3 +64,4 @@ public:
 
 }
 }
+#endif
