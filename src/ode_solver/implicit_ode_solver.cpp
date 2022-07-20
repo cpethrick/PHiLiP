@@ -68,7 +68,7 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool/* p
     
     
     const int max_iter = 1000;
-    const double gmres_tol = 1E-7;
+    const double gmres_tol = 1E-6;
     dealii::SolverControl solver_control(max_iter, 
                                          gmres_tol,
                                          false,     //log_history 
@@ -111,7 +111,7 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool/* p
         k ++;
 
 
-        this->pcout << k << " " << mag_dxk << std::endl;
+        this->pcout << "Newton iteration : " << k << " " << mag_dxk << std::endl;
     }
     this->current_time += dt;
     ++(this->current_iteration);
