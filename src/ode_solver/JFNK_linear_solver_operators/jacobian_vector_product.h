@@ -37,6 +37,7 @@ protected:
     double epsilon;
     
     /// solution at previous timestep
+    // COULD USE A POINTER HERE
     dealii::LinearAlgebra::distributed::Vector<double> previous_step_solution;
     
     /// Unsteady residual = dw/dt - R

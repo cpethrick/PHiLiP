@@ -68,21 +68,25 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool/* p
     
     
     const int max_iter = 1000;
-    const double gmres_tol = 1E-6;
-    dealii::SolverControl solver_control(max_iter, gmres_tol);
-    dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>> solver(solver_control);
+    const double gmres_tol = 1E-7;
+    dealii::SolverControl solver_control(max_iter, 
+                                         gmres_tol,
+                                         false,     //log_history 
+                                         true);     //log_result 
+    //const dealii::AdditionalData additional_data(10);     //max_n_tmp_vectors
+    dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>> solver(solver_control, 
+            dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>>::AdditionalData(30)); //max_n_tmp_vectors = 10
 
-    //JacobianVectorProduct Jv(un, eps, dt, dg); //should move this to store in the class
     dealii::LinearAlgebra::distributed::Vector<double> dxk;
     dxk.reinit(this->dg->solution); //init to zero
     dealii::LinearAlgebra::distributed::Vector<double> soln_at_previous_step = this->dg->solution;
-    const double newton_tol = 1E-6;
+    const double newton_tol = 1E-7;
     double mag_dxk = 1;
     int k = 0;
     double epsilon_jacobian = 1.490116119384765625E-8; //sqrt(machine epsilon)
     this->solution_update = this->dg->solution; //initialize as previous solution
     Jv.reinit_for_next_timestep(dt, epsilon_jacobian, this->dg->solution);
-    while ((mag_dxk > newton_tol)&&(k < 10)){
+    while ((mag_dxk > newton_tol)&&(k < 100)){
         
         Jv.reinit_for_next_Newton_iter(this->solution_update);
 
@@ -110,6 +114,7 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool/* p
         this->pcout << k << " " << mag_dxk << std::endl;
     }
     this->current_time += dt;
+    ++(this->current_iteration);
 
 }
 
@@ -213,9 +218,9 @@ template <int dim, typename real, typename MeshType>
 void ImplicitODESolver<dim,real,MeshType>::allocate_ode_system ()
 {
     this->pcout << "Allocating ODE system and evaluating mass matrix..." << std::endl;
-    //bool do_inverse_mass_matrix = false;
-    //this->dg->evaluate_mass_matrices(do_inverse_mass_matrix);
-    bool do_inverse_mass_matrix = true;
+    bool do_inverse_mass_matrix = false;
+    this->dg->evaluate_mass_matrices(do_inverse_mass_matrix);
+    do_inverse_mass_matrix = true;
     this->dg->evaluate_mass_matrices(do_inverse_mass_matrix);
 
     this->solution_update.reinit(this->dg->right_hand_side);
