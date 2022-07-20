@@ -13,7 +13,7 @@ set use_periodic_bc = true
 subsection ODE solver
   set ode_solver_type = implicit
   set output_solution_every_dt_time_intervals = 0.1
-  set initial_time_step = 5E-3
+  set initial_time_step = 1E-2#5E-3
   subsection explicit solver options
     set runge_kutta_order =1 
     set implicit_rk_flag_testing = true
@@ -38,11 +38,11 @@ end
 
 subsection flow_solver
   set flow_case_type = advection_periodic
-  set poly_degree = 5 
-  set final_time = 1
+  set poly_degree = 3 
+  set final_time = 5E-2 
   subsection grid
     set grid_left_bound = 0.0
     set grid_right_bound = 2.0
-    set number_of_grid_elements_per_dimension = 32
+    set number_of_grid_elements_per_dimension = 16
   end
 end

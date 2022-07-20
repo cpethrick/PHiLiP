@@ -1,5 +1,8 @@
 #include "implicit_ode_solver.h"
 
+//for jacobian free
+#include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/precondition.h>
 
 namespace PHiLiP {
 namespace ODE {
@@ -7,11 +10,15 @@ namespace ODE {
 template <int dim, typename real, typename MeshType>
 ImplicitODESolver<dim,real,MeshType>::ImplicitODESolver(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input)
         : ODESolverBase<dim,real,MeshType>(dg_input)
-        {}
+        , Jv(JacobianVectorProduct(dg_input))
+{
+    // Jv = JacobianVectorProduct(this->dg);
+}
 
 template <int dim, typename real, typename MeshType>
-void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pseudotime)
+void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool/* pseudotime*/)
 {
+/*
     const bool compute_dRdW = true;
     this->dg->assemble_residual(compute_dRdW);
     this->current_time += dt;
@@ -45,7 +52,7 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
 
     this->update_norm = this->solution_update.l2_norm();
     ++(this->current_iteration);
-/*
+*/
 
     /// JFNK Version
     // #include <deal.II/lac/solver_gmres.h>
@@ -62,23 +69,48 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
     
     const int max_iter = 1000;
     const double gmres_tol = 1E-6;
-    SolverControl solver_control(max_iter, gmres_tol);
-    SolverGMRES<vector...> solver(solver_control);
+    dealii::SolverControl solver_control(max_iter, gmres_tol);
+    dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>> solver(solver_control);
 
-    JacobianVectorProduct Jv(un, eps, dt, dg); //should move this to store in the class
-    vector dxk=0;
+    //JacobianVectorProduct Jv(un, eps, dt, dg); //should move this to store in the class
+    dealii::LinearAlgebra::distributed::Vector<double> dxk;
+    dxk.reinit(this->dg->solution); //init to zero
+    dealii::LinearAlgebra::distributed::Vector<double> soln_at_previous_step = this->dg->solution;
+    const double newton_tol = 1E-6;
+    double mag_dxk = 1;
+    int k = 0;
+    double epsilon_jacobian = 1.490116119384765625E-8; //sqrt(machine epsilon)
+    this->solution_update = this->dg->solution; //initialize as previous solution
+    Jv.reinit_for_next_timestep(dt, epsilon_jacobian, this->dg->solution);
+    while ((mag_dxk > newton_tol)&&(k < 10)){
+        
+        Jv.reinit_for_next_Newton_iter(this->solution_update);
 
-    while (mag_dxk > newton_tol){
+        dealii::LinearAlgebra::distributed::Vector<double> b;
+        b.reinit(this->dg->solution);
+        this->dg->solution = this->solution_update;
+        this->dg->assemble_residual();
+        this->dg->global_inverse_mass_matrix.vmult(this->dg->solution, this->dg->right_hand_side);
+        b += this->solution_update;
+        b -= soln_at_previous_step;
+        b /= dt;
+        b -= this->dg->solution;
+        b *= -1.0;
+        //b = -f(wk) = -((w_k - w_n)/dt - IMM * R(w_k));
+        //
+        solver.solve(Jv, dxk, b, dealii::PreconditionIdentity()); //GMRES solve of J(x_k)*dxk = f(x_k)
         
-        b = -f(wk) = -(w_k - w_n)/dt - IMM * R(w_k);
-        solver.solve(Jv, dxk, b, PreconditionIdentity()); //GMRES solve of J(x_k)*dxk = f(x_k)
-        
-        // 
-        xk = xk + dxk;
-        k += 1;
+        this->solution_update += dxk; 
+        //xk = xk + dxk;
+        //k += 1;
         mag_dxk = dxk.l2_norm();
+        k ++;
+
+
+        this->pcout << k << " " << mag_dxk << std::endl;
     }
-*/
+    this->current_time += dt;
+
 }
 
 template <int dim, typename real, typename MeshType>
@@ -181,7 +213,9 @@ template <int dim, typename real, typename MeshType>
 void ImplicitODESolver<dim,real,MeshType>::allocate_ode_system ()
 {
     this->pcout << "Allocating ODE system and evaluating mass matrix..." << std::endl;
-    const bool do_inverse_mass_matrix = false;
+    //bool do_inverse_mass_matrix = false;
+    //this->dg->evaluate_mass_matrices(do_inverse_mass_matrix);
+    bool do_inverse_mass_matrix = true;
     this->dg->evaluate_mass_matrices(do_inverse_mass_matrix);
 
     this->solution_update.reinit(this->dg->right_hand_side);

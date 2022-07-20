@@ -4,6 +4,7 @@
 #include "dg/dg.h"
 #include "ode_solver_base.h"
 #include "linear_solver/linear_solver.h"
+#include "JFNK_linear_solver_operators/jacobian_vector_product.h"
 
 namespace PHiLiP {
 namespace ODE {
@@ -48,6 +49,8 @@ public:
 
     /// Line search algorithm
     double linesearch ();
+
+    JacobianVectorProduct<dim,real,MeshType> Jv;
 
 };
 
