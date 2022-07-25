@@ -36,7 +36,7 @@ void JacobianVectorProduct<dim,real,MeshType>:: reinit_for_next_timestep(double 
 
 
 template <int dim, typename real, typename MeshType>
-dealii::LinearAlgebra::distributed::Vector<double> JacobianVectorProduct<dim,real,MeshType>::compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> w) const
+dealii::LinearAlgebra::distributed::Vector<double> JacobianVectorProduct<dim,real,MeshType>::compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> w, bool do_negate) const
 {
     dealii::LinearAlgebra::distributed::Vector<double> temp;
     temp.reinit(dg->solution);
@@ -46,12 +46,14 @@ dealii::LinearAlgebra::distributed::Vector<double> JacobianVectorProduct<dim,rea
     dg->assemble_residual();
     
     //TO DO: see if GMM * du/dt + RHS works
-    dg->global_inverse_mass_matrix.vmult(temp, dg->right_hand_side);//solution = IMM*RHS
+    dg->global_inverse_mass_matrix.vmult(temp, dg->right_hand_side);//temp = IMM*RHS
 
     temp*=-1;
 
     temp.add(-1.0/dt, previous_step_solution);
     temp.add(1.0/dt, w);
+
+    if (do_negate) { temp *= -1.0; }
 
     return temp; // R* = (w-previous_step_solution)/dt - IMM*RHS
 /*

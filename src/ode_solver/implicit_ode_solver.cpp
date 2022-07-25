@@ -10,7 +10,7 @@ namespace ODE {
 template <int dim, typename real, typename MeshType>
 ImplicitODESolver<dim,real,MeshType>::ImplicitODESolver(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input)
         : ODESolverBase<dim,real,MeshType>(dg_input)
-        , Jv(JacobianVectorProduct(dg_input))
+        , solver(dg_input)
 {
     // Jv = JacobianVectorProduct(this->dg);
 }
@@ -66,7 +66,7 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool/* p
     // J(w_k) * dw = -f(w)
     // where J(wk) is defined by a jacobian-vector product, Jv = 1/eps * (f(wk + eps*v)-f(wk))
     
-    
+/*    
     const int max_iter = 1000;
     const double gmres_tol = 1E-6;
     dealii::SolverControl solver_control(max_iter, 
@@ -113,6 +113,12 @@ void ImplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool/* p
 
         this->pcout << "Newton iteration : " << k << " " << mag_dxk << std::endl;
     }
+*/
+    std::cout << "Calculating timestep number " << this->current_iteration << std::endl;
+    solver.solve(dt, this->dg->solution);
+    std::cout << "Finished calculating timestep number " << this->current_iteration << std::endl;
+    this->dg->solution = solver.current_solution_estimate;
+
     this->current_time += dt;
     ++(this->current_iteration);
 

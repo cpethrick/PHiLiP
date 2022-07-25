@@ -9,7 +9,8 @@ ExplicitODESolver<dim,real,MeshType>::ExplicitODESolver(std::shared_ptr< DGBase<
         : ODESolverBase<dim,real,MeshType>(dg_input)
         , rk_order(this->ode_param.runge_kutta_order)
         , implicit_flag(this->ode_param.implicit_rk_flag_testing)
-        {}
+        , solver(dg_input)
+    {}
 
 template <int dim, typename real, typename MeshType>
 void ExplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pseudotime)
@@ -18,7 +19,7 @@ void ExplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
     
     bool compute_dRdW;
     if (implicit_flag){
-        compute_dRdW = true;
+        compute_dRdW = false;
     }else{
         compute_dRdW = false;
     }
@@ -50,6 +51,7 @@ void ExplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
         if (implicit_flag){
             //implicit solve for diagonal element
             if (this->butcher_tableau_a[i][i] != 0){
+                /* // AD version
                 // Solve (M/dt - dRdW) / a_ii * dw = R
                 // w = w + dw
                 dealii::LinearAlgebra::distributed::Vector<double> temp_u(this->dg->solution.size());
@@ -65,6 +67,13 @@ void ExplicitODESolver<dim,real,MeshType>::step_in_time (real dt, const bool pse
                         this->ODESolverBase<dim,real,MeshType>::all_parameters->linear_solver_param);
 
                 this->rk_stage[i].add(1.0, temp_u);
+                */
+
+                //JFNK version
+
+                solver.solve(dt*butcher_tableau_a[i][i], rk_stage[i]);
+                rk_stage[i] = solver.current_solution_estimate;
+
             } // u_n + dt * sum(a_ij * k_j) <explicit> + dt * a_ii * u^(i) <implicit>
             
             this->dg->solution = this->rk_stage[i];

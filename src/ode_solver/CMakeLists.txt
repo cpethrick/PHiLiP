@@ -6,7 +6,8 @@ set(ODE_SOURCE
     pod_galerkin_ode_solver.cpp
     pod_petrov_galerkin_ode_solver.cpp
     rrk_explicit_ode_solver.cpp
-    JFNK_linear_solver_operators/jacobian_vector_product.cpp)
+    JFNK_linear_solver_operators/jacobian_vector_product.cpp
+    JFNK_linear_solver_operators/JFNK_solver.cpp)
 
 foreach(dim RANGE 1 3)
     # Output library

@@ -25,6 +25,9 @@ public:
     // Application of matrix to vector src. Write result into dst.
     void vmult (dealii::LinearAlgebra::distributed::Vector<double> &dst,
                 const dealii::LinearAlgebra::distributed::Vector<double> &src) const;
+    
+    /// Unsteady residual = dw/dt - R
+    dealii::LinearAlgebra::distributed::Vector<double> compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> solution, bool do_negate = false) const;
 protected:
 
     /// pointer to dg
@@ -40,8 +43,6 @@ protected:
     // COULD USE A POINTER HERE
     dealii::LinearAlgebra::distributed::Vector<double> previous_step_solution;
     
-    /// Unsteady residual = dw/dt - R
-    dealii::LinearAlgebra::distributed::Vector<double> compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> solution) const;
 
     //wtonKrylovRHS RHS;
     

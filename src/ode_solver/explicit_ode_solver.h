@@ -3,6 +3,7 @@
 
 #include "dg/dg.h"
 #include "ode_solver_base.h"
+#include "JFNK_linear_solver_operators/JFNK_solver.h"
 
 namespace PHiLiP {
 namespace ODE {
@@ -35,6 +36,10 @@ protected:
     /// Flag for implicit RK
     const bool implicit_flag;
     
+    /// Solver for JFNK 
+    //TO DO: check initialization (storage when not implicit )
+    JFNKSolver<dim,real,MeshType> solver;
+
     /// Storage for the derivative at each Runge-Kutta stage
     std::vector<dealii::LinearAlgebra::distributed::Vector<double>> rk_stage;
     
@@ -43,6 +48,7 @@ protected:
 
     /// Butcher tableau "b"
     dealii::Table<1,double> butcher_tableau_b;
+
 };
 
 } // ODE namespace
