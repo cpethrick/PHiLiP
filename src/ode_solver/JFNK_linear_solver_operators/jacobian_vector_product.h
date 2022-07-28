@@ -27,7 +27,8 @@ public:
                 const dealii::LinearAlgebra::distributed::Vector<double> &src) const;
     
     /// Unsteady residual = dw/dt - R
-    dealii::LinearAlgebra::distributed::Vector<double> compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> solution, bool do_negate = false) const;
+    dealii::LinearAlgebra::distributed::Vector<double> compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> &solution,
+            bool do_negate = false) const;
 protected:
 
     /// pointer to dg
@@ -40,11 +41,9 @@ protected:
     double epsilon;
     
     /// solution at previous timestep
-    // COULD USE A POINTER HERE
+    // POSSIBLY COULD USE A POINTER HERE
     dealii::LinearAlgebra::distributed::Vector<double> previous_step_solution;
     
-
-    //wtonKrylovRHS RHS;
     
     /// current estimate for the solution
     dealii::LinearAlgebra::distributed::Vector<double> current_solution_estimate;
@@ -52,17 +51,6 @@ protected:
     /// current estimate for the solution
     dealii::LinearAlgebra::distributed::Vector<double> current_solution_estimate_residual;
 };
-/*
-//probably overkill to make another class here, especially with the confusing signs
-class NewtonKrylovRHS{
-public:
-    
-    vector evaluate(u, uk, dt); // R* = dw/dt-R
-
-    std::shared_ptr<DGBase<dim,real,MeshType>> dg;
-
-}
-*/
 
 }
 }

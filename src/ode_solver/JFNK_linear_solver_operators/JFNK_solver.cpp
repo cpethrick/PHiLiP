@@ -19,7 +19,7 @@ JFNKSolver<dim,real,MeshType>::JFNKSolver(std::shared_ptr< DGBase<dim, real, Mes
                      epsilon_GMRES,
                      false,     //log_history 
                      true)      //log_result 
-    , solver(solver_control,
+    , solver_GMRES(solver_control,
             dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>>::AdditionalData(max_num_temp_vectors))
 {}
 
@@ -38,7 +38,7 @@ void JFNKSolver<dim,real,MeshType>::solve (real dt,
     while ((update_norm > epsilon_Newton) && (Newton_iter_counter < max_Newton_iter)){
         Jv.reinit_for_next_Newton_iter(current_solution_estimate);
 
-        solver.solve(Jv,
+        solver_GMRES.solve(Jv,
                      solution_update_newton, 
                      Jv.compute_unsteady_residual(current_solution_estimate, true), //do_negate = true
                      dealii::PreconditionIdentity());

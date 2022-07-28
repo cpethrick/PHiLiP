@@ -62,7 +62,7 @@ protected:
     dealii::SolverControl solver_control;
     
     /// Solver
-    dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>> solver;
+    dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>> solver_GMRES;
     
     /// solution at previous timestep
     // COULD USE A POINTER HERE
