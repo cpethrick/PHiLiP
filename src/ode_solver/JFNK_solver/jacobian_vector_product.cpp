@@ -7,10 +7,6 @@ template <int dim, typename real, typename MeshType>
 JacobianVectorProduct<dim,real,MeshType>::JacobianVectorProduct(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input)
     : dg(dg_input)
 {
-    //initialize storage vectors with the same parallel structure as dg->solution
-    //previous_step_solution.reinit(dg->solution);
-    current_solution_estimate.reinit(dg->solution);
-    current_solution_estimate_residual.reinit(dg->solution);
 }
 
 template <int dim, typename real, typename MeshType>
@@ -21,7 +17,7 @@ void JacobianVectorProduct<dim,real,MeshType>::reinit_for_next_Newton_iter(deali
 }
 
 template <int dim, typename real, typename MeshType>
-void JacobianVectorProduct<dim,real,MeshType>:: reinit_for_next_timestep(double dt_input,
+void JacobianVectorProduct<dim,real,MeshType>::reinit_for_next_timestep(double dt_input,
                 double epsilon_input,
                 dealii::LinearAlgebra::distributed::Vector<double> &previous_step_solution_input)
 {

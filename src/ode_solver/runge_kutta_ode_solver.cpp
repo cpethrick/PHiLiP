@@ -48,33 +48,29 @@ void RungeKuttaODESolver<dim,real,MeshType>::step_in_time (real dt, const bool p
         this->dg->solution = this->rk_stage[i];
         this->dg->assemble_residual(compute_dRdW); //RHS : du/dt = RHS = F(u_n + dt* sum(a_ij*k_j))
 
-        if (implicit_flag){
-            //implicit solve for diagonal element
-            if (this->butcher_tableau_a[i][i] != 0){
-                /* // AD version
-                // Solve (M/dt - dRdW) / a_ii * dw = R
-                // w = w + dw
-                dealii::LinearAlgebra::distributed::Vector<double> temp_u(this->dg->solution.size());
+        //implicit solve for diagonal element
+        if (this->butcher_tableau_a[i][i] != 0){
+            /* // AD version
+            // Solve (M/dt - dRdW) / a_ii * dw = R
+            // w = w + dw
+            dealii::LinearAlgebra::distributed::Vector<double> temp_u(this->dg->solution.size());
+            this->dg->system_matrix *= -1.0/butcher_tableau_a[i][i]; //system_matrix = -1/a_ii*dRdW
+            this->dg->add_mass_matrices(1.0/butcher_tableau_a[i][i]/dt); //system_matrix = -1/a_ii*dRdW + M/dt/a_ii = A
 
-                this->dg->system_matrix *= -1.0/butcher_tableau_a[i][i]; //system_matrix = -1/a_ii*dRdW
-
-                this->dg->add_mass_matrices(1.0/butcher_tableau_a[i][i]/dt); //system_matrix = -1/a_ii*dRdW + M/dt/a_ii = A
-
-                solve_linear ( //Solve Ax=b using Aztec00 gmres
+            solve_linear ( //Solve Ax=b using Aztec00 gmres
                         this->dg->system_matrix, //A = -1/a_ii*dRdW + M/dt/a_ii
                         this->dg->right_hand_side, //b = R
                         temp_u, // result,  x = dw
                         this->ODESolverBase<dim,real,MeshType>::all_parameters->linear_solver_param);
 
-                this->rk_stage[i].add(1.0, temp_u);
-                */
+            this->rk_stage[i].add(1.0, temp_u);
+            */
 
-                //JFNK version
+            //JFNK version
 
-                solver.solve(dt*butcher_tableau_a[i][i], rk_stage[i]);
-                rk_stage[i] = solver.current_solution_estimate;
-
-            } // u_n + dt * sum(a_ij * k_j) <explicit> + dt * a_ii * u^(i) <implicit>
+            solver.solve(dt*butcher_tableau_a[i][i], rk_stage[i]);
+            rk_stage[i] = solver.current_solution_estimate;
+            // u_n + dt * sum(a_ij * k_j) <explicit> + dt * a_ii * u^(i) <implicit>
             
             this->dg->solution = this->rk_stage[i];
             this->dg->assemble_residual(compute_dRdW); //RHS : du/dt = RHS = F(u_n + dt* sum(a_ij*k_j) + dt * a_ii * u^(i)))

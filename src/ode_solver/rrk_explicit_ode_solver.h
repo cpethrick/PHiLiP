@@ -31,9 +31,13 @@ public:
 
 protected:
 
+    const bool do_write_root_function;
+
     /// Compute relaxation parameter explicitly (i.e. if energy is the entropy variable)
     /// See Ketcheson 2019, Eq. 2.4
-    real compute_relaxation_parameter_explicit() const;
+    real compute_relaxation_parameter_explicit(real &dt) const;
+
+    void write_root_function(real &dt, double numerator, double denominator) const;
 
     /// Modify timestep based on relaxation
     void modify_time_step (real &dt) override;
@@ -45,6 +49,7 @@ protected:
             const dealii::LinearAlgebra::distributed::Vector<double> &stage_i,
             const dealii::LinearAlgebra::distributed::Vector<double> &stage_j
             ) const;
+
 
 };
 
