@@ -27,6 +27,7 @@ void ODESolverParam::declare_parameters (dealii::ParameterHandler &prm)
                           " runge_kutta | "
                           " implicit | "
                           " rrk_explicit | "
+                          " two_derivative_rk | "
                           " pod_galerkin | "
                           " pod_petrov_galerkin"),
                           "Type of ODE solver to use."
@@ -34,6 +35,7 @@ void ODESolverParam::declare_parameters (dealii::ParameterHandler &prm)
                           " <runge_kutta | "
                           " implicit | "
                           " rrk_explicit | "
+                          " two_derivative_rk | "
                           " pod_galerkin | "
                           " pod_petrov_galerkin>.");
 
@@ -112,6 +114,7 @@ void ODESolverParam::parse_parameters (dealii::ParameterHandler &prm)
         if (solver_string == "runge_kutta") ode_solver_type = ODESolverEnum::runge_kutta_solver;
         if (solver_string == "implicit") ode_solver_type = ODESolverEnum::implicit_solver;
         if (solver_string == "rrk_explicit") ode_solver_type = ODESolverEnum::rrk_explicit_solver;
+        if (solver_string == "two_derivative_rk") ode_solver_type = ODESolverEnum::two_derivative_rk_solver;
         if (solver_string == "pod_galerkin") ode_solver_type = ODESolverEnum::pod_galerkin_solver;
         if (solver_string == "pod_petrov_galerkin") ode_solver_type = ODESolverEnum::pod_petrov_galerkin_solver;
 

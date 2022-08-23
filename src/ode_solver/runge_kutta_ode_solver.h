@@ -24,10 +24,10 @@ public:
     ~RungeKuttaODESolver() {};
 
     /// Function to evaluate solution update
-    void step_in_time(real dt, const bool pseudotime);
+    virtual void step_in_time(real dt, const bool pseudotime);
 
     /// Function to allocate the ODE system
-    void allocate_ode_system ();
+    virtual void allocate_ode_system ();
 
 protected:
     /// Runge-Kutta order

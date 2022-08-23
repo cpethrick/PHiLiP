@@ -4,6 +4,7 @@
 #include "runge_kutta_ode_solver.h"
 #include "implicit_ode_solver.h"
 #include "rrk_explicit_ode_solver.h"
+#include "two_derivative_rk_ode_solver.h"
 #include "pod_galerkin_ode_solver.h"
 #include "pod_petrov_galerkin_ode_solver.h"
 #include <deal.II/distributed/solution_transfer.h>
@@ -34,6 +35,7 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
             return nullptr;
         }
     }
+    if(ode_solver_type == ODEEnum::two_derivative_rk_solver)        return std::make_shared<TwoDerivativeRKODESolver<dim,real,MeshType>>(dg_input);
     else {
         display_error_ode_solver_factory(ode_solver_type, false);
         return nullptr;
@@ -74,6 +76,7 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
             return nullptr;
         }
     }
+    if(ode_solver_type == ODEEnum::two_derivative_rk_solver)        return std::make_shared<TwoDerivativeRKODESolver<dim,real,MeshType>>(dg_input);
     else {
         display_error_ode_solver_factory(ode_solver_type, false);
         return nullptr;
