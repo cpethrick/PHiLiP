@@ -20,6 +20,7 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
     ODEEnum ode_solver_type = dg_input->all_parameters->ode_solver_param.ode_solver_type;
     if(ode_solver_type == ODEEnum::runge_kutta_solver)        return std::make_shared<RungeKuttaODESolver<dim,real,MeshType>>(dg_input);
     if(ode_solver_type == ODEEnum::implicit_solver)        return std::make_shared<ImplicitODESolver<dim,real,MeshType>>(dg_input);
+    if(ode_solver_type == ODEEnum::two_derivative_rk_solver)        return std::make_shared<TwoDerivativeRKODESolver<dim,real,MeshType>>(dg_input);
     if constexpr(dim==1){
         //RRK is only implemented for Burgers on collocated nodes, 1D
         const bool use_collocated_nodes = dg_input->all_parameters->use_collocated_nodes;
@@ -35,7 +36,6 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
             return nullptr;
         }
     }
-    if(ode_solver_type == ODEEnum::two_derivative_rk_solver)        return std::make_shared<TwoDerivativeRKODESolver<dim,real,MeshType>>(dg_input);
     else {
         display_error_ode_solver_factory(ode_solver_type, false);
         return nullptr;
@@ -61,6 +61,7 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
     using ODEEnum = Parameters::ODESolverParam::ODESolverEnum;
     if(ode_solver_type == ODEEnum::runge_kutta_solver) return std::make_shared<RungeKuttaODESolver<dim,real,MeshType>>(dg_input);
     if(ode_solver_type == ODEEnum::implicit_solver)        return std::make_shared<ImplicitODESolver<dim,real,MeshType>>(dg_input);
+    if(ode_solver_type == ODEEnum::two_derivative_rk_solver)        return std::make_shared<TwoDerivativeRKODESolver<dim,real,MeshType>>(dg_input);
     if constexpr(dim==1){
         //RRK is only implemented for Burgers on collocated nodes, 1D
         const bool use_collocated_nodes = dg_input->all_parameters->use_collocated_nodes;
@@ -76,7 +77,6 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
             return nullptr;
         }
     }
-    if(ode_solver_type == ODEEnum::two_derivative_rk_solver)        return std::make_shared<TwoDerivativeRKODESolver<dim,real,MeshType>>(dg_input);
     else {
         display_error_ode_solver_factory(ode_solver_type, false);
         return nullptr;
@@ -104,11 +104,15 @@ void ODESolverFactory<dim,real,MeshType>::display_error_ode_solver_factory(Param
     if (ode_solver_type == ODEEnum::runge_kutta_solver)               solver_string = "runge_kutta";
     if (ode_solver_type == ODEEnum::implicit_solver)               solver_string = "implicit";
     if (ode_solver_type == ODEEnum::rrk_explicit_solver)           solver_string = "rrk_explicit";
+    if (ode_solver_type == ODEEnum::two_derivative_rk_solver)           solver_string = "two_derivative_rk";
     if (ode_solver_type == ODEEnum::pod_galerkin_solver)           solver_string = "pod_galerkin";
     if (ode_solver_type == ODEEnum::pod_petrov_galerkin_solver)    solver_string = "pod_petrov_galerkin";
     else solver_string = "undefined";
 
     dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
+
+    pcout << "Solver specified [enum]: " << ode_solver_type << std::endl;
+
     pcout << "********************************************************************" << std::endl;
     pcout << "Can't create ODE solver since solver type is not clear." << std::endl;
     pcout << "Solver type specified: " << solver_string << std::endl;
@@ -121,6 +125,7 @@ void ODESolverFactory<dim,real,MeshType>::display_error_ode_solver_factory(Param
         pcout <<  "runge_kutta" << std::endl;
         pcout <<  "implicit" << std::endl;
         pcout <<  "rrk_explicit" << std::endl;
+        pcout <<  "two_derivative_rk" << std::endl;
         pcout << "    With rrk_explicit only being valid for " <<std::endl;
         pcout << "    pde_type = burgers, use_collocated_nodes = true and dim = 1" <<std::endl;
     }

@@ -29,6 +29,18 @@ public:
     /// Unsteady residual = dw/dt - R
     dealii::LinearAlgebra::distributed::Vector<double> compute_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> &solution,
             bool do_negate = false) const;
+    
+    /// Compute second derivative of solution (dR/dt = R' * R)_ using JF approach
+    dealii::LinearAlgebra::distributed::Vector<double> compute_second_derivative(dealii::LinearAlgebra::distributed::Vector<double> &w) const;
+    
+    /// Flag for two-derivative RK method
+    bool two_derivative_flag;
+
+    /// For two-derivative RK method, coefficient for first derivative
+    double a;
+
+    /// For two-derivative RK method, coefficient for second derivative
+    double a_dot;
 protected:
 
     /// pointer to dg
@@ -39,11 +51,11 @@ protected:
     
     /// small number for finite difference
     double epsilon;
+
     
     /// solution at previous timestep
     // POSSIBLY COULD USE A POINTER HERE
     dealii::LinearAlgebra::distributed::Vector<double> previous_step_solution;
-    
     
     /// current estimate for the solution
     // NOTE: the same vector is stored in JFNK_solver
@@ -58,6 +70,11 @@ protected:
     // R is stored in dg->solution
     // NOTE: it's a bit confusing to store in dg->solution, maybe change later
     void compute_dg_residual(dealii::LinearAlgebra::distributed::Vector<double> &w) const;
+
+    /// Compute unsteady residual for two-derivative RK method
+    dealii::LinearAlgebra::distributed::Vector<double> compute_two_derivative_unsteady_residual(dealii::LinearAlgebra::distributed::Vector<double> &w,
+            bool do_negate = false) const;
+    
 };
 
 }

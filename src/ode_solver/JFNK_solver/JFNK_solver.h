@@ -27,6 +27,12 @@ public:
      */
     void solve(real dt,
                dealii::LinearAlgebra::distributed::Vector<double> &previous_step_solution);
+    
+    /// Solver modified for two-derivative RK method
+    void solve(real dt,
+               dealii::LinearAlgebra::distributed::Vector<double> &previous_step_solution,
+               double a,
+               double a_dot);
 
     /// current estimate for the solution
     // COULD USE A POINTER HERE
@@ -55,15 +61,17 @@ protected:
     /// maximum number of Newton iterations
     const int max_Newton_iter;
 
-    /// Jacobian-vector product utilities
-    JacobianVectorProduct<dim,real,MeshType> jacobian_vector_product;
-
     /// Solver control object
     dealii::SolverControl solver_control;
     
     /// Solver
     dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>> solver_GMRES;
-    
+
+public:   
+    /// Jacobian-vector product utilities
+    JacobianVectorProduct<dim,real,MeshType> jacobian_vector_product;
+
+protected:
     /// update to solution during Newton iterations
     dealii::LinearAlgebra::distributed::Vector<double> solution_update_newton;
 };

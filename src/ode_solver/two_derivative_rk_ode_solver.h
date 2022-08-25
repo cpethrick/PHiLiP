@@ -44,6 +44,9 @@ protected:
     /// Compute relaxation parameter explicitly (i.e. if energy is the entropy variable)
     /// See Ketcheson 2019, Eq. 2.4
     real compute_relaxation_parameter_explicit(real &dt) const;
+    
+    /// Number of stages for the RK method
+    int number_of_stages;
 
     void write_root_function(real &dt) const;
 

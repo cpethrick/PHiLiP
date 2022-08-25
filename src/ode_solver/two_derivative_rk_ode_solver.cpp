@@ -47,45 +47,47 @@ void TwoDerivativeRKODESolver<dim,real,MeshType>::step_in_time (real dt, const b
     this->solution_update = this->dg->solution; //storing u_n
     
     //calculating stages **Note that rk_stage[i] stores the RHS at a partial time-step (not solution u)
-    for (int i = 0; i < this->rk_order; ++i){
+    for (int i = 0; i < this->number_of_stages; ++i){
 
         this->rk_stage[i]=0.0; //resets all entries to zero
         
         for (int j = 0; j < i; ++j){
             if (this->butcher_tableau_a[i][j] != 0){
-                this->rk_stage[i].add(this->butcher_tableau_a[i][j], this->rk_stage[j]);
-                this->rk_stage[i].add(this->butcher_tableau_a_dot[i][j], this->rk_stage_2nd_deriv[j]);
+                this->rk_stage[i].add(this->butcher_tableau_a[i][j]*dt, this->rk_stage[j]);
+            }
+            if (this->butcher_tableau_a_dot[i][j] != 0){
+                this->rk_stage[i].add(this->butcher_tableau_a_dot[i][j]*dt*dt, this->rk_stage_2nd_deriv[j]);
             }
         } //sum(a_ij *k_j), explicit part
 
-        this->rk_stage[i]*=dt; 
-        
+        //this->rk_stage[i]*=dt;
         this->rk_stage[i].add(1.0,this->solution_update); //u_n + dt * sum(a_ij * k_j)
        
-        this->dg->solution = this->rk_stage[i];
-        this->dg->assemble_residual(); //RHS : du/dt = RHS = F(u_n + dt* sum(a_ij*k_j))
-
         //implicit solve for diagonal element
         if (this->butcher_tableau_a[i][i] != 0 || this->butcher_tableau_a_dot[i][i] != 0){
+            
+            //this->dg->solution = this->rk_stage[i];
+            //this->dg->assemble_residual(); //RHS : du/dt = RHS = F(u_n + dt* sum(a_ij*k_j) + dt * a_ii * u^(i)))
             //JFNK version
-
-            solver.solve(dt*this->butcher_tableau_a[i][i], this->rk_stage[i]);
-            this->rk_stage[i] = solver.current_solution_estimate;
+            this->solver.solve(dt, this->rk_stage[i], this->butcher_tableau_a[i][i], this->butcher_tableau_a_dot[i][i]);
+            this->rk_stage[i] = this->solver.current_solution_estimate;
             // u_n + dt * sum(a_ij * k_j) <explicit> + dt * a_ii * u^(i) <implicit>
             
-            this->dg->solution = this->rk_stage[i];
-            this->dg->assemble_residual(); //RHS : du/dt = RHS = F(u_n + dt* sum(a_ij*k_j) + dt * a_ii * u^(i)))
         }
-
+        
+        this->rk_stage_2nd_deriv[i] = this->solver.jacobian_vector_product.compute_second_derivative(this->rk_stage[i]);
+        this->dg->solution = this->rk_stage[i];
+        this->dg->assemble_residual(); //RHS : du/dt = RHS = F(u_n + dt* sum(a_ij*k_j) + dt * a_ii * u^(i)))
         this->dg->global_inverse_mass_matrix.vmult(this->rk_stage[i], this->dg->right_hand_side); //rk_stage[i] = IMM*RHS = F(u_n + dt*sum(a_ij*k_j))
+
     }
 
     modify_time_step(dt);
 
     //assemble solution from stages
-    for (int i = 0; i < this->rk_order; ++i){
+    for (int i = 0; i < this->number_of_stages; ++i){
         this->solution_update.add(dt* this->butcher_tableau_b[i],this->rk_stage[i]);
-        this->solution_update.add(this->butcher_tableau_a_dot[i][j], this->rk_stage_2nd_deriv[j]);
+        this->solution_update.add(dt*dt*this->butcher_tableau_b_dot[i], this->rk_stage_2nd_deriv[i]);
     }
     this->dg->solution = this->solution_update; // u_np1 = u_n + dt* sum(k_i * b_i)
 
@@ -164,17 +166,43 @@ void TwoDerivativeRKODESolver<dim,real,MeshType>::allocate_ode_system ()
     this->solution_update.reinit(this->dg->right_hand_side);
     this->dg->evaluate_mass_matrices(do_inverse_mass_matrix);
 
-    this->rk_stage.resize(this->rk_order);
-    this->rk_stage_2nd_deriv.resize(this->rk_order);
-    for (int i=0; i<this->rk_order; i++) {
-        this->rk_stage[i].reinit(this->dg->solution);
-        this->rk_stage_2nd_deriv[i].reinit(this->dg->solution);
-    }
-
     // Assigning butcher tableau
-    this->butcher_tableau_a.reinit(this->rk_order,this->rk_order);
-    this->butcher_tableau_b.reinit(this->rk_order);
-    if (this->rk_order == 3){
+    if (this->rk_order == 1){
+        this->pcout << "Initializing to order 1" << std::endl;
+        this->number_of_stages = 1;
+        this->butcher_tableau_a.reinit(this->number_of_stages,this->number_of_stages);
+        this->butcher_tableau_b.reinit(this->number_of_stages);
+        this->butcher_tableau_a_dot.reinit(this->number_of_stages,this->number_of_stages);
+        this->butcher_tableau_b_dot.reinit(this->number_of_stages);
+        // Implicit Euler method (note b = a)
+        // Implemented for verification
+        const double butcher_tableau_a_values[1] = {1.0};
+        this->butcher_tableau_a.fill(butcher_tableau_a_values);
+        this->butcher_tableau_b.fill(butcher_tableau_a_values);
+        const double butcher_tableau_a_dot_values[1] = {0.0};
+        this->butcher_tableau_a_dot.fill(butcher_tableau_a_dot_values);
+        this->butcher_tableau_b_dot.fill(butcher_tableau_a_dot_values);
+    }else if (this->rk_order == 2){
+        this->pcout << "Initializing to order 2" << std::endl;
+        this->number_of_stages = 1;
+        this->butcher_tableau_a.reinit(this->number_of_stages,this->number_of_stages);
+        this->butcher_tableau_b.reinit(this->number_of_stages);
+        this->butcher_tableau_a_dot.reinit(this->number_of_stages,this->number_of_stages);
+        this->butcher_tableau_b_dot.reinit(this->number_of_stages);
+        // Implicit Taylor series method (note b = a)
+        const double butcher_tableau_a_values[1] = {1.0};
+        this->butcher_tableau_a.fill(butcher_tableau_a_values);
+        this->butcher_tableau_b.fill(butcher_tableau_a_values);
+        const double butcher_tableau_a_dot_values[1] = {-1.0/2.0};
+        this->butcher_tableau_a_dot.fill(butcher_tableau_a_dot_values);
+        this->butcher_tableau_b_dot.fill(butcher_tableau_a_dot_values);
+    }else if (this->rk_order == 3){
+        this->pcout << "Initializing to order 3" << std::endl;
+        this->number_of_stages = 2;
+        this->butcher_tableau_a.reinit(this->number_of_stages,this->number_of_stages);
+        this->butcher_tableau_b.reinit(this->number_of_stages);
+        this->butcher_tableau_a_dot.reinit(this->number_of_stages,this->number_of_stages);
+        this->butcher_tableau_b_dot.reinit(this->number_of_stages);
         // butcher tableau from Gottlieb paper 
         const double butcher_tableau_a_values[4] = {0,0,0,1.0};
         this->butcher_tableau_a.fill(butcher_tableau_a_values);
@@ -188,6 +216,14 @@ void TwoDerivativeRKODESolver<dim,real,MeshType>::allocate_ode_system ()
         this->pcout << "Invalid RK order" << std::endl;
         std::abort();
     }
+    
+    this->rk_stage.resize(this->number_of_stages);
+    this->rk_stage_2nd_deriv.resize(this->number_of_stages);
+    for (int i=0; i<this->number_of_stages; i++) {
+        this->rk_stage[i].reinit(this->dg->solution);
+        this->rk_stage_2nd_deriv[i].reinit(this->dg->solution);
+    }
+
 }
 
 
