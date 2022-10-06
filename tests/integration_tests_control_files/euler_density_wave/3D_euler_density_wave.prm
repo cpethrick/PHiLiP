@@ -2,25 +2,26 @@
 # Number of dimensions
 set dimension = 3
 
-set test_type = euler_split_taylor_green
+set test_type = euler_density_wave
 
 set use_weak_form = false
 
 set use_collocated_nodes = true
 
-set use_split_form = true
+set use_split_form = false
 
 set two_point_num_flux_type = IR
 
-set use_curvilinear_split_form = true
+set use_curvilinear_split_form = false
 
-set energy_file = KG_cDG_4x4
+set energy_file = IR_cDG_4x4
 
 # The PDE we want to solve
 set pde_type = euler
 
 #set conv_num_flux = entropy_conserving_flux_with_lax_friedrichs_dissipation
-set conv_num_flux = entropy_conserving_flux
+#set conv_num_flux = entropy_conserving_flux
+set conv_num_flux = central_flux
 
 set use_energy = true
 
@@ -32,7 +33,7 @@ set use_weight_adjusted_mass = false
 
 set use_periodic_bc = true
 
-set use_classical_FR = true
+set use_classical_FR = false
 
 subsection ODE solver
 
@@ -40,7 +41,7 @@ subsection ODE solver
   
   set nonlinear_max_iterations = 500
 
-  set print_iteration_modulo = 100
+  set print_iteration_modulo = 10000
 
   set ode_solver_type = explicit
 
@@ -62,6 +63,6 @@ subsection euler
 end
 
 subsection flow_solver
-    set flow_case_type = taylor_green_vortex
-    set interpolate_initial_condition = false
+    set flow_case_type = euler_density_wave
+    set interpolate_initial_condition = true
 end

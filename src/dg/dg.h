@@ -946,6 +946,12 @@ public:
 
     ///Asembles the auxiliary equations' residuals and solves.
     virtual void assemble_auxiliary_residual ()=0;
+
+    ///Computes the minmod function.
+    real minmod_function(real a, real b, real c);
+    
+    ///Applies TVD/TVB limiter on the solution state.
+    void limit_solution();
  
 
 protected:

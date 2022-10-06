@@ -4,6 +4,8 @@
 #include "tests.h"
 #include "dg/dg.h"
 #include "parameters/all_parameters.h"
+#include "physics/physics.h"
+#include "physics/physics_factory.h"
 
 namespace PHiLiP {
 namespace Tests {

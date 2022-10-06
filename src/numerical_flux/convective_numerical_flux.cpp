@@ -161,14 +161,64 @@ std::array<real, nstate> EntropyConservingBaselineNumericalFluxConvective<dim,ns
 
     conv_phys_split_flux = pde_physics->convective_numerical_split_flux (soln_int,soln_ext);
 
+    RealArrayVector conv_phys_flux_int;
+    RealArrayVector conv_phys_flux_ext;
+
+    conv_phys_flux_int = pde_physics->convective_flux (soln_int);
+    conv_phys_flux_ext = pde_physics->convective_flux (soln_ext);
+
+    std::array<real,nstate> entropy_var_int;
+    std::array<real,nstate> entropy_var_ext;
+
+    entropy_var_int = pde_physics->compute_entropy_variables (soln_int);
+    entropy_var_ext = pde_physics->compute_entropy_variables (soln_ext);
+
     // Scalar dissipation
     std::array<real, nstate> numerical_flux_dot_n;
     for (int s=0; s<nstate; s++) {
-        real flux_dot_n = 0.0;
+        real flux_entropy_dot_n = 0.0;
+        real flux_avg_dot_n = 0.0;
         for (int d=0; d<dim; ++d) {
-            flux_dot_n += conv_phys_split_flux[s][d] * normal_int[d];
+            flux_entropy_dot_n += conv_phys_split_flux[s][d] * normal_int[d];
+
+            flux_avg_dot_n += 0.5*(conv_phys_flux_int[s][d] + conv_phys_flux_ext[s][d]) * normal_int[d];
         }
-        numerical_flux_dot_n[s] = flux_dot_n;
+
+       // if((flux_avg_dot_n - flux_entropy_dot_n)*(soln_ext[s] - soln_int[s]) < 0){
+        if((flux_avg_dot_n - flux_entropy_dot_n)*(entropy_var_ext[s] - entropy_var_int[s]) < 0){
+      //  if((flux_avg_dot_n - flux_entropy_dot_n)*(entropy_var_ext[s] - entropy_var_int[s]) > 0){
+      //  if(((flux_avg_dot_n - flux_entropy_dot_n)*(entropy_var_ext[s] - entropy_var_int[s]) < 0) ||
+      //      ((flux_avg_dot_n - flux_entropy_dot_n)*(soln_ext[s] - soln_int[s]) < 0)){
+            numerical_flux_dot_n[s] = flux_avg_dot_n;
+            
+        //    numerical_flux_dot_n[s] = flux_entropy_dot_n;
+        } 
+        else {
+            numerical_flux_dot_n[s] = flux_entropy_dot_n;
+              //  if(s==2)
+              //      numerical_flux_dot_n[s] = flux_avg_dot_n;
+
+//            if((soln_ext[0]-soln_int[0])*normal_int[0]<0)//remove anti-diffusive from shock
+//                numerical_flux_dot_n[s] += 1.0/12.0 * abs(soln_ext[0]-soln_int[0]) * (soln_ext[0] - soln_int[0]);
+//            else
+//                numerical_flux_dot_n[s] -= 1.0/12.0 * abs(soln_ext[0]-soln_int[0]) * (soln_ext[0] - soln_int[0]);
+
+          //      numerical_flux_dot_n[s] -= 1.0/12.0 * abs(soln_ext[0]-soln_int[0]) * (soln_ext[0] - soln_int[0]);
+//                numerical_flux_dot_n[s] -= 1.0/12.0 * (soln_ext[0]-soln_int[0]) * (soln_ext[0] - soln_int[0])*normal_int[0];
+        }
+       // numerical_flux_dot_n[s] = flux_dot_n;
+
+
+//        if(abs(soln_int[0])>abs(soln_ext[0]))
+//            numerical_flux_dot_n[s] -= 0.5 * abs(soln_int[0])* (soln_ext[0] - soln_int[0]);//LF
+//        else
+//            numerical_flux_dot_n[s] -= 0.5 * abs(soln_ext[0])* (soln_ext[0] - soln_int[0]);//LF
+
+//        numerical_flux_dot_n[s] -= 0.25 * abs(soln_int[0]+soln_ext[0]) * (soln_ext[0] - soln_int[0]);//IR
+//        numerical_flux_dot_n[s] -= 1.0/12.0 * abs(soln_ext[0]-soln_int[0]) * (soln_ext[0] - soln_int[0]);
+
+//        if(soln_ext[0]-soln_int[0]<0)//remove anti-diffusive
+//            numerical_flux_dot_n[s] += 1.0/12.0 * (soln_ext[0]-soln_int[0]) * (soln_ext[0] - soln_int[0]);
     }
     return numerical_flux_dot_n;
 }

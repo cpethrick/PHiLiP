@@ -1,4 +1,4 @@
-set test_type = burgers_energy_stability
+set test_type = burgers_linear_stability
 
 set dimension = 1
 
@@ -8,7 +8,7 @@ set overintegration = 0
 
 set use_collocated_nodes = true
 
-set use_split_form = true
+set use_split_form = false
 
 set use_energy = true
 
@@ -22,14 +22,13 @@ set flux_reconstruction = cDG
 
 set use_inverse_mass_on_the_fly = true
 
-#set use_skew_sym_deriv = false
-
 set pde_type = burgers_inviscid
+#set pde_type = burgers_viscous
 
 #set conv_num_flux = lax_friedrichs
-#set conv_num_flux = central_flux
+set conv_num_flux = central_flux
+#set conv_num_flux = entropy_conserving_flux
 #set conv_num_flux = entropy_conserving_flux_with_lax_friedrichs_dissipation
-set conv_num_flux = entropy_conserving_flux
 
 subsection ODE solver
 
@@ -44,8 +43,6 @@ subsection ODE solver
   set initial_time_step = 0.0001
   #set initial_time_step = 0.00005
 
-  set output_solution_every_x_steps = 100
-
   subsection explicit solver options
 
     set runge_kutta_order = 4
@@ -57,3 +54,7 @@ end
 subsection flow_solver
     set flow_case_type = burgers_inviscid
 end
+
+#subsection burgers
+#    set diffusion_coefficient = 3e-5
+#end

@@ -24,7 +24,9 @@ public:
         convection_diffusion,
         advection,
         periodic_1D_unsteady,
-        gaussian_bump
+        gaussian_bump,
+        euler_isentropic_vortex,
+        euler_density_wave
         };
     FlowCaseType flow_case_type; ///< Selected FlowCaseType from the input file
 

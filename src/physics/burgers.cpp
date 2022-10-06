@@ -75,6 +75,18 @@ std::array<dealii::Tensor<1,dim,real>,nstate> Burgers<dim,nstate,real>::convecti
         for (int flux_dim=0; flux_dim<dim; ++flux_dim) {
             for (int s=0; s<nstate; ++s) {
                 conv_flux[s][flux_dim] = 1./6. * (conservative_soln1[flux_dim]*conservative_soln1[flux_dim] + conservative_soln1[flux_dim]*conservative_soln2[s] + conservative_soln2[s]*conservative_soln2[s]);
+
+             //   real avg_flux = 1./4.*(conservative_soln1[flux_dim]*conservative_soln1[flux_dim] +conservative_soln2[s]*conservative_soln2[s]);
+             //   conv_flux[s][flux_dim] = avg_flux;
+
+             //   if(1.0/12.0 *(conservative_soln1[flux_dim] - conservative_soln2[s]) * (conservative_soln1[flux_dim] - conservative_soln2[s])> 0.0)
+             //   if(1.0/12.0 *(conservative_soln1[flux_dim] - conservative_soln2[s])> 0.0)
+             //       conv_flux[s][flux_dim] = avg_flux - 1.0/12.0 *(conservative_soln1[flux_dim] - conservative_soln2[s]) * (conservative_soln1[flux_dim] - conservative_soln2[s]);
+
+//                conv_flux[s][flux_dim] -= 1.0/12.0*(conservative_soln1[flux_dim] - conservative_soln2[s]) * (conservative_soln1[flux_dim] - conservative_soln2[s]);
+//                real b = (conservative_soln1[flux_dim] - conservative_soln2[s] ) * (conv_flux[s][flux_dim] - avg_flux);
+//                real delta = (sqrt(pow(b,2) + 1e-12) - b) / (sqrt(pow(b,2) + pow(1e-12,2)));
+//                conv_flux[s][flux_dim] = conv_flux[s][flux_dim] + delta*(avg_flux -conv_flux[s][flux_dim]);
             }
         }
         return conv_flux;
@@ -88,6 +100,14 @@ real Burgers<dim,nstate,real>::convective_surface_numerical_split_flux (
     real surface_split_flux;
     surface_split_flux = 2.0/3.0 * flux_interp_to_surface + 1.0/3.0 * surface_flux;
     return surface_split_flux;
+}
+
+template <int dim, int nstate, typename real>
+std::array<real,nstate> Burgers<dim, nstate, real>
+::compute_entropy_variables (
+    const std::array<real,nstate> &conservative_soln) const
+{
+    return conservative_soln;
 }
 
 template <int dim, int nstate, typename real>

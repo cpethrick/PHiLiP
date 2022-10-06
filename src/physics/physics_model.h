@@ -64,6 +64,10 @@ public:
                 const real &surface_flux,
                 const real &flux_interp_to_surface) const;
 
+    /// Computes the entropy variables.
+    std::array<real,nstate> compute_entropy_variables (
+                const std::array<real,nstate> &conservative_soln) const;
+
     /** Spectral radius of convective term Jacobian.
      *  Used for scalar dissipation
      */

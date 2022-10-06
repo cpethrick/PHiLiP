@@ -385,16 +385,17 @@ void DGStrong<dim,nstate,real,MeshType>::allocate_auxiliary_equation()
 template <int dim, int nstate, typename real, typename MeshType>
 void DGStrong<dim,nstate,real,MeshType>::assemble_auxiliary_residual()
 {
-    using PDE_enum = Parameters::AllParameters::PartialDifferentialEquation;
+//    using PDE_enum = Parameters::AllParameters::PartialDifferentialEquation;
     using ODE_enum = Parameters::ODESolverParam::ODESolverEnum;
-    const PDE_enum pde_type = this->all_parameters->pde_type;
+//    const PDE_enum pde_type = this->all_parameters->pde_type;
 
-    if(pde_type == PDE_enum::burgers_viscous){
-        pcout << "DG Strong not yet verified for Burgers' viscous." << std::endl;
-        exit(1);
-    }
+//    if(pde_type == PDE_enum::burgers_viscous){
+//        pcout << "DG Strong not yet verified for Burgers' viscous." << std::endl;
+//        exit(1);
+//    }
     // NOTE: auxiliary currently only works explicit time advancement
-    if (this->use_auxiliary_eq && (this->all_parameters->ode_solver_param.ode_solver_type == ODE_enum::explicit_solver)) {
+   // if (this->use_auxiliary_eq && (this->all_parameters->ode_solver_param.ode_solver_type == ODE_enum::explicit_solver)) {
+    if (this->use_auxiliary_eq && (this->all_parameters->ode_solver_param.ode_solver_type != ODE_enum::implicit_solver)) {
         //set auxiliary rhs to 0
         for(int idim=0; idim<dim; idim++){
             this->auxiliary_RHS[idim] = 0;
@@ -949,6 +950,43 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
     // The matrix of two-pt fluxes for Hadamard products
     std::array<dealii::Tensor<1,dim,dealii::FullMatrix<real>>,nstate> conv_ref_2pt_flux_at_q;
 
+#if 0
+    std::array<dealii::Tensor<1,dim,dealii::FullMatrix<real>>,nstate> visc_ref_2pt_flux_at_q;
+#endif
+//#if 0
+    OPERATOR::local_basis_stiffness<dim,2*dim> stiff(1,poly_degree, this->high_order_grid->fe_system.tensor_degree());
+   // stiff.build_1D_volume_operator(this->oneD_fe_collection_flux[poly_degree], this->oneD_quadrature_collection[poly_degree]);
+    stiff.build_1D_volume_operator(this->oneD_fe_collection_1state[poly_degree], this->oneD_quadrature_collection[poly_degree]);
+    OPERATOR::local_mass<dim,2*dim> mass(1,poly_degree, this->high_order_grid->fe_system.tensor_degree());
+   // mass.build_1D_volume_operator(this->oneD_fe_collection_flux[poly_degree], this->oneD_quadrature_collection[poly_degree]);
+    mass.build_1D_volume_operator(this->oneD_fe_collection_1state[poly_degree], this->oneD_quadrature_collection[poly_degree]);
+    std::array<dealii::FullMatrix<real>,dim> stiff_dim;
+    for(int idim=0; idim<dim; idim++){
+        stiff_dim[idim].reinit(n_quad_pts,n_quad_pts); 
+        if(idim==0)
+            stiff_dim[idim] = stiff.tensor_product(stiff.oneD_vol_operator,
+                                                   mass.oneD_vol_operator,
+                                                   mass.oneD_vol_operator);
+        if(idim==1)
+            stiff_dim[idim] = stiff.tensor_product(mass.oneD_vol_operator,
+                                                   stiff.oneD_vol_operator,
+                                                   mass.oneD_vol_operator);
+        if(idim==2)
+            stiff_dim[idim] = stiff.tensor_product(mass.oneD_vol_operator,
+                                                   mass.oneD_vol_operator,
+                                                   stiff.oneD_vol_operator);
+    }
+//    double avg =0.0;
+//    double integral = 0.0;
+//    for(unsigned int iquad=0;iquad<n_quad_pts;iquad++){
+//        avg += vol_quad_weights[iquad] * soln_at_q[0][iquad];
+//        integral += vol_quad_weights[iquad];
+//    }
+//    avg/=integral;
+//    double numerator = (soln_at_q[0][0]-avg)+(soln_at_q[0][n_quad_pts-1]-avg);
+  //  double numerator = -soln_at_q[0][0]+soln_at_q[0][n_quad_pts-1];
+//#endif
+
     for (unsigned int iquad=0; iquad<n_quad_pts; ++iquad) {
         //extract soln and auxiliary soln at quad pt to be used in physics
         std::array<real,nstate> soln_state;
@@ -974,8 +1012,10 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
         // If 2pt flux, transform to reference at construction to improve performance.
         // We technically use a REFERENCE 2pt flux for all entropy stable schemes.
         std::array<dealii::Tensor<1,dim,real>,nstate> conv_phys_flux;
-        std::array<dealii::Tensor<1,dim,real>,nstate> conv_phys_flux_2pt;
+       // std::array<dealii::Tensor<1,dim,real>,nstate> conv_phys_flux_2pt;
         std::vector<std::array<dealii::Tensor<1,dim,real>,nstate>> conv_ref_flux_2pt(n_quad_pts);
+
+        std::vector<std::array<dealii::Tensor<1,dim,real>,nstate>> visc_ref_flux_2pt(n_quad_pts);
         if (this->all_parameters->use_split_form || this->all_parameters->use_curvilinear_split_form){
             for (unsigned int flux_basis=iquad; flux_basis<n_quad_pts; ++flux_basis) {
 
@@ -993,20 +1033,177 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
                     soln_state_flux_basis[istate] = soln_at_q[istate][flux_basis];
                 }
                 //Compute the physical flux
-                conv_phys_flux_2pt = this->pde_physics_double->convective_numerical_split_flux(soln_state, soln_state_flux_basis);
+//                conv_phys_flux_2pt = this->pde_physics_double->convective_numerical_split_flux(soln_state, soln_state_flux_basis);
+                const std::array<dealii::Tensor<1,dim,real>,nstate> conv_phys_flux_2pt = this->pde_physics_double->convective_numerical_split_flux(soln_state, soln_state_flux_basis);
+
+                std::array<dealii::Tensor<1,dim,real>,nstate> flux_avg;
+                std::array<dealii::Tensor<1,dim,real>,nstate> flux_int;
+                std::array<dealii::Tensor<1,dim,real>,nstate> flux_ext;
+                flux_int = this->pde_physics_double->convective_flux (soln_state);
+                flux_ext = this->pde_physics_double->convective_flux (soln_state_flux_basis);
+                for(int istate=0; istate<nstate; istate++){
+                    flux_avg[istate] = 0.5*(flux_int[istate] + flux_ext[istate]);
+                }
+
+                std::array<dealii::Tensor<1,dim,real>,nstate> conv_phys_flux_2pt_switch;
+                std::array<real,nstate> entropy_variables_int = this->pde_physics_double->compute_entropy_variables(soln_state);
+                std::array<real,nstate> entropy_variables_ext = this->pde_physics_double->compute_entropy_variables(soln_state_flux_basis);
+                for(int istate=0; istate<nstate; istate++){
+                    for(int idim=0; idim<dim; idim++){
+
+#if 0
+                        real difference=0.0;
+                        if(istate==0 || istate ==1)
+                            difference = soln_state_flux_basis[istate]-soln_state[istate];
+                        if(istate==2){
+
+                            const real vel1 = soln_state[1]/soln_state[0];
+                            const real vel2 = soln_state_flux_basis[1]/soln_state_flux_basis[0];
+                            const real pressure1 = 0.4*(soln_state[nstate-1] - 0.5*soln_state[0]*vel1*vel1);
+                            const real pressure2 = 0.4*(soln_state_flux_basis[nstate-1] - 0.5*soln_state_flux_basis[0]*vel2*vel2);
+                             
+                            const real beta1 = soln_state[0]/(2.0*pressure1);
+                            const real beta2 = soln_state_flux_basis[0]/(2.0*pressure2);
+                            const real zeta = beta1/beta2;
+                            const real f = (zeta-1.0)/(zeta+1.0);
+                            const real u = f*f;
+                            
+                            real F;
+                            if(u<1.0e-2){ F = 1.0 + u/3.0 + u*u/5.0 + u*u*u/7.0; } 
+                            else { 
+                                if constexpr(std::is_same<real,double>::value) F = std::log(zeta)/2.0/f; 
+                            }
+                            
+                            const real beta_log = (beta1+beta2)/(2.0*F);
+                        //   real beta_log = (beta1+beta2)/(2.0*F);
+                        //   beta_log = 0.5*(beta1+beta2);
+                             
+                             const real density1 = soln_state[0];
+                             const real density2 = soln_state_flux_basis[0];
+                             
+                            difference = (1.0/(2.0*0.4*beta_log) + 0.5*vel1*vel2)*(density2-density1) + 0.5*(density2+density1)*(0.5*(vel1+vel2))*(vel2-vel1) + (0.5*(density2+density1))/(2*0.4) *(1.0/beta2- 1.0/beta1);
+                           // difference *= -1.0;
+
+                        }
+#endif
+
+                     //   if((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( soln_state_flux_basis[istate]-soln_state[istate]) <0) ){
+                       // if((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( entropy_variables_ext[istate]-entropy_variables_int[istate]) <0) ){
+                        if((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( entropy_variables_ext[istate]-entropy_variables_int[istate]) <0) ){
+//                        if((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( difference) <0) ){
+                      // if(((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( entropy_variables_ext[istate]-entropy_variables_int[istate]) <0) ) ||
+                      //     ((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( soln_state_flux_basis[istate]-soln_state[istate]) <0) )){
+                            conv_phys_flux_2pt_switch[istate][idim] = flux_avg[istate][idim];
+
+                         //   conv_phys_flux_2pt_switch[istate][idim] = conv_phys_flux_2pt[istate][idim];
+                        }
+                        else{
+                            conv_phys_flux_2pt_switch[istate][idim] = conv_phys_flux_2pt[istate][idim];
+                           // conv_phys_flux_2pt_switch[istate][idim] = flux_avg[istate][idim];
+                           // if(istate==2)
+                           //     conv_phys_flux_2pt_switch[istate][idim] = flux_avg[istate][idim];
+
+                           //Burgers downinding check
+//                           if(( entropy_variables_ext[istate]-entropy_variables_int[istate]) <0){
+//                               conv_phys_flux_2pt_switch[istate][idim] += 1.0/12.0 * abs( entropy_variables_ext[istate]-entropy_variables_int[istate])
+//                                                                        * ( entropy_variables_ext[istate]-entropy_variables_int[istate]);
+//                           }
+//                           else{
+//                               conv_phys_flux_2pt_switch[istate][idim] -= 1.0/12.0 * abs( entropy_variables_ext[istate]-entropy_variables_int[istate])
+//                                                                        * ( entropy_variables_ext[istate]-entropy_variables_int[istate]);
+//                           }
+                               conv_phys_flux_2pt_switch[istate][idim] -= 1.0/12.0 * ( entropy_variables_ext[istate]-entropy_variables_int[istate])
+                                                                        * ( entropy_variables_ext[istate]-entropy_variables_int[istate]);
+
+                        }
+                    }
+                }
 
                 for(int istate=0; istate<nstate; istate++){
                     //For each state, transform the physical flux to a reference flux.
                     metric_oper.transform_physical_to_reference(
-                        conv_phys_flux_2pt[istate],
+                       // conv_phys_flux_2pt[istate],
+                        conv_phys_flux_2pt_switch[istate],
                         0.5*(metric_cofactor + metric_cofactor_flux_basis),
                         conv_ref_flux_2pt[flux_basis][istate]);
                 }
+
+#if 0
+                //artifical viscosity 2pt
+//        std::array<dealii::Tensor<1,dim,real>,nstate> visc_phys_flux_2pt;
+#if 0
+                if((stiff.oneD_vol_operator[iquad][flux_basis]* ( soln_state_flux_basis[0]-soln_state[0]) <0) ){// || 
+                  //   visc_phys_flux_2pt[0][0] = -(1.0/12.0*abs( soln_state_flux_basis[0]-soln_state[0]))*(soln_state_flux_basis[0] - soln_state[0]);
+                    //below is corrcet for symmetric to cancel anti-diffusive
+                    visc_phys_flux_2pt[0][0] = (1.0/12.0*( soln_state_flux_basis[0]-soln_state[0]))*(soln_state_flux_basis[0] - soln_state[0]);
+                    visc_ref_flux_2pt[flux_basis][0][0] = visc_phys_flux_2pt[0][0];
+                }
+#endif
+
+#if 0
+                    std::array<dealii::Tensor<1,dim,real>,nstate> entropy_cons_flux;
+                    entropy_cons_flux = this->pde_physics_double->convective_numerical_split_flux(soln_state, soln_state_flux_basis);
+               //     std::array<dealii::Tensor<1,dim,real>,nstate> flux_avg;
+               //     std::array<dealii::Tensor<1,dim,real>,nstate> flux_int;
+               //     std::array<dealii::Tensor<1,dim,real>,nstate> flux_ext;
+               //     flux_int = this->pde_physics_double->convective_flux (soln_state);
+               //     flux_ext = this->pde_physics_double->convective_flux (soln_state_flux_basis);
+                    std::array<dealii::Tensor<1,dim,real>,nstate> lambda;
+                    for(int istate=0;istate<nstate;istate++){
+               //         flux_avg[istate] = 0.5*(flux_int[istate]+flux_ext[istate]);
+                        for(int idim=0;idim<dim;idim++){
+                           // lambda[istate][idim] = (flux_avg[istate][idim] - entropy_cons_flux[istate][idim]);
+                            lambda[istate][idim] = -(flux_avg[istate][idim] - entropy_cons_flux[istate][idim]);
+
+                        }
+                    }
+                
+                    for(int istate=0; istate<nstate; istate++){
+                        for(int idim=0; idim<dim; idim++){
+                        //if((stiff_dim[idim][iquad][flux_basis]*lambda[istate][idim]* ( soln_state_flux_basis[istate]-soln_state[istate]) <0) ){// || 
+                       // if((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( entropy_variables_ext[istate]-entropy_variables_int[istate]) <0) ){
+                        if((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( entropy_variables_ext[istate]-entropy_variables_int[istate]) >0) ){
+                    
+                            visc_phys_flux_2pt[istate][idim] = lambda[istate][idim];
+
+
+                            metric_oper.transform_physical_to_reference(
+                                visc_phys_flux_2pt[istate],
+                                0.5*(metric_cofactor + metric_cofactor_flux_basis),
+                                visc_ref_flux_2pt[flux_basis][istate]);
+                        }
+                        }
+                    }
+#endif
+                    
+            
+
+
+              // double theta = numerator /( (soln_state[0]-avg) + (soln_state_flux_basis[0]-avg));
+             //  double theta =1.0- numerator /( (soln_state[0]-avg) + (soln_state_flux_basis[0]-avg));
+              // double theta =abs( numerator /( (soln_state[0]-avg) + (soln_state_flux_basis[0]-avg)) +1e-12);
+              // double theta =abs( numerator /( -soln_state[0]+ soln_state_flux_basis[0] +1e-12));
+             //  double theta =abs( ( -soln_state[0]+ soln_state_flux_basis[0]) / (numerator+1e-12));
+             //   visc_phys_flux_2pt[0][0] = -theta*(1.0/12.0*abs( soln_state_flux_basis[0]-soln_state[0]))*(soln_state[0]-soln_state_flux_basis[0]);
+
+           //    } //else { visc_phys_flux_2pt[0][0] =0.0;}
+
+
+               // if(flux_basis<= iquad+1){
+                if(flux_basis<= iquad+1 && soln_state_flux_basis[0]-soln_state[0]<0){
+//                    visc_phys_flux_2pt[0][0] -= (1.0/4.0*abs( soln_state_flux_basis[0]+soln_state[0]))*(soln_state[0]-soln_state_flux_basis[0]);
+//                    visc_phys_flux_2pt[0][0] -= (1.0/12.0*abs( soln_state_flux_basis[0]-soln_state[0]))*(soln_state[0]-soln_state_flux_basis[0]);
+                    visc_ref_flux_2pt[flux_basis][0][0] -= (1.0/4.0*abs( soln_state_flux_basis[0]+soln_state[0]))*(soln_state[0]-soln_state_flux_basis[0]);
+                }
+
+#endif
+
             }
         }
         else{
             //Compute the physical flux
             conv_phys_flux = this->pde_physics_double->convective_flux (soln_state);
+           // conv_phys_flux[0][0] = (soln_state[0]);
         }
 
         //Diffusion
@@ -1059,6 +1256,10 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
                     conv_ref_flux_at_q[istate][idim].resize(n_quad_pts);
                     conv_ref_2pt_flux_at_q[istate][idim].reinit(n_quad_pts, n_quad_pts);
                     diffusive_ref_flux_at_q[istate][idim].resize(n_quad_pts);
+
+#if 0
+                    visc_ref_2pt_flux_at_q[istate][idim].reinit(n_quad_pts, n_quad_pts);
+#endif
                 }
                 //write data
                 if (this->all_parameters->use_split_form || this->all_parameters->use_curvilinear_split_form){
@@ -1066,6 +1267,13 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
                         //Note that the 2pt flux matrix is symmetric so we only computed upper triangular
                         conv_ref_2pt_flux_at_q[istate][idim][iquad][flux_basis] = conv_ref_flux_2pt[flux_basis][istate][idim];
                         conv_ref_2pt_flux_at_q[istate][idim][flux_basis][iquad] = conv_ref_flux_2pt[flux_basis][istate][idim];
+
+#if 0
+                        //for artifical visc 2pt
+                        visc_ref_2pt_flux_at_q[istate][idim][iquad][flux_basis] = visc_ref_flux_2pt[flux_basis][istate][idim];
+                        visc_ref_2pt_flux_at_q[istate][idim][flux_basis][iquad] = -visc_ref_flux_2pt[flux_basis][istate][idim];
+//                        visc_ref_2pt_flux_at_q[istate][idim][flux_basis][iquad] = visc_ref_flux_2pt[flux_basis][istate][idim];
+#endif
                     }
                 }
                 else{
@@ -1081,7 +1289,39 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
             }
         }
     }
+//    for(unsigned int iquad=0;iquad<n_quad_pts; iquad++){
+//    for(unsigned int jquad=0;jquad<n_quad_pts; jquad++){
+//    conv_ref_2pt_flux_at_q[0][0][iquad][jquad] -= (0.25*abs(soln_at_q[0][iquad]+soln_at_q[0][jquad]) + 1.0/12.0*abs(soln_at_q[0][iquad]-soln_at_q[0][jquad]))
+//                                                        * (soln_at_q[0][iquad] - soln_at_q[0][jquad]);
+//    }
+//    }
 
+//pcout<<"the derivative "<<std::endl;
+//for(unsigned int i=0;i<n_quad_pts;i++){
+//for(unsigned int j=0;j<n_quad_pts;j++){
+//printf(" %g ",flux_basis.oneD_grad_operator[i][j]);
+//}
+//printf("\n");
+//}
+
+//std::vector<real> uW(n_quad_pts);
+//for(unsigned int i=0;i<n_quad_pts; i++){
+//uW[i] = vol_quad_weights[i] * soln_at_q[0][i];
+//}
+
+//    double u_avg =0.0;
+//    for(unsigned int iquad=0; iquad<n_quad_pts; iquad++){
+//        u_avg += soln_at_q[0][iquad];
+//    }
+//    u_avg /= n_quad_pts;
+//    double denominator =0.0;
+//    for(unsigned int iquad=0; iquad<n_quad_pts; iquad++){
+//        denominator += pow(soln_at_q[0][iquad] - u_avg,2);
+//    }
+
+
+//    OPERATOR::local_basis_stiffness<dim,2*dim> stiff(1,poly_degree, this->high_order_grid->fe_system.tensor_degree());
+//    stiff.build_1D_volume_operator(this->oneD_fe_collection_1state[poly_degree], this->oneD_quadrature_collection[poly_degree]);
 
     //For each state we:
     //  1. Compute reference divergence.
@@ -1109,6 +1349,14 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
                                                     flux_basis.oneD_vol_operator,
                                                     flux_basis.oneD_grad_operator);
 
+//this->pcout<<"convective div"<<std::endl;
+//for(unsigned int iquad=0;iquad<n_quad_pts;iquad++){
+//    this->pcout<<conv_flux_divergence[iquad]<<std::endl;
+//}
+//this->pcout<<"diffusiiive div"<<std::endl;
+//for(unsigned int iquad=0;iquad<n_quad_pts;iquad++){
+//    this->pcout<<diffusive_flux_divergence[iquad]<<std::endl;
+//}
 
         // Strong form
         // The right-hand side sends all the term to the side of the source term
@@ -1122,6 +1370,7 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
 
         // Convective
         soln_basis.inner_product_1D(conv_flux_divergence, vol_quad_weights, rhs, soln_basis.oneD_vol_operator, false, -1.0);
+       // soln_basis.inner_product_1D(conv_flux_divergence, uW, rhs, soln_basis.oneD_vol_operator, false, -1.0);
 
         // Diffusive
         // Note that for diffusion, the negative is defined in the physics. Since we used the auxiliary
@@ -1137,7 +1386,24 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
             soln_basis.inner_product_1D(source_at_q[istate], JxW, rhs, soln_basis.oneD_vol_operator, true, 1.0);
         }
 
+
+        //do artificla visc Hadamard
+#if 0
+        for(unsigned int iquad=0; iquad<n_quad_pts; iquad++){
+            for(unsigned int jquad=0; jquad<n_quad_pts; jquad++){
+
+               // rhs[iquad] -=visc_ref_2pt_flux_at_q[0][0][iquad][jquad] * abs(2.0*stiff.oneD_vol_operator[iquad][jquad]);
+                rhs[iquad] +=visc_ref_2pt_flux_at_q[0][0][iquad][jquad] * abs(2.0*stiff.oneD_vol_operator[iquad][jquad]);
+              //  rhs[iquad] -=visc_ref_2pt_flux_at_q[istate][0][iquad][jquad] * (2.0*stiff.oneD_vol_operator[iquad][jquad]);
+            }
+        }
+#endif
+
         for(unsigned int ishape=0; ishape<n_shape_fns; ishape++){
+       //dissipation from RD
+//            rhs[ishape] += (0.25 * abs(soln_at_q[0][ishape] + u_avg) + 1.0/12.0 *abs(soln_at_q[0][ishape] - u_avg) )
+//                        *(soln_at_q[0][ishape] - u_avg) / denominator;
+
             local_rhs_int_cell(istate*n_shape_fns + ishape) += rhs[ishape];
         }
 

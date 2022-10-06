@@ -45,6 +45,111 @@ double BurgersEnergyStability<dim, nstate>::compute_energy(std::shared_ptr < PHi
     //Energy \f$ = 0.5 * \int u^2 d\Omega_m \f$
     energy = dg->solution * mass_matrix_times_solution;
     
+//do local entropy production
+
+//    for (auto soln_cell = dg->dof_handler.begin_active(); soln_cell != dg->dof_handler.end(); ++soln_cell) {
+//        if (!soln_cell->is_locally_owned()) continue;
+//        const unsigned int poly_degree = soln_cell->active_fe_index();
+//        const unsigned int n_dofs_cell = dg->fe_collection[poly_degree].n_dofs_per_cell();
+//        std::vector<dealii::types::global_dof_index> current_dofs_indices;
+//        current_dofs_indices.resize(n_dofs_cell);
+//        soln_cell->get_dof_indices (current_dofs_indices);
+//
+//        double local_entropy_production =0.0;
+//        for(unsigned int i=0;i<n_dofs_cell;i++){
+//            local_entropy_production += dg->right_hand_side[current_dofs_indices[i]] * dg->solution[current_dofs_indices[i]];
+//        }
+//
+//        if(abs(local_entropy_production) > 1e-11)
+//            pcout<<"the cell number "<<soln_cell->active_cell_index()<<" the entropy production "<<local_entropy_production<<std::endl;
+//
+//    }
+
+//below tryout
+#if 0
+    const unsigned int n_dofs_cell = dg->fe_collection[dg->max_degree].dofs_per_cell;
+    const unsigned int n_quad_pts = dg->volume_quadrature_collection[dg->max_degree].size();
+    const unsigned int n_shape_fns = n_dofs_cell / nstate;
+    //We have to project the vector of entropy variables because the mass matrix has an interpolation from solution nodes built into it.
+    OPERATOR::vol_projection_operator<dim,2*dim> vol_projection(1, dg->max_degree, dg->max_grid_degree);
+    vol_projection.build_1D_volume_operator(dg->oneD_fe_collection_1state[dg->max_degree], dg->oneD_quadrature_collection[dg->max_degree]);
+
+    OPERATOR::basis_functions<dim,2*dim> soln_basis(1, dg->max_degree, dg->max_grid_degree); 
+    soln_basis.build_1D_volume_operator(dg->oneD_fe_collection_1state[dg->max_degree], dg->oneD_quadrature_collection[dg->max_degree]);
+
+    dealii::LinearAlgebra::distributed::Vector<double> entropy_var_hat_global(dg->right_hand_side);
+    std::vector<dealii::types::global_dof_index> dofs_indices (n_dofs_cell);
+
+    std::shared_ptr < Physics::PhysicsBase<dim, nstate, double > > pde_physics_double  = PHiLiP::Physics::PhysicsFactory<dim,nstate,double>::create_Physics(dg->all_parameters);
+
+
+//    dealii::QGauss<dim> quad_extra(dg->max_degree+1+0);
+//    const dealii::Mapping<dim> &mapping = (*(dg->high_order_grid->mapping_fe_field));
+//    dealii::FEValues<dim,dim> fe_values_extra(mapping, dg->fe_collection[poly_degree], quad_extra, 
+//                    dealii::update_values | dealii::update_JxW_values | dealii::update_quadrature_points);
+
+//    double integrated_entropy = 0.0;
+    for (auto cell = dg->dof_handler.begin_active(); cell!=dg->dof_handler.end(); ++cell) {
+        if (!cell->is_locally_owned()) continue;
+
+//        fe_values_extra.reinit (cell);
+        cell->get_dof_indices (dofs_indices);
+
+        std::array<std::vector<double>,nstate> soln_coeff;
+        for(unsigned int idof=0; idof<n_dofs_cell; idof++){
+            const unsigned int istate = dg->fe_collection[dg->max_degree].system_to_component_index(idof).first;
+            const unsigned int ishape = dg->fe_collection[dg->max_degree].system_to_component_index(idof).second;
+            if(ishape == 0)
+                soln_coeff[istate].resize(n_shape_fns);
+            soln_coeff[istate][ishape] = dg->solution(dofs_indices[idof]);
+        }
+
+        std::array<std::vector<double>,nstate> soln_at_q;
+        for(int istate=0; istate<nstate; istate++){
+            soln_at_q[istate].resize(n_quad_pts);
+            soln_basis.matrix_vector_mult_1D(soln_coeff[istate], soln_at_q[istate],
+                                             soln_basis.oneD_vol_operator);
+        }
+        std::array<std::vector<double>,nstate> entropy_var_at_q;
+        for(unsigned int iquad=0; iquad<n_quad_pts; iquad++){
+            std::array<double,nstate> soln_state;
+            for(int istate=0; istate<nstate; istate++){
+                soln_state[istate] = soln_at_q[istate][iquad];
+            }
+            std::array<double,nstate> entropy_var_state = pde_physics_double->compute_entropy_variables(soln_state);
+            for(int istate=0; istate<nstate; istate++){
+                if(iquad==0)
+                    entropy_var_at_q[istate].resize(n_quad_pts);
+                entropy_var_at_q[istate][iquad] = entropy_var_state[istate];
+            }
+
+//            double pressure = 0.4*soln_state[nstate-1];
+//            for(int idim=0; idim<dim; idim++){
+//                const double vel = soln_state[idim+1]/soln_state[0];
+//                pressure -= 0.4*0.5*soln_state[0]*vel*vel;
+//            }
+//            const double entropy_int = - soln_state[0]*(log(pressure)-1.4*log(soln_state[0]))/0.4; 
+//            integrated_entropy += entropy_int * fe_values_extra.JxW(iquad);
+
+        }
+        for(int istate=0; istate<nstate; istate++){
+            //Projected vector of entropy variables.
+            std::vector<double> entropy_var_hat(n_shape_fns);
+            vol_projection.matrix_vector_mult_1D(entropy_var_at_q[istate], entropy_var_hat,
+                                                 vol_projection.oneD_vol_operator);
+                                                
+            for(unsigned int ishape=0; ishape<n_shape_fns; ishape++){
+                const unsigned int idof = istate * n_shape_fns + ishape;
+                entropy_var_hat_global[dofs_indices[idof]] = entropy_var_hat[ishape];
+            }
+        }
+    }
+
+    energy = entropy_var_hat_global * mass_matrix_times_solution;
+#endif
+//end tryout    
+
+
     return energy;
 }
 
@@ -93,13 +198,18 @@ int BurgersEnergyStability<dim, nstate>::run_test() const
     PHiLiP::Parameters::AllParameters all_parameters_new = *all_parameters;  
     double left = 0.0;
     double right = 2.0;
-    const unsigned int n_grids = (all_parameters_new.use_energy) ? 4 : 5;
+   // const unsigned int n_grids = (all_parameters_new.use_energy) ? 4 : 5;
+    const unsigned int n_grids = (all_parameters_new.use_energy) ? 5 : 5;
     std::vector<double> grid_size(n_grids);
     std::vector<double> soln_error(n_grids);
-    unsigned int poly_degree = 4;
+  //  unsigned int poly_degree = 4;
+    unsigned int poly_degree = 8;
     dealii::ConvergenceTable convergence_table;
-    const unsigned int igrid_start = 3;
-    const unsigned int grid_degree = 1;
+   // const unsigned int igrid_start = 3;
+    const unsigned int igrid_start = 4;
+   // const unsigned int igrid_start = 4;
+   // const unsigned int grid_degree = 1;
+    unsigned int grid_degree = poly_degree;
 
     for(unsigned int igrid = igrid_start; igrid<n_grids; igrid++){
 
@@ -118,8 +228,10 @@ int BurgersEnergyStability<dim, nstate>::run_test() const
                 dealii::Triangulation<dim>::smoothing_on_coarsening));
 #endif
         //straight grid setup
-        dealii::GridGenerator::hyper_cube(*grid, left, right, true);
-        //found the periodicity in dealii doesn't work as expected in 1D so I hard coded the 1D periodic condition in DG
+//        dealii::GridGenerator::hyper_cube(*grid, left, right, true);
+        dealii::GridGenerator::subdivided_hyper_cube(*grid, 17, left, right, true);
+      //  dealii::GridGenerator::subdivided_hyper_cube(*grid, 35, left, right, true);
+      //  dealii::GridGenerator::subdivided_hyper_cube(*grid, 16, left, right, true);
 #if PHILIP_DIM==1
         std::vector<dealii::GridTools::PeriodicFacePair<typename dealii::Triangulation<PHILIP_DIM>::cell_iterator> > matched_pairs;
         dealii::GridTools::collect_periodic_faces(*grid,0,1,0,matched_pairs);
@@ -131,7 +243,7 @@ int BurgersEnergyStability<dim, nstate>::run_test() const
         if(dim>=3) dealii::GridTools::collect_periodic_faces(*grid,4,5,2,matched_pairs);
         grid->add_periodicity(matched_pairs);
 #endif
-        grid->refine_global(igrid);
+//        grid->refine_global(igrid);
         pcout << "Grid generated and refined" << std::endl;
         //CFL number
         const unsigned int n_global_active_cells2 = grid->n_global_active_cells();

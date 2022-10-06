@@ -1178,6 +1178,7 @@ read_gmsh(std::string filename, int requested_grid_order)
             equidistant_points[i](0) = i*dx;
         }
         dealii::Quadrature<1> quad_equidistant(equidistant_points);
+       // dealii::QGaussLobatto<1> quad_equidistant(grid_order+1);
         dealii::FE_Q<dim> fe_q_equidistant(quad_equidistant);
         dealii::FESystem<dim> fe_system_equidistant(fe_q_equidistant, dim);
         dealii::DoFHandler<dim> dof_handler_equidistant(*triangulation);
@@ -1213,6 +1214,7 @@ read_gmsh(std::string filename, int requested_grid_order)
                 equidistant_points[i](0) = i*dx;
             }
             dealii::Quadrature<1> quad_equidistant(equidistant_points);
+        //    dealii::QGaussLobatto<1> quad_equidistant(grid_order+1);
             dealii::FE_Q<dim> fe_q_equidistant(quad_equidistant);
             dealii::FESystem<dim> fe_system_equidistant(fe_q_equidistant, dim);
             dealii::DoFHandler<dim> dof_handler_equidistant(*triangulation);

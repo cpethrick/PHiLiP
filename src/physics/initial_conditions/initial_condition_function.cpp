@@ -222,6 +222,34 @@ inline real InitialConditionFunction_BurgersInviscidEnergy<dim,nstate,real>
     value += 0.01;
     return value;
 }
+// ========================================================
+// 1D BURGERS Inviscid Energy-- Initial Condition
+// ========================================================
+template <int dim, int nstate, typename real>
+InitialConditionFunction_BurgersInviscidLinearStability<dim,nstate,real>
+::InitialConditionFunction_BurgersInviscidLinearStability ()
+        : InitialConditionFunction<dim,nstate,real>()
+{
+    // Nothing to do here yet
+}
+
+template <int dim, int nstate, typename real>
+inline real InitialConditionFunction_BurgersInviscidLinearStability<dim,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
+{
+    real value = 1.0;
+    if constexpr(dim >= 1)
+       // value *= sin(dealii::numbers::PI*point[0] - 0.7);
+        value *= sin(4.0*dealii::numbers::PI*point[0] - 0.7);
+       // value *= sin(8.0*dealii::numbers::PI*point[0] - 0.7);
+    if constexpr(dim >= 2)
+        value *= sin(dealii::numbers::PI*point[1] - 0.7);
+    if constexpr(dim == 3)
+        value *= sin(dealii::numbers::PI*point[2] - 0.7);
+
+    value += 2.0;
+    return value;
+}
 
 // ========================================================
 // Advection -- Initial Condition
@@ -369,6 +397,90 @@ real InitialConditionFunction_Zero<dim, nstate, real>
 {
     return 0.0;
 }
+// ========================================================
+// Euler Density Wave -- Initial Condition
+// ========================================================
+template <int dim, int nstate, typename real>
+InitialConditionFunction_EulerDensityWave<dim,nstate,real>
+::InitialConditionFunction_EulerDensityWave()
+        : InitialConditionFunction<dim,nstate,real>()
+{
+    // Nothing to do here yet
+}
+
+template <int dim, int nstate, typename real>
+inline real InitialConditionFunction_EulerDensityWave<dim,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    real value = 0.0;
+    real pi = dealii::numbers::PI;
+    real rho = 0.0;
+    if constexpr(dim==1)
+        rho = 1.0 + 0.98 * sin(2.0*pi*(point[0]));
+        //rho = 2.0 + sin(2*pi*(point[0]));//Jesse's
+    else
+        rho = 1.0 + 0.98 * sin(2.0*pi*(point[0] +point[1]));
+
+    if(istate==0)//rho
+        value = rho;
+    if(istate==1)//u
+        value = 0.1 * rho;
+      //  value = 1.0 * rho;//Jesse's
+    if(istate==2 && dim > 1)//v
+        value = 0.2 * rho;
+    if(istate==2 && dim==1)//E
+        value = 20.0/(0.4) + 0.5*rho*(0.1*0.1);
+       // value = 1.0/(0.4) + 0.5*rho;//Jesse's
+    if(istate==3 && dim==3)//w
+        value = 0.0;
+    if((istate==3 && dim==2) || istate==4)//E
+        value = 20.0/(0.4) + 0.5*rho*(0.1*0.1 + 0.2*0.2);
+
+    return value;
+}
+// ========================================================
+// Euler Isentropic Vortex -- Initial Condition
+// ========================================================
+template <int dim, int nstate, typename real>
+InitialConditionFunction_EulerIsentropicVortex<dim,nstate,real>
+::InitialConditionFunction_EulerIsentropicVortex()
+        : InitialConditionFunction<dim,nstate,real>()
+{
+    // Nothing to do here yet
+}
+
+template <int dim, int nstate, typename real>
+inline real InitialConditionFunction_EulerIsentropicVortex<dim,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    real value = 0.0;
+    real pi = dealii::numbers::PI;
+    const real x0 = 0.0;
+    const real y0 = 0.0;
+    const real x = point[0];
+    const real y = point[1];
+    const real beta = 5.0;
+  //  const real beta = 0.5;
+    const real gamma = 1.4;
+    const real r_square = (x-x0)*(x-x0) + (y-y0)*(y-y0);
+    const real exp_val = exp(1.0 - r_square);
+    const real density = pow(1.0 - ( 0.5*(0.4)*(beta*exp_val)*(beta*exp_val) ) / (8.0*gamma*pi*pi) , 1.0/0.4);
+    const real u = (1.0 - beta/(2.0*pi) * (y-y0) * exp_val);
+    const real v = (beta/(2.0*pi) * (x-x0) * exp_val);
+
+    if(istate == 0)
+        value = density;
+    if(istate == 1)
+        value = density*u;
+    if(istate == 2)
+        value = density*v;
+    if(istate == 3){
+        const real pressure = pow(density, gamma);
+        value = pressure / 0.4 + 0.5 * density *(u*u + v*v);
+    }
+
+    return value;
+}
 
 // =========================================================
 // Initial Condition Factory
@@ -378,6 +490,7 @@ std::shared_ptr<InitialConditionFunction<dim, nstate, real>>
 InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
     Parameters::AllParameters const *const param)
 {
+    using Test_enum = Parameters::AllParameters::TestType;
     // Get the flow case type
     const FlowCaseEnum flow_type = param->flow_solver_param.flow_case_type;
     if (flow_type == FlowCaseEnum::taylor_green_vortex) {
@@ -408,6 +521,9 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
                     param->euler_param.side_slip_angle);
             return std::make_shared<FreeStreamInitialConditions<dim,nstate,real>>(euler_physics_double);
         }
+    } else if (param->test_type==Test_enum::burgers_linear_stability) {
+        if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_BurgersInviscidLinearStability<dim,nstate,real> > ();
+     //   if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_BurgersInviscidEnergy<dim,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::burgers_inviscid && param->use_energy==false) {
         if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_BurgersInviscid<dim,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::burgers_inviscid && param->use_energy==true) {
@@ -422,6 +538,10 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
         return std::make_shared<InitialConditionFunction_ConvDiffEnergy<dim,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::periodic_1D_unsteady) {
         if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_1DSine<dim,nstate,real> > ();
+    } else if (flow_type == FlowCaseEnum::euler_density_wave){
+        if constexpr (nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerDensityWave<dim,nstate,real> > ();
+    } else if (flow_type == FlowCaseEnum::euler_isentropic_vortex){
+        if constexpr (dim==2 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerIsentropicVortex<dim,nstate,real> > ();
     } else {
         std::cout << "Invalid Flow Case Type. You probably forgot to add it to the list of flow cases in initial_condition_function.cpp" << std::endl;
         std::abort();
@@ -439,6 +559,7 @@ template class InitialConditionFunction_BurgersViscous <PHILIP_DIM, 1, double>;
 template class InitialConditionFunction_BurgersRewienski <PHILIP_DIM, 1, double>;
 template class InitialConditionFunction_BurgersInviscid <PHILIP_DIM, 1, double>;
 template class InitialConditionFunction_BurgersInviscidEnergy <PHILIP_DIM, 1, double>;
+template class InitialConditionFunction_BurgersInviscidLinearStability <PHILIP_DIM, 1, double>;
 #endif
 #if PHILIP_DIM==3
 template class InitialConditionFunction_TaylorGreenVortex <PHILIP_DIM, PHILIP_DIM+2, double>;
@@ -454,5 +575,7 @@ template class InitialConditionFunction_Advection <PHILIP_DIM, 1, double>;
 template class InitialConditionFunction_AdvectionEnergy <PHILIP_DIM, 1, double>;
 template class InitialConditionFunction_ConvDiff <PHILIP_DIM, 1, double>;
 template class InitialConditionFunction_ConvDiffEnergy <PHILIP_DIM,1,double>;
+template class InitialConditionFunction_EulerDensityWave <PHILIP_DIM,PHILIP_DIM+2,double>;
+template class InitialConditionFunction_EulerIsentropicVortex <PHILIP_DIM,PHILIP_DIM+2,double>;
 
 } // PHiLiP namespace

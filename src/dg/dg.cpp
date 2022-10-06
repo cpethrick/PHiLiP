@@ -748,7 +748,6 @@ void DGBase<dim,real,MeshType>::assemble_cell_residual (
         exit(1);
     }
 
-
     assemble_volume_term_and_build_operators(
         current_cell,
         current_cell_index,
@@ -1300,7 +1299,6 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
         &&  !(compute_dRdX && compute_d2R)
             , dealii::ExcMessage("Can only do one at a time compute_dRdW or compute_dRdX or compute_d2R"));
 
-    max_artificial_dissipation_coeff = 0.0;
     //pcout << "Assembling DG residual...";
     if (compute_dRdW) {
         pcout << " with dRdW...";
@@ -1441,6 +1439,9 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
 
         // assembles and solves for auxiliary variable if necessary.
         assemble_auxiliary_residual();
+
+        //Applies TVD/TVB limiter on solution
+//        limit_solution();
 
         auto metric_cell = high_order_grid->dof_handler_grid.begin_active();
         for (auto soln_cell = dof_handler.begin_active(); soln_cell != dof_handler.end(); ++soln_cell, ++metric_cell) {
@@ -2079,7 +2080,6 @@ void DGBase<dim,real,MeshType>::allocate_system (
     pcout << "Allocating DG system and initializing FEValues" << std::endl;
     // This function allocates all the necessary memory to the
     // system matrices and vectors.
-
     dof_handler.distribute_dofs(fe_collection);
     //This Cuthill_McKee renumbering for dof_handlr uses a lot of memory in 3D, is there another way?
     dealii::DoFRenumbering::Cuthill_McKee(dof_handler,true);
@@ -3248,6 +3248,91 @@ template <int dim, typename real, typename MeshType>
 void DGBase<dim,real,MeshType>::set_current_time(const real current_time_input)
 {
     this->current_time = current_time_input;
+}
+
+template <int dim, typename real, typename MeshType>
+real DGBase<dim,real,MeshType>::minmod_function(real a, real b, real c)
+{
+    real value = 0.0;
+    if((a > 0.0 && b > 0.0 && c >0.0 ) || (a < 0.0 && b < 0.0 && c <0.0 )){//check if same sign
+        value = a;
+        if(abs(a) < abs(b) && abs(a) < abs(c)) value = a;
+        if(abs(b) < abs(a) && abs(b) < abs(c)) value = b;
+        if(abs(c) < abs(a) && abs(c) < abs(b)) value = c;
+    }
+
+    return value;
+}
+template <int dim, typename real, typename MeshType>
+void DGBase<dim,real,MeshType>::limit_solution () 
+{
+    for (auto soln_cell = dof_handler.begin_active(); soln_cell != dof_handler.end(); ++soln_cell) {
+        if (!soln_cell->is_locally_owned()) continue;
+    
+        std::vector<dealii::types::global_dof_index> current_dofs_indices;
+        std::vector<dealii::types::global_dof_index> neighbor_dofs_indices;
+        const int poly_degree = soln_cell->active_fe_index();
+        const dealii::FESystem<dim,dim> &current_fe_ref = fe_collection[poly_degree];
+        const unsigned int n_dofs_cell = current_fe_ref.n_dofs_per_cell();
+        current_dofs_indices.resize(n_dofs_cell);
+        soln_cell->get_dof_indices (current_dofs_indices);
+        std::vector<real> soln_coeff_int(n_dofs_cell);
+        for (unsigned int idof = 0; idof < n_dofs_cell; ++idof) {
+            soln_coeff_int[idof] = this->solution(current_dofs_indices[idof]);
+        }
+
+        double soln_int_avg = 0.0;
+      //  const std::vector<double> &quad_weights = this->volume_quadrature_collection[poly_degree].get_weights();
+        const unsigned int n_quad_pts  = this->volume_quadrature_collection[poly_degree].size();
+        for(unsigned int iquad=0; iquad<n_quad_pts; iquad++){
+           // soln_int_avg += quad_weights[iquad] * soln_coeff_int[iquad];
+            soln_int_avg += 1.0 / n_quad_pts * soln_coeff_int[iquad];
+        }
+
+        double soln_left_avg = 0.0;
+        double soln_right_avg = 0.0;
+        for (unsigned int iface=0; iface < dealii::GeometryInfo<dim>::faces_per_cell; ++iface) {
+            const auto neighbor_cell = soln_cell->neighbor_or_periodic_neighbor(iface);
+            // Get information about neighbor cell
+            const unsigned int n_dofs_neigh_cell = fe_collection[neighbor_cell->active_fe_index()].n_dofs_per_cell();
+            neighbor_dofs_indices.resize(n_dofs_neigh_cell);
+            neighbor_cell->get_dof_indices (neighbor_dofs_indices);
+            const int poly_degree_ext = neighbor_cell->active_fe_index();
+            std::vector<real> soln_coeff_ext(n_dofs_neigh_cell);
+            for (unsigned int idof = 0; idof < n_dofs_cell; ++idof) {
+                soln_coeff_ext[idof] = this->solution(neighbor_dofs_indices[idof]);
+            }
+           // const std::vector<double> &quad_weights_ext = this->volume_quadrature_collection[poly_degree_ext].get_weights();
+            const unsigned int n_quad_pts_ext  = this->volume_quadrature_collection[poly_degree_ext].size();
+            for(unsigned int iquad=0; iquad<n_quad_pts_ext; iquad++){
+                if(iface==0){
+                   // soln_left_avg += quad_weights_ext[iquad] * soln_coeff_ext[iquad];
+                    soln_left_avg += 1.0/n_quad_pts * soln_coeff_ext[iquad];
+                }
+                if(iface==1){
+                   // soln_right_avg += quad_weights_ext[iquad] * soln_coeff_ext[iquad];
+                    soln_right_avg += 1.0/n_quad_pts * soln_coeff_ext[iquad];
+                }
+            }
+        }
+
+        const double soln_left  = soln_int_avg - minmod_function(soln_int_avg - soln_coeff_int[0], soln_right_avg-soln_int_avg, soln_int_avg - soln_left_avg);
+        const double soln_right = soln_int_avg + minmod_function(soln_coeff_int[n_quad_pts-1] - soln_int_avg, soln_right_avg-soln_int_avg, soln_int_avg - soln_left_avg);
+        for (unsigned int idof = 0; idof < n_dofs_cell; ++idof) {
+            if(idof == 0){
+                this->solution(current_dofs_indices[idof]) = soln_left;
+            }
+            else if (idof == n_dofs_cell - 1){
+                this->solution(current_dofs_indices[idof]) = soln_right;
+            }
+            else{
+                const double theta = ( (soln_left - soln_int_avg) + (soln_right - soln_int_avg) )
+                             / ( (soln_coeff_int[0] - soln_int_avg) + (soln_coeff_int[n_dofs_cell-1] - soln_int_avg) );
+                this->solution(current_dofs_indices[idof]) = soln_int_avg + theta * ( soln_coeff_int[idof] - soln_int_avg);
+            }
+        }
+    }
+
 }
 // No support for anisotropic mesh refinement with parallel::distributed::Triangulation
 // template<int dim, typename real>

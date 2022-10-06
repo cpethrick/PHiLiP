@@ -97,7 +97,7 @@ public:
     bool use_split_form;
 
     /// Two point numerical flux type for split form
-    enum TwoPointNumericalFlux { KG, IR };
+    enum TwoPointNumericalFlux { KG, IR, CH };
     /// Store selected TwoPointNumericalFlux from the input file
     TwoPointNumericalFlux two_point_num_flux_type;
 
@@ -145,6 +145,7 @@ public:
         run_control,
         grid_refinement_study,
         burgers_energy_stability,
+        burgers_linear_stability,
         diffusion_exact_adjoint,
         euler_gaussian_bump,
         euler_gaussian_bump_enthalpy,
@@ -173,6 +174,8 @@ public:
         time_refinement_study,
         time_refinement_study_reference,
         burgers_energy_conservation_rrk,
+        euler_isentropic_vortex,
+        euler_density_wave,
     };
     /// Store selected TestType from the input file.
     TestType test_type;

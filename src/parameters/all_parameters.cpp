@@ -72,9 +72,9 @@ void AllParameters::declare_parameters (dealii::ParameterHandler &prm)
 
     prm.declare_entry("two_point_num_flux_type", "KG",
                       dealii::Patterns::Selection(
-                      "KG | IR"),
+                      "KG | IR | CH"),
                       "Two point flux type. "
-                      "Choices are <KG | IR>.");
+                      "Choices are <KG | IR | CH>.");
 
     prm.declare_entry("use_curvilinear_split_form", "false",
                       dealii::Patterns::Bool(),
@@ -134,6 +134,7 @@ void AllParameters::declare_parameters (dealii::ParameterHandler &prm)
                       " run_control | "
                       " grid_refinement_study | "
                       " burgers_energy_stability | "
+                      " burgers_linear_stability | "
                       " diffusion_exact_adjoint | "
                       " optimization_inverse_manufactured | "
                       " euler_gaussian_bump | "
@@ -160,12 +161,15 @@ void AllParameters::declare_parameters (dealii::ParameterHandler &prm)
                       " taylor_green_vortex_restart_check | "
                       " time_refinement_study | "
                       " time_refinement_study_reference | "
-                      " burgers_energy_conservation_rrk"),
+                      " burgers_energy_conservation_rrk | "
+                      " euler_isentropic_vortex | "
+                      " euler_density_wave"),
                       "The type of test we want to solve. "
                       "Choices are " 
                       " <run_control | " 
                       "  grid_refinement_study | "
                       "  burgers_energy_stability | "
+                      "  burgers_linear_stability | "
                       "  diffusion_exact_adjoint | "
                       "  optimization_inverse_manufactured | "
                       "  euler_gaussian_bump | "
@@ -192,7 +196,9 @@ void AllParameters::declare_parameters (dealii::ParameterHandler &prm)
                       "  taylor_green_vortex_restart_check | "
                       "  time_refinement_study | "
                       "  time_refinement_study_reference | "
-                      "  burgers_energy_conservation_rrk>.");
+                      "  burgers_energy_conservation_rrk | "
+                      "  euler_isentropic_vortex | "
+                      "  euler_density_wave>.");
 
     prm.declare_entry("pde_type", "advection",
                       dealii::Patterns::Selection(
@@ -297,6 +303,7 @@ void AllParameters::parse_parameters (dealii::ParameterHandler &prm)
     if      (test_string == "run_control")                              { test_type = run_control; }
     else if (test_string == "grid_refinement_study")                    { test_type = grid_refinement_study; }
     else if (test_string == "burgers_energy_stability")                 { test_type = burgers_energy_stability; }
+    else if (test_string == "burgers_linear_stability")                 { test_type = burgers_linear_stability; }
     else if (test_string == "diffusion_exact_adjoint")                  { test_type = diffusion_exact_adjoint; }
     else if (test_string == "euler_gaussian_bump")                      { test_type = euler_gaussian_bump; }
     else if (test_string == "euler_gaussian_bump_enthalpy")             { test_type = euler_gaussian_bump_enthalpy; }
@@ -324,6 +331,8 @@ void AllParameters::parse_parameters (dealii::ParameterHandler &prm)
     else if (test_string == "time_refinement_study")                    { test_type = time_refinement_study; }
     else if (test_string == "time_refinement_study_reference")          { test_type = time_refinement_study_reference; }
     else if (test_string == "burgers_energy_conservation_rrk")          { test_type = burgers_energy_conservation_rrk; }
+    else if (test_string == "euler_density_wave")                       { test_type = euler_density_wave; }
+    else if (test_string == "euler_isentropic_vortex")                  { test_type = euler_isentropic_vortex; }
     
     // WARNING: Must assign model_type before pde_type
     const std::string model_string = prm.get("model_type");
@@ -381,6 +390,7 @@ void AllParameters::parse_parameters (dealii::ParameterHandler &prm)
     const std::string two_point_num_flux_string = prm.get("two_point_num_flux_type");
     if (two_point_num_flux_string == "KG") { two_point_num_flux_type = TwoPointNumericalFlux::KG; }
     if (two_point_num_flux_string == "IR") { two_point_num_flux_type = TwoPointNumericalFlux::IR; }
+    if (two_point_num_flux_string == "CH") { two_point_num_flux_type = TwoPointNumericalFlux::CH; }
 
     use_curvilinear_split_form = prm.get_bool("use_curvilinear_split_form");
     use_weight_adjusted_mass = prm.get_bool("use_weight_adjusted_mass");
