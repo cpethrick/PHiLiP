@@ -255,7 +255,7 @@ public:
     * in each cell using sum-factorization techniques.
     */
     void apply_inverse_global_mass_matrix(
-        dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
+        const dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
         dealii::LinearAlgebra::distributed::Vector<double> &output_vector,
         const bool use_auxiliary_eq = false);
 
@@ -264,7 +264,7 @@ public:
     * in each cell using sum-factorization techniques.
     */
     void apply_global_mass_matrix(
-        dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
+        const dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
         dealii::LinearAlgebra::distributed::Vector<double> &output_vector,
         const bool use_auxiliary_eq = false);
 
