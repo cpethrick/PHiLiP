@@ -1095,11 +1095,14 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
                       //     ((stiff_dim[idim][iquad][flux_basis]*(flux_avg[istate][idim] - conv_phys_flux_2pt[istate][idim])* ( soln_state_flux_basis[istate]-soln_state[istate]) <0) )){
                             conv_phys_flux_2pt_switch[istate][idim] = flux_avg[istate][idim];
 
-                         //   conv_phys_flux_2pt_switch[istate][idim] = conv_phys_flux_2pt[istate][idim];
+                            ///Use the entrop cons above is for my switch
+                          //  conv_phys_flux_2pt_switch[istate][idim] = conv_phys_flux_2pt[istate][idim];
                         }
                         else{
                             conv_phys_flux_2pt_switch[istate][idim] = conv_phys_flux_2pt[istate][idim];
+                            ///Use cons dg above is my switch
                            // conv_phys_flux_2pt_switch[istate][idim] = flux_avg[istate][idim];
+
                            // if(istate==2)
                            //     conv_phys_flux_2pt_switch[istate][idim] = flux_avg[istate][idim];
 
@@ -1112,8 +1115,8 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_volume_term_strong(
 //                               conv_phys_flux_2pt_switch[istate][idim] -= 1.0/12.0 * abs( entropy_variables_ext[istate]-entropy_variables_int[istate])
 //                                                                        * ( entropy_variables_ext[istate]-entropy_variables_int[istate]);
 //                           }
-                               conv_phys_flux_2pt_switch[istate][idim] -= 1.0/12.0 * ( entropy_variables_ext[istate]-entropy_variables_int[istate])
-                                                                        * ( entropy_variables_ext[istate]-entropy_variables_int[istate]);
+                      //         conv_phys_flux_2pt_switch[istate][idim] -= 1.0/12.0 * ( entropy_variables_ext[istate]-entropy_variables_int[istate])
+                      //                                                  * ( entropy_variables_ext[istate]-entropy_variables_int[istate]);
 
                         }
                     }

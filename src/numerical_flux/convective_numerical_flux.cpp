@@ -191,7 +191,7 @@ std::array<real, nstate> EntropyConservingBaselineNumericalFluxConvective<dim,ns
       //      ((flux_avg_dot_n - flux_entropy_dot_n)*(soln_ext[s] - soln_int[s]) < 0)){
             numerical_flux_dot_n[s] = flux_avg_dot_n;
             
-        //    numerical_flux_dot_n[s] = flux_entropy_dot_n;
+          //  numerical_flux_dot_n[s] = flux_entropy_dot_n;
         } 
         else {
             numerical_flux_dot_n[s] = flux_entropy_dot_n;
