@@ -10,7 +10,7 @@ set use_collocated_nodes = true
 
 set use_split_form = true
 
-set two_point_num_flux_type = KG
+set two_point_num_flux_type = IR
 
 set use_curvilinear_split_form = true
 
