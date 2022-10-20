@@ -51,7 +51,7 @@ double EulerTaylorGreen<dim, nstate>::compute_MK_energy(std::shared_ptr < DGBase
             soln_coeff[istate][ishape] = dg->solution(dofs_indices[idof]);
         }
 
-        std::array<std:vector<double>,nstate> soln_at_q;
+        std::array<std::vector<double>,nstate> soln_at_q;
         for(int istate=0; istate<nstate; istate++){
             soln_at_q[istate].resize(n_quad_pts);
             soln_basis.matrix_vector_mult_1D(soln_coeff[istate], soln_at_q[istate],
