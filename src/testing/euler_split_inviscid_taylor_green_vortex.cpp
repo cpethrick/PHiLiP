@@ -322,42 +322,41 @@ int EulerTaylorGreen<dim, nstate>::run_test() const
 
     all_parameters_new.ode_solver_param.initial_time_step =  get_timestep(dg,poly_degree,delta_x);
      
-    std::cout << "creating ODE solver" << std::endl;
+    pcout << "creating ODE solver" << std::endl;
     std::shared_ptr<ODE::ODESolverBase<dim, double>> ode_solver = ODE::ODESolverFactory<dim, double>::create_ODESolver(dg);
-    std::cout << "ODE solver successfully created" << std::endl;
-    double finalTime = 14.;
-    finalTime = 0.4;
+    pcout << "ODE solver successfully created" << std::endl;
+    //double finalTime = 14.;
+    //finalTime = 0.4;
     // finalTime = 0.1;//to speed things up locally in tests, doesn't need full 14seconds to verify.
     double dt = all_parameters_new.ode_solver_param.initial_time_step;
     // double dt = all_parameters_new.ode_solver_param.initial_time_step / 10.0;
 
-    std::cout << " number dofs " << dg->dof_handler.n_dofs()<<std::endl;
-    std::cout << "preparing to advance solution in time" << std::endl;
-
-    // Currently the only way to calculate energy at each time-step is to advance solution by dt instead of finaltime
-    // this causes some issues with outputs (only one file is output, which is overwritten at each time step)
-    // also the ode solver output doesn't make sense (says "iteration 1 out of 1")
-    // but it works. I'll keep it for now and need to modify the output functions later to account for this.
-    double initialcond_energy = compute_kinetic_energy(dg, poly_degree);
-    double initialcond_energy_mpi = (dealii::Utilities::MPI::sum(initialcond_energy, mpi_communicator));
-    std::cout << std::setprecision(16) << std::fixed;
-    pcout << "Energy for initial condition " << initialcond_energy_mpi/(8*pow(dealii::numbers::PI,3)) << std::endl;
+    pcout << " number dofs " << dg->dof_handler.n_dofs()<<std::endl;
+    pcout << "preparing to advance solution in time" << std::endl;
 
     pcout << "Energy at time " << 0 << " is " << compute_kinetic_energy(dg, poly_degree) << std::endl;
     ode_solver->current_iteration = 0;
-	ode_solver->advance_solution_time(dt/10.0);
+	//ode_solver->advance_solution_time(dt/10.0);
 	double initial_energy = compute_kinetic_energy(dg, poly_degree);
 	double initial_energy_mpi = (dealii::Utilities::MPI::sum(initial_energy, mpi_communicator));
-        double initial_MK_energy = compute_MK_energy(dg, poly_degree);
+    double initial_MK_energy = compute_MK_energy(dg, poly_degree);
 	double initial_MK_energy_mpi = (dealii::Utilities::MPI::sum(initial_MK_energy, mpi_communicator));
 
     std::cout << std::setprecision(16) << std::fixed;
-    pcout << "Energy at one timestep is " << initial_energy_mpi/(8*pow(dealii::numbers::PI,3)) << std::endl;
+    ode_solver->advance_solution_time(dt);
+    double current_energy = compute_kinetic_energy(dg,poly_degree);
+    double current_energy_mpi = (dealii::Utilities::MPI::sum(current_energy, mpi_communicator))/initial_energy_mpi;
+    pcout << "Energy at one timestep is " << current_energy_mpi << std::endl;
+    
+    double current_MK_energy = compute_MK_energy(dg, poly_degree);
+    double current_MK_energy_mpi = (dealii::Utilities::MPI::sum(current_MK_energy, mpi_communicator))/initial_MK_energy_mpi;
+    pcout << "Entropy at one timestep is " << current_MK_energy_mpi << std::endl;
+
     // std::ofstream myfile ("kinetic_energy_3D_TGV_cdg_curv_grid_4x4.gpl" , std::ios::trunc);
-    std::ofstream myfile (all_parameters_new.energy_file + ".gpl"  , std::ios::trunc);
+    //std::ofstream myfile (all_parameters_new.energy_file + ".gpl"  , std::ios::trunc);
 
     //for (int i = 0; i < std::ceil(finalTime/dt); ++ i) {
-    while(ode_solver->current_time < finalTime){
+/*    while(ode_solver->current_time < finalTime){
         ode_solver->advance_solution_time(dt);
         // double current_energy = compute_kinetic_energy(dg,poly_degree) / initial_energy;
         double current_energy = compute_kinetic_energy(dg,poly_degree);
@@ -382,8 +381,8 @@ int EulerTaylorGreen<dim, nstate>::run_test() const
         all_parameters_new.ode_solver_param.initial_time_step =  get_timestep(dg,poly_degree, delta_x);
         dt = all_parameters_new.ode_solver_param.initial_time_step;
     }
-
-    myfile.close();
+*/
+    //myfile.close();
 
     return 0;
 }
