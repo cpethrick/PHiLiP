@@ -99,10 +99,8 @@ int TimeRefinementStudyReference<dim, nstate>::run_test() const
     const double initial_time_step = this->all_parameters->ode_solver_param.initial_time_step;
     const int n_steps = round(final_time/initial_time_step);
     if (n_steps * initial_time_step != final_time){
-        pcout << "Error: final_time is not evenly divisible by initial_time_step!" << std::endl
-              << "Remainder is " << fmod(final_time, initial_time_step)
-              << ". Modify parameters to run this test." << std::endl;
-        std::abort();
+        pcout << std::endl << "WARNING: final_time is not evenly divisible by initial_time_step!" << std::endl
+              << "Remainder is " << fmod(final_time, initial_time_step) << std::endl;
     }
 
     int testfail = 0;
@@ -153,14 +151,12 @@ int TimeRefinementStudyReference<dim, nstate>::run_test() const
         convergence_table.set_precision("L2_error", 16);
         convergence_table.evaluate_convergence_rates("L2_error", "dt", dealii::ConvergenceTable::reduction_rate_log2, 1);
         
-        if (params.use_collocated_nodes){
-            //current energy calculation is only valid for collocated nodes
-            const double energy_end = flow_solver_case->compute_energy_collocated(flow_solver->dg);
-            const double energy_change = energy_initial - energy_end;
-            convergence_table.add_value("energy_change", energy_change);
-            convergence_table.set_precision("energy_change", 16);
-            convergence_table.evaluate_convergence_rates("energy_change", "dt", dealii::ConvergenceTable::reduction_rate_log2, 1);
-        }
+        //current energy calculation is only valid for collocated nodes
+        const double energy_end = flow_solver_case->compute_energy_collocated(flow_solver->dg);
+        const double energy_change = energy_initial - energy_end;
+        convergence_table.add_value("energy_change", energy_change);
+        convergence_table.set_precision("energy_change", 16);
+        convergence_table.evaluate_convergence_rates("energy_change", "dt", dealii::ConvergenceTable::reduction_rate_log2, 1);
         
         if(params.ode_solver_param.ode_solver_type == ODESolverEnum::rrk_explicit_solver){
             //for burgers, this is the average gamma over the runtime

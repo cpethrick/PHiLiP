@@ -134,6 +134,7 @@ int TimeRefinementStudy<dim, nstate>::run_test() const
         //std::abort();
     }
 
+
     int testfail = 0;
 
     dealii::ConvergenceTable convergence_table;
@@ -148,6 +149,15 @@ int TimeRefinementStudy<dim, nstate>::run_test() const
 
         const Parameters::AllParameters params = reinit_params_and_refine_timestep(refinement);
         std::unique_ptr<FlowSolver::FlowSolver<dim,nstate>> flow_solver = FlowSolver::FlowSolverFactory<dim,nstate>::select_flow_case(&params, parameter_handler);
+        
+        double initial_entropy;
+        (void) initial_entropy;
+        if constexpr(nstate==dim+2){
+            //In Euler tests, the timestep is updated according to the CFL number; initial_time_step is not used.
+            std::unique_ptr<FlowSolver::PeriodicEntropyTests<dim, nstate>> flow_solver_case = std::make_unique<FlowSolver::PeriodicEntropyTests<dim,nstate>>(&params);
+            initial_entropy = flow_solver_case->compute_entropy(flow_solver->dg);
+        }
+
         static_cast<void>(flow_solver->run());
         
         pcout << "Finished flowsolver " << std::endl;
@@ -191,6 +201,12 @@ int TimeRefinementStudy<dim, nstate>::run_test() const
             convergence_table.add_value("gamma_agg",gamma_agg-1.0);
             convergence_table.set_precision("gamma_agg", 16);
             convergence_table.evaluate_convergence_rates("gamma_agg", "dt", dealii::ConvergenceTable::reduction_rate_log2, 1);
+
+            std::unique_ptr<FlowSolver::PeriodicEntropyTests<dim, nstate>> flow_solver_case = std::make_unique<FlowSolver::PeriodicEntropyTests<dim,nstate>>(&params);
+            const double entropy_change = flow_solver_case->compute_entropy(flow_solver->dg)-initial_entropy;
+            convergence_table.add_value("entropy_change",entropy_change);
+            convergence_table.set_precision("entropy_change", 16);
+            convergence_table.evaluate_convergence_rates("entropy_change", "dt", dealii::ConvergenceTable::reduction_rate_log2, 1);
         }
 
         //Checking convergence order

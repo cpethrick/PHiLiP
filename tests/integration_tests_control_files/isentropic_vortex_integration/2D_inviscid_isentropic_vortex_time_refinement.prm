@@ -29,11 +29,17 @@ subsection ODE solver
   set ode_solver_type = rrk_explicit
   set output_solution_every_x_steps = -1
   set output_solution_every_dt_time_intervals = 100.0 
-  set runge_kutta_method = ssprk3_ex
+  set runge_kutta_method = dirk_2_im 
 end
 
 subsection linear solver
-  set linear_solver_output = quiet
+  set linear_solver_output = verbose
+  subsection gmres options
+    set linear_residual_tolerance = 1e-7
+  end
+  subsection JFNK options
+    set newton_residual = 1E-5
+  end
 end
 
 # freestream Mach number
@@ -42,14 +48,14 @@ subsection euler
 end
 
 subsection time_refinement_study
-  set number_of_times_to_solve = 4
+  set number_of_times_to_solve = 3
   set refinement_ratio = 0.5
 end
 
 subsection flow_solver
   set flow_case_type = isentropic_vortex
-  set poly_degree = 3 
-  set final_time = 11.83215956619 #= 10 * sqrt(1.4), time for vortex to advect around the domain
+  set poly_degree = 2 
+  set final_time = 0.1 # 11.83215956619 #= 10 * sqrt(1.4), time for vortex to advect around the domain
   set courant_friedrich_lewy_number = 0.1
   set unsteady_data_table_filename = isentropic_vortex_time_table
   subsection grid
