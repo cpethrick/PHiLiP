@@ -279,6 +279,98 @@ double PeriodicTurbulence<dim, nstate>::get_numerical_entropy(
     return entropy;
 }
 
+template<int dim, int nstate>
+double PeriodicTurbulence<dim, nstate>::get_kinetic_energy_matrixVector(
+        const std::shared_ptr <DGBase<dim, double>> dg
+        ) const
+{
+    const double poly_degree = this->all_param.flow_solver_param.poly_degree;
+    dealii::LinearAlgebra::distributed::Vector<double> mass_matrix_times_solution(dg->right_hand_side);
+    if(this->all_param.use_inverse_mass_on_the_fly)
+        dg->apply_global_mass_matrix(dg->solution,mass_matrix_times_solution);
+    else
+        dg->global_mass_matrix.vmult( mass_matrix_times_solution, dg->solution);
+
+    const unsigned int n_dofs_cell = dg->fe_collection[poly_degree].dofs_per_cell;
+    const unsigned int n_quad_pts = dg->volume_quadrature_collection[poly_degree].size();
+    const unsigned int n_shape_fns = n_dofs_cell / nstate;
+    //We have to project the vector of entropy variables because the mass matrix has an interpolation from solution nodes built into it.
+    OPERATOR::vol_projection_operator<dim,2*dim> vol_projection(1, poly_degree, dg->max_grid_degree);
+    vol_projection.build_1D_volume_operator(dg->oneD_fe_collection_1state[poly_degree], dg->oneD_quadrature_collection[poly_degree]);
+
+    OPERATOR::basis_functions<dim,2*dim> soln_basis(1, poly_degree, dg->max_grid_degree);
+    soln_basis.build_1D_volume_operator(dg->oneD_fe_collection_1state[poly_degree], dg->oneD_quadrature_collection[poly_degree]);
+
+    dealii::LinearAlgebra::distributed::Vector<double> energy_var_hat_global(dg->right_hand_side);
+    energy_var_hat_global = 0.0;
+    std::vector<dealii::types::global_dof_index> dofs_indices (n_dofs_cell);
+
+    for (auto cell = dg->dof_handler.begin_active(); cell!=dg->dof_handler.end(); ++cell) {
+        if (!cell->is_locally_owned()) continue;
+        dofs_indices.resize(n_dofs_cell);
+        cell->get_dof_indices (dofs_indices);
+
+        std::array<std::vector<double>,nstate> soln_coeff;
+        for(unsigned int idof=0; idof<n_dofs_cell; idof++){
+            const unsigned int istate = dg->fe_collection[poly_degree].system_to_component_index(idof).first;
+            const unsigned int ishape = dg->fe_collection[poly_degree].system_to_component_index(idof).second;
+            if(ishape == 0)
+                soln_coeff[istate].resize(n_shape_fns);
+            soln_coeff[istate][ishape] = dg->solution(dofs_indices[idof]);
+        }
+
+        std::array<std::vector<double>,nstate> soln_at_q;
+        for(int istate=0; istate<nstate; istate++){
+            soln_at_q[istate].resize(n_quad_pts);
+            soln_basis.matrix_vector_mult_1D(soln_coeff[istate], soln_at_q[istate],
+                                             soln_basis.oneD_vol_operator);
+        }
+        std::array<std::vector<double>,nstate> energy_var_at_q;
+        for(unsigned int iquad=0; iquad<n_quad_pts; iquad++){
+            std::array<double,nstate> soln_state;
+            for(int istate=0; istate<nstate; istate++){
+                soln_state[istate] = soln_at_q[istate][iquad];
+            }
+            std::array<double,nstate> energy_var;
+            dealii::Tensor<1,dim,double> vel;
+            for(int idim=0; idim<dim; idim++){
+                vel[idim] = soln_state[idim+1] / soln_state[0];
+            }
+            energy_var[0] = 0.0;
+            for(int idim=0; idim<dim; idim++){
+                energy_var[0] -= 0.5 * vel[idim] * vel[idim];
+                energy_var[idim+1] = vel[idim];
+            }
+            //energy_var[nstate-1] = dim + 1;
+            energy_var[nstate-1] = 0.0;
+
+            for(int istate=0; istate<nstate; istate++){
+                if(iquad==0)
+                    energy_var_at_q[istate].resize(n_quad_pts);
+                energy_var_at_q[istate][iquad] = energy_var[istate];
+            }
+        }
+        for(int istate=0; istate<nstate; istate++){
+            //Projected vector of entropy variables.
+            std::vector<double> energy_var_hat(n_shape_fns);
+            vol_projection.matrix_vector_mult_1D(energy_var_at_q[istate], energy_var_hat,
+                                                 vol_projection.oneD_vol_operator);
+
+            for(unsigned int ishape=0; ishape<n_shape_fns; ishape++){
+                const unsigned int idof = istate * n_shape_fns + ishape;
+                energy_var_hat_global[dofs_indices[idof]] = energy_var_hat[ishape];
+            }
+        }
+    }
+
+   // const double kinetic_energy = entropy_var_hat_global * mass_matrix_times_solution;
+    double kinetic_energy = energy_var_hat_global * mass_matrix_times_solution;
+    kinetic_energy/= this->domain_size;
+    //kinetic_energy/=(dim+1);
+    return kinetic_energy;
+
+}
+
 template <int dim, int nstate>
 void PeriodicTurbulence<dim, nstate>::compute_unsteady_data_and_write_to_table(
         const unsigned int current_iteration,
@@ -290,6 +382,7 @@ void PeriodicTurbulence<dim, nstate>::compute_unsteady_data_and_write_to_table(
     this->compute_and_update_integrated_quantities(*dg);
     // Get computed quantities
     const double integrated_kinetic_energy = this->get_integrated_kinetic_energy();
+    const double kinetic_energy_Mv = this->get_kinetic_energy_matrixVector(dg);
     const double integrated_enstrophy = this->get_integrated_enstrophy();
     const double vorticity_based_dissipation_rate = this->get_vorticity_based_dissipation_rate();
     const double pressure_dilatation_based_dissipation_rate = this->get_pressure_dilatation_based_dissipation_rate();
@@ -303,6 +396,7 @@ void PeriodicTurbulence<dim, nstate>::compute_unsteady_data_and_write_to_table(
         this->add_value_to_data_table(current_time,"time",unsteady_data_table);
         if(do_calculate_numerical_entropy) this->add_value_to_data_table(numerical_entropy,"numerical_entropy",unsteady_data_table);
         this->add_value_to_data_table(integrated_kinetic_energy,"kinetic_energy",unsteady_data_table);
+        this->add_value_to_data_table(kinetic_energy_Mv, "kinetic_energy_mV",unsteady_data_table);
         this->add_value_to_data_table(integrated_enstrophy,"enstrophy",unsteady_data_table);
         if(is_viscous_flow) this->add_value_to_data_table(vorticity_based_dissipation_rate,"eps_vorticity",unsteady_data_table);
         this->add_value_to_data_table(pressure_dilatation_based_dissipation_rate,"eps_pressure",unsteady_data_table);

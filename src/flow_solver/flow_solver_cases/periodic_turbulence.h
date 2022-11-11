@@ -65,6 +65,9 @@ public:
     /// Calculate numerical entropy by matrix-vector product
     double get_numerical_entropy(const std::shared_ptr <DGBase<dim, double>> dg) const;
 
+    /// Calculate energy by matrix-vector product
+    double get_kinetic_energy_matrixVector(const std::shared_ptr <DGBase<dim, double>> dg) const;
+
 protected:
     /// Filename (with extension) for the unsteady data table
     const std::string unsteady_data_table_filename_with_extension;
