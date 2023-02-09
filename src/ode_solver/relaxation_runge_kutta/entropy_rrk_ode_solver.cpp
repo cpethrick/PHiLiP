@@ -24,8 +24,6 @@ void EntropyRRKODESolver<dim,real,n_rk_stages,MeshType>::compute_stored_quantiti
 template <int dim, typename real, int n_rk_stages, typename MeshType>
 real EntropyRRKODESolver<dim,real,n_rk_stages,MeshType>::compute_relaxation_parameter(real &dt) const
 {
-    // TEMP : Using variable names per Ranocha paper
-
     // Console output is based on linearsolverparam
     const bool do_output = (this->dg->all_parameters->linear_solver_param.linear_solver_output == Parameters::OutputEnum::verbose); 
 
@@ -307,9 +305,10 @@ real EntropyRRKODESolver<dim,real,n_rk_stages,MeshType>::compute_entropy_change_
         //transform solution into entropy variables
         dealii::LinearAlgebra::distributed::Vector<double> entropy_var_hat_global = compute_entropy_vars(this->rk_stage_solution[istage]);
         
-        double entropy = entropy_var_hat_global * mass_matrix_times_rk_stage;
+        double d_entropy = entropy_var_hat_global * mass_matrix_times_rk_stage;
+        this->pcout << "stage entropy derivative: " << d_entropy << std::endl;
         
-        entropy_change_estimate += this->butcher_tableau->get_b(istage) * entropy;
+        entropy_change_estimate += this->butcher_tableau->get_b(istage) * d_entropy;
     }
 
     return dt * entropy_change_estimate;

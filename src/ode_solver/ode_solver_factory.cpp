@@ -150,8 +150,8 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
 
         using PDEEnum = Parameters::AllParameters::PartialDifferentialEquation;
         const PDEEnum pde_type = dg_input->all_parameters->pde_type;
-        using NumFluxEnum = Parameters::AllParameters::TwoPointNumericalFlux;
-        const NumFluxEnum two_point_num_flux_type = dg_input->all_parameters->two_point_num_flux_type;
+        //using NumFluxEnum = Parameters::AllParameters::TwoPointNumericalFlux;
+        //const NumFluxEnum two_point_num_flux_type = dg_input->all_parameters->two_point_num_flux_type;
         
         enum NumEntropyEnum {energy, entropy};
         NumEntropyEnum numerical_entropy_type;
@@ -159,7 +159,10 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
         if (pde_type == PDEEnum::burgers_inviscid){
             numerical_entropy_type = NumEntropyEnum::energy;
             numerical_entropy_string = "Energy";
-        } else if ((pde_type == PDEEnum::euler) && (two_point_num_flux_type == NumFluxEnum::IR)){
+        } else if ((pde_type == PDEEnum::euler)){
+            numerical_entropy_type = NumEntropyEnum::entropy;
+            numerical_entropy_string = "Entropy";
+        } else if ((pde_type == PDEEnum::navier_stokes)){
             numerical_entropy_type = NumEntropyEnum::entropy;
             numerical_entropy_string = "Entropy";
         } else{

@@ -5,7 +5,7 @@
 set dimension = 3
 set run_type = integration_test
 set test_type = euler_ismail_roe_entropy_check
-set pde_type = euler
+set pde_type = navier_stokes
 
 # DG formulation
 set use_weak_form = false
@@ -26,9 +26,14 @@ set two_point_num_flux_type = IR
 # ODE solver
 subsection ODE solver
   set ode_output = quiet
+  #set ode_solver_type = rrk_explicit 
   set ode_solver_type = runge_kutta
   set output_solution_every_x_steps = 10
   set runge_kutta_method = rk4_ex
+end
+
+subsection linear solver
+  set linear_solver_output = verbose
 end
 
 # freestream Mach number
@@ -39,8 +44,8 @@ end
 subsection flow_solver
   set flow_case_type = taylor_green_vortex
   set poly_degree = 3 
-  set final_time = 0.1
-  set courant_friedrich_lewy_number = 0.005
+  set final_time = 14
+  set courant_friedrich_lewy_number = 0.1
   set unsteady_data_table_filename = tgv_kinetic_energy_vs_time_table
   subsection grid
     set grid_left_bound = 0.0
