@@ -194,10 +194,58 @@ std::array<real, nstate> LaxFriedrichsRiemannSolverDissipation<dim,nstate,real>
 ::evaluate_riemann_solver_dissipation (
     const std::array<real, nstate> &soln_int,
     const std::array<real, nstate> &soln_ext,
-    const dealii::Tensor<1,dim,real> &/*normal_int*/) const
+    const dealii::Tensor<1,dim,real> &normal_int) const
 {
-    const real conv_max_eig_int = pde_physics->max_convective_eigenvalue(soln_int);
-    const real conv_max_eig_ext = pde_physics->max_convective_eigenvalue(soln_ext);
+
+    // TEMP convert velocities into normal components
+    /*
+    std::array<real, nstate> soln_int_with_normal_vel;
+    std::array<real, nstate> soln_ext_with_normal_vel;
+    soln_int_with_normal_vel[0] = soln_int[0];
+    soln_ext_with_normal_vel[0] = soln_ext[0];
+    for (int idim = 0; idim < dim; ++idim) {
+        soln_int_with_normal_vel[idim+1] = soln_int[idim+1] * normal_int[idim];
+        soln_ext_with_normal_vel[idim+1] = soln_ext[idim+1] * normal_int[idim]
+    }
+    soln_int_with_normal_vel[nstate-1] = soln_int[nstate-1];
+    soln_ext_with_normal_vel[nstate-1] = soln_ext[nstate-1];
+*/
+
+
+    //const real conv_max_eig_int = pde_physics->max_convective_eigenvalue(soln_int);
+    //const real conv_max_eig_ext = pde_physics->max_convective_eigenvalue(soln_ext);
+
+    // TEMP THIS WILL BREAK THINGS
+    real vel_int_dot_n=0;
+    real kin_en_int = 0;
+    for (int i = 0; i < dim; ++i){
+        real vel = soln_int[1+i]/soln_int[0];
+        vel_int_dot_n += vel * normal_int[i];
+        kin_en_int += vel*vel;
+    }
+    kin_en_int *= 0.5 * soln_int[0];
+
+    real pressure_int = 0.4 * (soln_int[nstate-1]-kin_en_int); 
+
+    real sound_int = sqrt(pressure_int*1.4/soln_int[0]);
+
+    real conv_max_eig_int = abs(vel_int_dot_n) + sound_int;
+
+    real vel_ext_dot_n=0;
+    real kin_en_ext = 0;
+    for (int i = 0; i < dim; ++i){
+        real vel = soln_ext[1+i]/soln_ext[0];
+        vel_ext_dot_n -= vel * normal_int[i]; // normal_ext = -1*normal_int
+        kin_en_ext += vel*vel;
+    }
+    kin_en_ext *= 0.5 * soln_ext[0];
+
+    real pressure_ext = 0.4 * (soln_ext[nstate-1]-kin_en_ext); 
+
+    real sound_ext = sqrt(pressure_ext*1.4/soln_ext[0]);
+
+    real conv_max_eig_ext = abs(vel_ext_dot_n) + sound_ext;
+
     // Replaced the std::max with an if-statement for the AD to work properly.
     //const real conv_max_eig = std::max(conv_max_eig_int, conv_max_eig_ext);
     real conv_max_eig;

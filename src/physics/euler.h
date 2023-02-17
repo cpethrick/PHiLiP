@@ -159,8 +159,14 @@ public:
         const std::array<real,nstate> &/*conservative_soln*/,
         const dealii::Tensor<1,dim,real> &/*normal*/) const;
 
-    /// Maximum convective eigenvalue used in Lax-Friedrichs
+    /// Maximum convective eigenvalue used in other parts of the code
+    /// uses velocity MAGNITUDE
     real max_convective_eigenvalue (const std::array<real,nstate> &soln) const;
+
+//    /// Maximum convective eigenvalue used in Lax-Friedrichs
+//    /// uses NORMAL velocity
+//    real max_convective_eigenvalue (const std::array<real,nstate> &soln,
+//            const dealii::Tensor<1,dim,real> &normal_int) const;
 
     /// Maximum viscous eigenvalue.
     real max_viscous_eigenvalue (const std::array<real,nstate> &soln) const;

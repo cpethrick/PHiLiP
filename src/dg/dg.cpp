@@ -218,14 +218,16 @@ DGBase<dim,real,MeshType>::create_collection_tuple(
     for (unsigned int degree=minimum_degree; degree<=max_degree; ++degree) {
 
         // Solution FECollection
-        const dealii::FE_DGQ<dim> fe_dg(degree);
-        //const dealii::FE_DGQArbitraryNodes<dim,dim> fe_dg(dealii::QGauss<1>(degree+1));
+        // TEMP change to Gauss nodes
+        //const dealii::FE_DGQ<dim> fe_dg(degree);
+        const dealii::FE_DGQArbitraryNodes<dim,dim> fe_dg(dealii::QGauss<1>(degree+1));
         //std::cout << degree << " fe_dg.tensor_degree " << fe_dg.tensor_degree() << " fe_dg.n_dofs_per_cell " << fe_dg.n_dofs_per_cell() << std::endl;
         const dealii::FESystem<dim,dim> fe_system(fe_dg, nstate);
         fe_coll.push_back (fe_system);
 
-        const dealii::FE_DGQ<1> fe_dg_1D(degree);
-        //const dealii::FE_DGQArbitraryNodes<dim,dim> fe_dg(dealii::QGauss<1>(degree+1));
+        // TEMP change to Gauss nodes
+        //const dealii::FE_DGQ<1> fe_dg_1D(degree);
+        const dealii::FE_DGQArbitraryNodes<1,1> fe_dg_1D(dealii::QGauss<1>(degree+1));
         //std::cout << degree << " fe_dg.tensor_degree " << fe_dg.tensor_degree() << " fe_dg.n_dofs_per_cell " << fe_dg.n_dofs_per_cell() << std::endl;
         const dealii::FESystem<1,1> fe_system_1D(fe_dg_1D, nstate);
         fe_coll_1D.push_back (fe_system_1D);
