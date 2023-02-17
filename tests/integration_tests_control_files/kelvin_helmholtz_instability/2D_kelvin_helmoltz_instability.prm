@@ -15,6 +15,8 @@ set flux_nodes_type = GL
 set flux_reconstruction = cDG
 set use_inverse_mass_on_the_fly = true
 
+set enable_higher_order_vtk_output = true
+
 # Note: this was added to turn off check_same_coords() -- has no other function when dim!=1
 set use_periodic_bc = true
 
@@ -42,7 +44,7 @@ end
 
 subsection flow_solver
   set flow_case_type = kelvin_helmholtz_instability
-  set poly_degree = 7 
+  set poly_degree = 7
   set final_time = 10
   set courant_friedrichs_lewy_number = 0.05
   set unsteady_data_table_filename = isentropic_vortex_time_table
@@ -52,6 +54,6 @@ subsection flow_solver
     set number_of_grid_elements_per_dimension = 16
   end
   subsection kelvin_helmholtz_instability
-    set atwood_number = 0.9
+    set atwood_number = 0.4
   end
 end
