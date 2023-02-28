@@ -274,6 +274,31 @@ public:
     real value (const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
 };
 
+/// Initial Condition Function: Reynolds-dependent sine wave
+/** See Benton 1972 
+ *  Table 5.2
+ */
+template <int dim, int nstate, typename real>
+class InitialConditionFunction_ViscousBurgersExact 
+        : public InitialConditionFunction<dim,nstate,real>
+{
+protected:
+    using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
+
+public:
+    /// Constructor for InitialConditionFunction_ViscousBurgersExact
+    InitialConditionFunction_ViscousBurgersExact (const double reynolds_input);
+
+    /// Value of initial condition
+    real value (const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
+
+    /// Reynolds number
+    /** Quantifies "strength" of the sine wave (amplitude)
+     *  Following naming in Benton 1972
+     */
+    const real reynolds;
+};
+
 /// Initial Condition Function: Isentropic vortex
 template <int dim, int nstate, typename real>
 class InitialConditionFunction_IsentropicVortex

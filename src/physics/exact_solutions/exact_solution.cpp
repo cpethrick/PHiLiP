@@ -23,6 +23,42 @@ inline real ExactSolutionFunction_Zero<dim,nstate,real>
 }
 
 // ========================================================
+// VISCOUS BURGERS EXACT -- Sinusoidal initial condition
+// on 1D domain, having an exact analytical solution
+// ========================================================
+template <int dim, int nstate, typename real>
+ExactSolutionFunction_ViscousBurgersExact<dim,nstate,real>
+::ExactSolutionFunction_ViscousBurgersExact(double time_compare, const double reynolds_input )
+        : ExactSolutionFunction<dim,nstate,real>()
+        , t(time_compare)
+        , reynolds(reynolds_input)
+{
+}
+
+template <int dim, int nstate, typename real>
+inline real ExactSolutionFunction_ViscousBurgersExact<dim,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
+{
+    const unsigned int truncation_limit = 10; // This is high enough for double-precision
+
+    //Assemble Fourier coefficients
+    double a[truncation_limit] {0};
+    for (unsigned int n = 0; n<truncation_limit; ++n){
+        a[n] = pow(-1, n) * cyl_bessel_i(n, reynolds*0.5);
+    }
+
+    //Exact solution
+    const double x = point[0];
+    double num = 0;
+    double den = a[0];
+    for (unsigned int n = 1; n<truncation_limit; ++n){
+        num += 4 * n * a[n] * exp(-n*n*t) * sin(n*x);
+        den += 2 * a[n] * exp(-n*n*t) * cos(n*x);
+    }
+    return num/den;
+}
+
+// ========================================================
 // 1D SINE -- Exact solution for advection_explicit_time_study
 // ========================================================
 template <int dim, int nstate, typename real>

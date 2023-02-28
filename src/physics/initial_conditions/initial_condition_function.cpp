@@ -357,7 +357,32 @@ inline real InitialConditionFunction_1DSine<dim,nstate,real>
 }
 
 // ========================================================
-// Inviscid Isentropic Vortex
+// VISCOUS BURGERS EXACT -- Sinusoidal initial condition
+// on 1D domain, having an exact analytical solution
+// ========================================================
+template <int dim, int nstate, typename real>
+InitialConditionFunction_ViscousBurgersExact<dim,nstate,real>
+::InitialConditionFunction_ViscousBurgersExact (const double reynolds_input)
+        : InitialConditionFunction<dim,nstate,real>()
+        , reynolds(reynolds_input)
+{
+    // Nothing to do here yet
+}
+
+template <int dim, int nstate, typename real>
+inline real InitialConditionFunction_ViscousBurgersExact<dim,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
+{
+    real value = 0;
+    real pi = dealii::numbers::PI;
+    if(point[0] >= -pi && point[0] <= pi){
+        value = -reynolds * sin(point[0]);
+    }
+    return value;
+}
+
+// ========================================================
+// Inviscid Isentropic Vortex 
 // ========================================================
 template <int dim, int nstate, typename real>
 InitialConditionFunction_IsentropicVortex<dim,nstate,real>
