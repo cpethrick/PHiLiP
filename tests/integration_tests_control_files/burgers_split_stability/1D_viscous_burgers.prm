@@ -1,0 +1,62 @@
+# Listing of Parameters
+# ---------------------
+# Number of dimensions
+
+set dimension = 1 
+set run_type = flow_simulation
+set pde_type = burgers_viscous
+
+# Note: this is required to correctly calculate energy
+set use_periodic_bc = true
+
+# for split form & energy-stable flux
+set use_weak_form = false
+set use_collocated_nodes = true # can set to fale now
+set use_split_form = true
+set conv_num_flux = two_point_flux
+
+set flux_reconstruction = cDG # or other
+
+set use_inverse_mass_on_the_fly = true
+
+# ODE solver
+subsection ODE solver
+  set ode_solver_type = runge_kutta #this is modified by the test
+  set output_solution_every_dt_time_intervals = 0.01
+  set initial_time_step = 5E-5 #this is modified by the test 
+  set runge_kutta_method = rk4_ex
+end
+
+subsection burgers
+  set diffusion_coefficient = 1
+end
+
+# Diffusion tensor needs to be set to identity as 
+# default value is set up for a manufactured solution
+subsection manufactured solution convergence study
+  set diffusion_00 = 1
+  set diffusion_01 = 0
+  set diffusion_02 = 0
+  set diffusion_01 = 0
+  set diffusion_11 = 1
+  set diffusion_12 = 0
+  set diffusion_20 = 0
+  set diffusion_21 = 0
+  set diffusion_22 = 1
+end
+
+set enable_higher_order_vtk_output = false
+
+subsection flow_solver
+  set flow_case_type = periodic_1D_unsteady
+  set poly_degree = 3 
+  set final_time = 1.0  #very small total time, but enough to test energy conservation
+  set unsteady_data_table_filename = burgers_unsteady_data
+  subsection grid
+    set grid_left_bound = -3.14159265358979323
+    set grid_right_bound = 3.14159265358979323
+    #set grid_left_bound = 0
+    #set grid_right_bound = 6.28318530718  
+    set number_of_grid_elements_per_dimension = 32 
+  end
+end

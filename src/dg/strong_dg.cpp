@@ -381,14 +381,8 @@ void DGStrong<dim,nstate,real,MeshType>::assemble_subface_term_and_build_operato
 template <int dim, int nstate, typename real, typename MeshType>
 void DGStrong<dim,nstate,real,MeshType>::assemble_auxiliary_residual()
 {
-    using PDE_enum = Parameters::AllParameters::PartialDifferentialEquation;
     using ODE_enum = Parameters::ODESolverParam::ODESolverEnum;
-    const PDE_enum pde_type = this->all_parameters->pde_type;
 
-    if(pde_type == PDE_enum::burgers_viscous){
-        pcout << "DG Strong not yet verified for Burgers' viscous. Aborting..." << std::endl;
-        std::abort();
-    }
     // NOTE: auxiliary currently only works explicit time advancement - not implicit
     if (this->use_auxiliary_eq && !(this->all_parameters->ode_solver_param.ode_solver_type == ODE_enum::implicit_solver)) {
         //set auxiliary rhs to 0

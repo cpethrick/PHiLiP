@@ -544,7 +544,8 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
     } else if (flow_type == FlowCaseEnum::convection_diffusion && param->use_energy) {
         return std::make_shared<InitialConditionFunction_ConvDiffEnergy<dim,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::periodic_1D_unsteady) {
-        if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_1DSine<dim,nstate,real> > ();
+        //if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_1DSine<dim,nstate,real> > ();
+        if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_ViscousBurgersExact<dim,nstate,real> > (5.0);
     } else if (flow_type == FlowCaseEnum::isentropic_vortex) {
         if constexpr (dim>1 && nstate==dim+2) return std::make_shared<InitialConditionFunction_IsentropicVortex<dim,nstate,real> > (param);
     } else if (flow_type == FlowCaseEnum::kelvin_helmholtz_instability) {

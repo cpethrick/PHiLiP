@@ -30,3 +30,17 @@ add_test(
     COMMAND mpirun -n 1 ${EXECUTABLE_OUTPUT_PATH}/PHiLiP_1D -i ${CMAKE_CURRENT_BINARY_DIR}/1D_burgers_energy_conservation_rrk.prm
     WORKING_DIRECTORY ${TEST_OUTPUT_DIR}
 )
+
+# =======================================
+# Viscous Burgers  
+# =======================================
+# ----------------------------------------
+# Add more info later 
+# ----------------------------------------
+
+configure_file(1D_viscous_burgers.prm 1D_viscous_burgers.prm COPYONLY)
+add_test(
+    NAME 1D_VISCOUS_BURGERS
+    COMMAND mpirun -n 1 ${EXECUTABLE_OUTPUT_PATH}/PHiLiP_1D -i ${CMAKE_CURRENT_BINARY_DIR}/1D_viscous_burgers.prm
+    WORKING_DIRECTORY ${TEST_OUTPUT_DIR}
+)
