@@ -44,16 +44,18 @@ inline real ExactSolutionFunction_ViscousBurgersExact<dim,nstate,real>
     //Assemble Fourier coefficients
     double a[truncation_limit] {0};
     for (unsigned int n = 0; n<truncation_limit; ++n){
-        a[n] = pow(-1, n) * cyl_bessel_i(n, reynolds*0.5);
+        a[n] = pow(-1.0, n) * std::cyl_bessel_i(n, reynolds*0.5);
     }
+    //a_n are okay
 
     //Exact solution
     const double x = point[0];
     double num = 0;
     double den = a[0];
     for (unsigned int n = 1; n<truncation_limit; ++n){
-        num += 4 * n * a[n] * exp(-n*n*t) * sin(n*x);
-        den += 2 * a[n] * exp(-n*n*t) * cos(n*x);
+        const double n_d = (double)n;
+        num += 4 * n_d * a[n] * exp(-n_d*n_d*t) * sin(n_d*x);
+        den += 2 * a[n] * exp(-n_d*n_d*t) * cos(n_d*x);
     }
     return num/den;
 }
@@ -153,13 +155,16 @@ ExactSolutionFunction<dim,nstate,real>
 template <int dim, int nstate, typename real>
 std::shared_ptr<ExactSolutionFunction<dim, nstate, real>>
 ExactSolutionFactory<dim,nstate, real>::create_ExactSolutionFunction(
-        const Parameters::FlowSolverParam& flow_solver_parameters, 
+        Parameters::AllParameters const *const param,
         const double time_compare)
 {
+
     // Get the flow case type
-    const FlowCaseEnum flow_type = flow_solver_parameters.flow_case_type;
+    const FlowCaseEnum flow_type = param->flow_solver_param.flow_case_type;
     if (flow_type == FlowCaseEnum::periodic_1D_unsteady){
         if constexpr (dim==1 && nstate==dim)  return std::make_shared<ExactSolutionFunction_1DSine<dim,nstate,real> > (time_compare);
+    } else if (flow_type == FlowCaseEnum::burgers_viscous_exact){
+        if constexpr (dim==1 && nstate==dim)  return std::make_shared<ExactSolutionFunction_ViscousBurgersExact<dim,nstate,real> > (time_compare, param->burgers_param.reynolds_number);
     } else if (flow_type == FlowCaseEnum::isentropic_vortex){
         if constexpr (dim>1 && nstate==dim+2)  return std::make_shared<ExactSolutionFunction_IsentropicVortex<dim,nstate,real> > (time_compare);
     } else {

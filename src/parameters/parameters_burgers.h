@@ -9,14 +9,14 @@ namespace Parameters {
 class BurgersParam
 {
 public:
-    /* Parameter a for eq.(18) in Carlberg 2011
+    /** Parameter a for eq.(18) in Carlberg 2011
      * Carlberg, K., Amsallem, D., Avery, P., Zahr, M., & Farhat, C. (2011).
      * The GNAT nonlinear model reduction method and its application to fluid dynamics problems.
      * In 6th AIAA Theoretical Fluid Mechanics Conference (p. 3112).
      */
     double rewienski_a;
 
-    /* Parameter b for eq.(18) in Carlberg 2011
+    /** Parameter b for eq.(18) in Carlberg 2011
      * Carlberg, K., Amsallem, D., Avery, P., Zahr, M., & Farhat, C. (2011).
      * The GNAT nonlinear model reduction method and its application to fluid dynamics problems.
      * In 6th AIAA Theoretical Fluid Mechanics Conference (p. 3112).
@@ -30,6 +30,12 @@ public:
     *  Adds the manufactured solution source term to the PDE source term
     */
     bool rewienski_manufactured_solution;
+
+    /**Reynolds number for viscous Burgers exact solution. 
+     * Larger Reynolds number corresponds to larger amplitude
+     * of the initial sine wave. Naming per Benton 1972.
+     */
+    double reynolds_number;
 
     BurgersParam (); ///< Constructor
 

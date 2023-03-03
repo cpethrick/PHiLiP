@@ -36,7 +36,7 @@ double TimeRefinementStudy<dim,nstate>::calculate_Lp_error_at_final_time_wrt_fun
 {
     //generate exact solution at final time
     std::shared_ptr<ExactSolutionFunction<dim,nstate,double>> exact_solution_function;
-    exact_solution_function = ExactSolutionFactory<dim,nstate,double>::create_ExactSolutionFunction(parameters.flow_solver_param, final_time);
+    exact_solution_function = ExactSolutionFactory<dim,nstate,double>::create_ExactSolutionFunction(&parameters, final_time);
     this->pcout << "End time: " << final_time << std::endl;
     double Lp_error=0;
     int overintegrate = 10;

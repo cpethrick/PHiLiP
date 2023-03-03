@@ -124,7 +124,9 @@ protected:
 public:
     /// Construct ExactSolutionFunction object from global parameter file
     static std::shared_ptr<ExactSolutionFunction<dim,nstate,real>>
-        create_ExactSolutionFunction(const Parameters::FlowSolverParam& flow_solver_parameters, const double time_compare);
+        create_ExactSolutionFunction(
+                Parameters::AllParameters const *const param,
+                const double time_compare);
 };
 
 } // PHiLiP namespace

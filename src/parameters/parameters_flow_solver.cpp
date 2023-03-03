@@ -27,7 +27,8 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           " gaussian_bump | "
                           " isentropic_vortex | "
                           " kelvin_helmholtz_instability | "
-                          " sshock "),
+                          " sshock | "
+                          " burgers_viscous_exact"),
                           "The type of flow we want to simulate. "
                           "Choices are "
                           " <taylor_green_vortex | "
@@ -42,7 +43,8 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           " gaussian_bump | "
                           " isentropic_vortex | "
                           " kelvin_helmholtz_instability | "
-                          " sshock>. ");
+                          " sshock | "
+                          " burgers_viscous_exact>.");
 
         prm.declare_entry("poly_degree", "1",
                           dealii::Patterns::Integer(0, dealii::Patterns::Integer::max_int_value),
@@ -261,6 +263,7 @@ void FlowSolverParam::parse_parameters(dealii::ParameterHandler &prm)
         else if (flow_case_type_string == "kelvin_helmholtz_instability")   
                                                                         {flow_case_type = kelvin_helmholtz_instability;}
         else if (flow_case_type_string == "sshock")                     {flow_case_type = sshock;}
+        else if (flow_case_type_string == "burgers_viscous_exact")      {flow_case_type = burgers_viscous_exact;}
 
         poly_degree = prm.get_integer("poly_degree");
         
