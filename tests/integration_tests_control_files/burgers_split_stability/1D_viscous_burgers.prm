@@ -25,13 +25,25 @@ set use_inverse_mass_on_the_fly = true
 subsection ODE solver
   set ode_solver_type = runge_kutta #this is modified by the test
   set output_solution_every_dt_time_intervals = 0.25
-  set initial_time_step = 1E-4 #this is modified by the test 
-  set runge_kutta_method = euler_ex
+  set initial_time_step = 10E-3 #this is modified by the test 
+  set runge_kutta_method = dirk_2_im
 end
 
 subsection burgers
   set diffusion_coefficient = 1
+  set reynolds_number = 5
 end
+
+subsection linear solver
+  #set linear_solver_output = verbose
+  subsection gmres options
+    set linear_residual_tolerance = 1e-7
+  end
+  subsection JFNK options
+    set newton_residual = 5e-7
+  end
+end
+  
 
 # Diffusion tensor needs to be set to identity as 
 # default value is set up for a manufactured solution
@@ -50,20 +62,20 @@ end
 set enable_higher_order_vtk_output = false
 
 subsection time_refinement_study
-  set number_of_times_to_solve = 4
+  set number_of_times_to_solve = 6
   set refinement_ratio = 0.5
 end
 
 subsection flow_solver
   set flow_case_type = burgers_viscous_exact 
-  set poly_degree = 3 
-  set final_time = 0.5  #very small total time, but enough to test energy conservation
+  set poly_degree = 7
+  set final_time = 0.5
   set unsteady_data_table_filename = burgers_unsteady_data
   subsection grid
     set grid_left_bound = -3.14159265358979323
     set grid_right_bound = 3.14159265358979323
     #set grid_left_bound = 0
     #set grid_right_bound = 6.28318530718  
-    set number_of_grid_elements_per_dimension = 32
+    set number_of_grid_elements_per_dimension = 16
   end
 end

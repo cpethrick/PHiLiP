@@ -39,7 +39,7 @@ template <int dim, int nstate, typename real>
 inline real ExactSolutionFunction_ViscousBurgersExact<dim,nstate,real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
 {
-    const unsigned int truncation_limit = 10; // This is high enough for double-precision
+    const unsigned int truncation_limit = 100; // This is high enough for double-precision
 
     //Assemble Fourier coefficients
     double a[truncation_limit] {0};

@@ -236,7 +236,7 @@ std::shared_ptr<RKTableauBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
         // Implicit only tested in 1D with Burgers and advection
         using PDEEnum = Parameters::AllParameters::PartialDifferentialEquation;
         const PDEEnum pde_type = dg_input->all_parameters->pde_type;
-        if ((pde_type==PDEEnum::burgers_inviscid) || (pde_type==PDEEnum::advection)){
+        if ((pde_type==PDEEnum::burgers_inviscid) || (pde_type==PDEEnum::advection) || (pde_type==PDEEnum::burgers_viscous)){
             if (rk_method == RKMethodEnum::euler_im)    return std::make_shared<EulerImplicit<dim, real, MeshType>>  (n_rk_stages, "Implicit Euler (implicit)");
             if (rk_method == RKMethodEnum::dirk_2_im)   return std::make_shared<DIRK2Implicit<dim, real, MeshType>>  (n_rk_stages, "2nd order diagonally-implicit (implicit)");
             if (rk_method == RKMethodEnum::dirk_3_im)   return std::make_shared<DIRK3Implicit<dim, real, MeshType>>  (n_rk_stages, "3nd order diagonally-implicit (implicit)");
