@@ -156,7 +156,7 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
         enum NumEntropyEnum {energy, entropy};
         NumEntropyEnum numerical_entropy_type;
         std::string numerical_entropy_string;
-        if (pde_type == PDEEnum::burgers_inviscid){
+        if (pde_type == PDEEnum::burgers_inviscid || pde_type == PDEEnum::burgers_viscous){
             numerical_entropy_type = NumEntropyEnum::energy;
             numerical_entropy_string = "Energy";
         } else if ((pde_type == PDEEnum::euler || pde_type == PDEEnum::navier_stokes)
