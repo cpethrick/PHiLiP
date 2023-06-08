@@ -121,7 +121,7 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::allocate_ode_system ()
         using ODEEnum = Parameters::ODESolverParam::ODESolverEnum;
         ODEEnum ode_type = this->ode_param.ode_solver_type;
         if (ode_type == ODEEnum::rrk_explicit_solver){
-            this->dg->evaluate_mass_matrices(!do_inverse_mass_matrix);
+            this->dg->evaluate_mass_matrices(false);
         }
     }
     this->pcout << std::endl;

@@ -27,13 +27,13 @@ subsection ODE solver
   set ode_solver_type = rrk_explicit #this is modified by the test
   set output_solution_every_dt_time_intervals = 0.01
   #set output_solution_every_x_steps = 1
-  set initial_time_step = 0.1E-3 #this is modified by the test 
+  set initial_time_step = 1E-3 #this is modified by the test 
   set runge_kutta_method = dirk_2_im
 end
 
 subsection burgers
   set diffusion_coefficient = 1
-  set reynolds_number = 10 
+  set reynolds_number = 5 
 end
 
 subsection linear solver
@@ -72,7 +72,7 @@ subsection flow_solver
   set flow_case_type = burgers_viscous_exact 
   set poly_degree = 7
   set final_time = 0.1
-  set unsteady_data_table_filename = burgers_unsteady_data
+  set unsteady_data_table_filename = viscous_burgers_unsteady_data
   subsection grid
     set grid_left_bound = -3.14159265358979323
     set grid_right_bound = 3.14159265358979323

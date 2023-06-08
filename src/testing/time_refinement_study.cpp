@@ -27,6 +27,8 @@ Parameters::AllParameters TimeRefinementStudy<dim,nstate>::reinit_params_and_ref
     PHiLiP::Parameters::AllParameters parameters = *(this->all_parameters);
 
     parameters.ode_solver_param.initial_time_step *= pow(refine_ratio,refinement);
+    
+    parameters.flow_solver_param.unsteady_data_table_filename += std::to_string(refinement);
 
     //For RRK, do not end at exact time because of how relaxation parameter convergence is calculated
     using ODESolverEnum = Parameters::ODESolverParam::ODESolverEnum;

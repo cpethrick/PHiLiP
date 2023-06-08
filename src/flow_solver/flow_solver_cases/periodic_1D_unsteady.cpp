@@ -57,7 +57,7 @@ void Periodic1DUnsteady<dim, nstate>::compute_unsteady_data_and_write_to_table(
         (void) dg;
         (void) unsteady_data_table;
     }
-    else if (pde_type == PDEEnum::burgers_inviscid){
+    else if (pde_type == PDEEnum::burgers_inviscid || pde_type == PDEEnum::burgers_viscous){
         const double energy = this->compute_energy(dg);
     
         if ((current_iteration % output_solution_every_n_iterations) == 0){
