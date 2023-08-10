@@ -171,6 +171,41 @@ void DIRK3Implicit<dim,real,MeshType> :: set_c()
 }
 
 //##################################################################
+template <int dim, typename real, typename MeshType>
+void PERK_2_5_12<dim,real,MeshType> :: set_a()
+{
+    const double butcher_tableau_a_values[144] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0.04545454545454546, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0.069077876501923, 0.02183121440716792, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0.1013432933919275, 0, 0.03502034297170882, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0.131546549977525, 0, 0, 0.05027163184065681, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0.1590665514082178, 0, 0, 0, 0.06820617586450946, 0, 0, 0, 0, 0, 0, 0,
+                                                  0.1829935224378705, 0, 0, 0, 0, 0.08973375028940225, 0, 0, 0, 0, 0, 0,
+                                                  0.2019329227394814, 0, 0, 0, 0, 0, 0.1162488954423367, 0, 0, 0, 0, 0,
+                                                  0.2136207456096605, 0, 0, 0, 0, 0, 0, 0.1500156180267031, 0, 0, 0, 0,
+                                                  0.2140928553711159, 0, 0, 0, 0, 0, 0, 0, 0.1949980537197932, 0, 0, 0,
+                                                  0.1956515011807057, 0, 0, 0, 0, 0, 0, 0, 0, 0.2588939533647489, 0, 0,
+                                                  0.1408677509646996, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3591322490353004, 0};
+
+    this->butcher_tableau_a.fill(butcher_tableau_a_values);
+}
+
+template <int dim, typename real, typename MeshType>
+void PERK_2_5_12<dim,real,MeshType> :: set_b()
+{
+    const double butcher_tableau_b_values[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    this->butcher_tableau_b.fill(butcher_tableau_b_values);
+}
+
+template <int dim, typename real, typename MeshType>
+void PERK_2_5_12<dim,real,MeshType> :: set_c()
+{
+    /// NOT CORRECT JUST LEAVING AS A PLACEHOLDER FOR NOW
+    const double butcher_tableau_c_values[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    this->butcher_tableau_c.fill(butcher_tableau_c_values);
+}
+
+//##################################################################
 template class SSPRK3Explicit<PHILIP_DIM, double, dealii::Triangulation<PHILIP_DIM> >;
 template class SSPRK3Explicit<PHILIP_DIM, double, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
 #if PHILIP_DIM != 1
@@ -214,6 +249,12 @@ template class DIRK3Implicit<PHILIP_DIM, double, dealii::parallel::shared::Trian
 #if PHILIP_DIM != 1
     // Commenting higher dimensions as they have not been tested yet
     //template class DIRK3Implicit<PHILIP_DIM, double, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
+#endif
+
+template class PERK_2_5_12<PHILIP_DIM, double, dealii::Triangulation<PHILIP_DIM> >;
+template class PERK_2_5_12<PHILIP_DIM, double, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
+#if PHILIP_DIM != 1
+    template class PERK_2_5_12<PHILIP_DIM, double, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
 #endif
 
 } // ODESolver namespace

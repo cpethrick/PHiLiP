@@ -62,7 +62,8 @@ public:
         euler_ex, ///Forward Euler
         euler_im, ///Implicit Euler
         dirk_2_im, ///Second-order diagonally-implicit RK
-        dirk_3_im ///Third-order diagonally-implicit RK
+        dirk_3_im, ///Third-order diagonally-implicit RK
+        perk2_5_12_ex // Second order P-ERK method with 12 stages for spatial p=5
     };
 
     RKMethodEnum runge_kutta_method; ///< Runge-kutta method.

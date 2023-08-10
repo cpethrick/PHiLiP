@@ -25,7 +25,6 @@ Parameters::AllParameters TimeRefinementStudyReference<dim,nstate>::reinit_param
     const double dt = final_time/number_of_timesteps;     
     parameters.ode_solver_param.initial_time_step = dt;
     
-    parameters.flow_solver_param.final_time = final_time;
 
     //Change to RK because at small dt RRK is more costly but doesn't impact solution much
     using ODESolverEnum = Parameters::ODESolverParam::ODESolverEnum;
@@ -44,12 +43,19 @@ Parameters::AllParameters TimeRefinementStudyReference<dim,nstate>::reinit_param
     parameters.flow_solver_param.unsteady_data_table_filename += std::to_string(refinement);
      
     parameters.ode_solver_param.initial_time_step *= pow(refine_ratio,refinement);
+    
+    // Decrease final time a little to avoid taking an extra time step when using RRK
+    parameters.flow_solver_param.final_time -= parameters.ode_solver_param.initial_time_step*0.5;
 
     //For RRK, do not end at exact time because of how relaxation parameter convergence is calculatd
     using ODESolverEnum = Parameters::ODESolverParam::ODESolverEnum;
     if (parameters.ode_solver_param.ode_solver_type == ODESolverEnum::rrk_explicit_solver){
         parameters.flow_solver_param.end_exactly_at_final_time = false;
     }
+
+    //For testing, choose rk4 
+    using RKMethodEnum = Parameters::ODESolverParam::RKMethodEnum;
+    parameters.ode_solver_param.runge_kutta_method = RKMethodEnum::rk4_ex;
 
     return parameters;
 }

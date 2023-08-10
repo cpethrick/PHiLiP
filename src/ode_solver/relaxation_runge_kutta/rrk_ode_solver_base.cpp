@@ -32,15 +32,18 @@ template class RRKODESolverBase<PHILIP_DIM, double,1, dealii::Triangulation<PHIL
 template class RRKODESolverBase<PHILIP_DIM, double,2, dealii::Triangulation<PHILIP_DIM> >;
 template class RRKODESolverBase<PHILIP_DIM, double,3, dealii::Triangulation<PHILIP_DIM> >;
 template class RRKODESolverBase<PHILIP_DIM, double,4, dealii::Triangulation<PHILIP_DIM> >;
+template class RRKODESolverBase<PHILIP_DIM, double,12, dealii::Triangulation<PHILIP_DIM> >;
 template class RRKODESolverBase<PHILIP_DIM, double,1, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
 template class RRKODESolverBase<PHILIP_DIM, double,2, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
 template class RRKODESolverBase<PHILIP_DIM, double,3, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
 template class RRKODESolverBase<PHILIP_DIM, double,4, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
+template class RRKODESolverBase<PHILIP_DIM, double,12, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
 #if PHILIP_DIM != 1
     template class RRKODESolverBase<PHILIP_DIM, double,1, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
     template class RRKODESolverBase<PHILIP_DIM, double,2, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
     template class RRKODESolverBase<PHILIP_DIM, double,3, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
     template class RRKODESolverBase<PHILIP_DIM, double,4, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
+    template class RRKODESolverBase<PHILIP_DIM, double,12, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
 #endif
 
 } // ODESolver namespace

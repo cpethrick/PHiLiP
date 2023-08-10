@@ -141,6 +141,9 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
         else if (n_rk_stages == 4){
             return std::make_shared<RKNumEntropy<dim,real,4,MeshType>>(dg_input,rk_tableau);
         }
+        else if (n_rk_stages == 12){
+            return std::make_shared<RKNumEntropy<dim,real,12,MeshType>>(dg_input,rk_tableau);
+        }
         else{
             pcout << "Error: invalid number of stages. Aborting..." << std::endl;
             std::abort();
@@ -162,6 +165,9 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
         }
         else if (n_rk_stages == 4){
             return std::make_shared<RungeKuttaODESolver<dim,real,4,MeshType>>(dg_input,rk_tableau);
+        }
+        else if (n_rk_stages == 12){
+            return std::make_shared<RungeKuttaODESolver<dim,real,12,MeshType>>(dg_input,rk_tableau);
         }
         else{
             pcout << "Error: invalid number of stages. Aborting..." << std::endl;
@@ -221,6 +227,13 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
                 return std::make_shared<EntropyRRKODESolver<dim,real,4,MeshType>>(dg_input,rk_tableau);
             else return nullptr;
         }
+        else if (n_rk_stages == 12){
+            if (numerical_entropy_type==NumEntropyEnum::energy)
+                return std::make_shared<EnergyRRKODESolver<dim,real,12,MeshType>>(dg_input,rk_tableau);
+            else if (numerical_entropy_type==NumEntropyEnum::entropy)
+                return std::make_shared<EntropyRRKODESolver<dim,real,12,MeshType>>(dg_input,rk_tableau);
+            else return nullptr;
+        }
         else{
             pcout << "Error: invalid number of stages. Aborting..." << std::endl;
             std::abort();
@@ -245,6 +258,7 @@ std::shared_ptr<RKTableauBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
     if (rk_method == RKMethodEnum::ssprk3_ex)   return std::make_shared<SSPRK3Explicit<dim, real, MeshType>> (n_rk_stages, "3rd order SSP (explicit)");
     if (rk_method == RKMethodEnum::rk4_ex)      return std::make_shared<RK4Explicit<dim, real, MeshType>>    (n_rk_stages, "4th order classical RK (explicit)");
     if (rk_method == RKMethodEnum::heun2_ex)      return std::make_shared<HeunExplicit<dim, real, MeshType>>    (n_rk_stages, "2nd order Heun's method (explicit)");
+    if (rk_method == RKMethodEnum::perk2_5_12_ex)      return std::make_shared<PERK_2_5_12<dim, real, MeshType>>    (n_rk_stages, "2nd order P-ERK method with 12 stages for spatial p=5 (explicit)");
     if (rk_method == RKMethodEnum::euler_ex) {
         using ODEEnum = Parameters::ODESolverParam::ODESolverEnum;
         ODEEnum ode_solver_type = dg_input->all_parameters->ode_solver_param.ode_solver_type;
