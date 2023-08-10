@@ -32,6 +32,10 @@ Parameters::AllParameters TimeRefinementStudyReference<dim,nstate>::reinit_param
 
     pcout << "Using timestep size dt = " << dt << " for reference solution." << std::endl;
 
+    //For testing, choose rk4 
+    using RKMethodEnum = Parameters::ODESolverParam::RKMethodEnum;
+    parameters.ode_solver_param.runge_kutta_method = RKMethodEnum::rk4_ex;
+
     return parameters;
 }
 
@@ -52,10 +56,6 @@ Parameters::AllParameters TimeRefinementStudyReference<dim,nstate>::reinit_param
     if (parameters.ode_solver_param.ode_solver_type == ODESolverEnum::rrk_explicit_solver){
         parameters.flow_solver_param.end_exactly_at_final_time = false;
     }
-
-    //For testing, choose rk4 
-    using RKMethodEnum = Parameters::ODESolverParam::RKMethodEnum;
-    parameters.ode_solver_param.runge_kutta_method = RKMethodEnum::rk4_ex;
 
     return parameters;
 }
