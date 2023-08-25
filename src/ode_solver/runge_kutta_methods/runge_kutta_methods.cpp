@@ -206,6 +206,43 @@ void PERK_2_5_12<dim,real,MeshType> :: set_c()
 }
 
 //##################################################################
+template <int dim, typename real, typename MeshType>
+void PERK_2_4_12<dim,real,MeshType> :: set_a()
+{
+    const double butcher_tableau_a_values[144] = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0.04545454545454546, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0.06857795703508075, 0.02233113387401016, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0.1006270005053776, 0, 0.03573663585825877, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0.1306446189936138, 0, 0, 0.05117356282456798, 0, 0, 0, 0, 0, 0, 0, 0,
+            0.1580194655976917, 0, 0, 0, 0.06925326167503557, 0, 0, 0, 0, 0, 0, 0,
+            0.1818556273896119, 0, 0, 0, 0, 0.09087164533766087, 0, 0, 0, 0, 0, 0,
+            0.2007776381799146, 0, 0, 0, 0, 0, 0.1174041800019036, 0, 0, 0, 0, 0,
+            0.2125468841529873, 0, 0, 0, 0, 0, 0, 0.1510894794833764, 0, 0, 0, 0,
+            0.2132307775876235, 0, 0, 0, 0, 0, 0, 0, 0.1958601315032856, 0, 0, 0,
+            0.1951517528308653, 0, 0, 0, 0, 0, 0, 0, 0, 0.2593937017145893, 0, 0,
+            0.140822871000746, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.359177128999254, 0,
+    };
+    this->butcher_tableau_a.fill(butcher_tableau_a_values);
+}
+
+template <int dim, typename real, typename MeshType>
+void PERK_2_4_12<dim,real,MeshType> :: set_b()
+{
+    const double butcher_tableau_b_values[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    this->butcher_tableau_b.fill(butcher_tableau_b_values);
+}
+
+template <int dim, typename real, typename MeshType>
+void PERK_2_4_12<dim,real,MeshType> :: set_c()
+{
+    /// NOT CORRECT JUST LEAVING AS A PLACEHOLDER FOR NOW
+    const double butcher_tableau_c_values[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    this->butcher_tableau_c.fill(butcher_tableau_c_values);
+}
+
+
+//##################################################################
 template class SSPRK3Explicit<PHILIP_DIM, double, dealii::Triangulation<PHILIP_DIM> >;
 template class SSPRK3Explicit<PHILIP_DIM, double, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
 #if PHILIP_DIM != 1
@@ -255,6 +292,12 @@ template class PERK_2_5_12<PHILIP_DIM, double, dealii::Triangulation<PHILIP_DIM>
 template class PERK_2_5_12<PHILIP_DIM, double, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
 #if PHILIP_DIM != 1
     template class PERK_2_5_12<PHILIP_DIM, double, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
+#endif
+
+template class PERK_2_4_12<PHILIP_DIM, double, dealii::Triangulation<PHILIP_DIM> >;
+template class PERK_2_4_12<PHILIP_DIM, double, dealii::parallel::shared::Triangulation<PHILIP_DIM> >;
+#if PHILIP_DIM != 1
+    template class PERK_2_4_12<PHILIP_DIM, double, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
 #endif
 
 } // ODESolver namespace
