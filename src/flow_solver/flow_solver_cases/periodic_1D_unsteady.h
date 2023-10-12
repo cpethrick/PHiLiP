@@ -19,6 +19,12 @@ public:
 
     /// Calculate energy
     double compute_energy(const std::shared_ptr <DGBase<dim, double>> dg) const;
+    
+    /// Calculate energy conservation indicator
+    /** For Burgers viscous, we can test that numerical entropy evolves exactly as
+     * it is supposed to by testing the equality of (u du/dt) ?= ||q||_B
+     */
+    double compute_viscous_energy_conservation_indicator(const std::shared_ptr <DGBase<dim, double>> dg) const;
 protected:
 
     /// Compute the desired unsteady data and write it to a table

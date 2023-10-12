@@ -46,6 +46,9 @@ protected:
             bool expect_conservation
             ) const;
 
+    /// Get the appropriate energy -- u^T M u for inv. Burgers', or u^T (RHS) + ||q|| for visc. burgers
+    double get_energy_indicator( const std::shared_ptr <DGBase<dim, double>> dg) const;
+
 };
 
 } // End of Tests namespace

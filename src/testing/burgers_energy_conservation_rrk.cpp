@@ -29,6 +29,28 @@ Parameters::AllParameters BurgersEnergyConservationRRK<dim,nstate>::reinit_param
     return parameters;
 }
 
+
+template <int dim, int nstate>
+double BurgersEnergyConservationRRK<dim, nstate>::get_energy_indicator(const std::shared_ptr <DGBase<dim, double>> dg) const {
+
+    //pointer to flow_solver_case for computing energy
+    std::unique_ptr<FlowSolver::Periodic1DUnsteady<dim, nstate>> flow_solver_case = std::make_unique<FlowSolver::Periodic1DUnsteady<dim,nstate>>(this->all_parameters);
+
+    using PDEEnum = Parameters::AllParameters::PartialDifferentialEquation; 
+    const PDEEnum pde_type = this->all_parameters->pde_type;
+    
+    double energy_indicator = 0;
+    if (pde_type == PDEEnum::burgers_inviscid){
+        this->pcout << "Calculating standard energy" << std::endl;
+        energy_indicator = flow_solver_case->compute_energy(dg);
+    } else if (pde_type == PDEEnum::burgers_viscous){
+        this->pcout << "Calculating viscous energy conservation indicator" << std::endl;
+        energy_indicator = flow_solver_case->compute_viscous_energy_conservation_indicator(dg);
+    }
+    return energy_indicator;
+
+}
+
 template <int dim, int nstate>
 int BurgersEnergyConservationRRK<dim, nstate>::compare_energy_to_initial(
         const std::shared_ptr <DGBase<dim, double>> dg,
@@ -37,10 +59,8 @@ int BurgersEnergyConservationRRK<dim, nstate>::compare_energy_to_initial(
         bool expect_conservation
         ) const{
     
-    //pointer to flow_solver_case for computing energy
-    std::unique_ptr<FlowSolver::Periodic1DUnsteady<dim, nstate>> flow_solver_case = std::make_unique<FlowSolver::Periodic1DUnsteady<dim,nstate>>(this->all_parameters);
+    const double final_energy = get_energy_indicator(dg);
 
-    const double final_energy = flow_solver_case->compute_energy(dg);
     const double energy_change = abs(initial_energy-final_energy);
     pcout << "At end time t = " << final_time_actual << ", Energy change at end was " << std::fixed << std::setprecision(16) << energy_change <<std::endl;
     if (expect_conservation && (energy_change< 1E-13)){
@@ -68,6 +88,7 @@ int BurgersEnergyConservationRRK<dim,nstate>::get_energy_and_compare_to_initial(
         ) const
 {
     std::unique_ptr<FlowSolver::FlowSolver<dim,nstate>> flow_solver = FlowSolver::FlowSolverFactory<dim,nstate>::select_flow_case(&params, parameter_handler);
+    flow_solver->dg->assemble_residual(); //There seems to be an issue with the t=0 calculation of the energy change indicator if I don't assemble residual before.  
     static_cast<void>(flow_solver->run());
     const double final_time_actual = flow_solver->ode_solver->current_time;
     int failed_this_calculation = compare_energy_to_initial(flow_solver->dg, energy_initial, final_time_actual, expect_conservation);
@@ -101,7 +122,8 @@ int BurgersEnergyConservationRRK<dim, nstate>::run_test() const
     pcout << "  Calculating initial energy..." << std::endl;
     pcout << "-------------------------------------------------------------" << std::endl;
     std::unique_ptr<FlowSolver::FlowSolver<dim,nstate>> flow_solver = FlowSolver::FlowSolverFactory<dim,nstate>::select_flow_case((this->all_parameters), parameter_handler);
-    const double energy_initial = flow_solver_case->compute_energy(flow_solver->dg); //no need to run as ode_solver is allocated during construction
+    flow_solver->dg->assemble_residual();
+    const double energy_initial = get_energy_indicator(flow_solver->dg); //no need to run as ode_solver is allocated during construction
     pcout << "   Initial energy : " << energy_initial << std::endl;
 
     // Run four main tests
