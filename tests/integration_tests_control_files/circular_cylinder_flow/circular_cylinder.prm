@@ -1,0 +1,4 @@
+set dimension = 2
+set run_type = integration_test
+set test_type = circular_cylinder_flow
+set pde_type = euler
