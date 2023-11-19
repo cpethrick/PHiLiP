@@ -121,15 +121,18 @@ double PeriodicTurbulence<dim,nstate>::get_adaptive_time_step(std::shared_ptr<DG
 {
     // compute time step based on advection speed (i.e. maximum local wave speed)
     const unsigned int number_of_degrees_of_freedom_per_state = dg->dof_handler.n_dofs()/nstate;
-    const double approximate_grid_spacing = (this->domain_right-this->domain_left)/pow(number_of_degrees_of_freedom_per_state,(1.0/dim));
+    //const double approximate_grid_spacing = (this->domain_right-this->domain_left)/pow(number_of_degrees_of_freedom_per_state,(1.0/dim));
+    // HARD CODED WARNING
+    const double min_elem_length = 2 * (atan(1.0)*4) / 10 / ( 0.5 * pow(number_of_degrees_of_freedom_per_state,(1.0/dim)) ); //extra spacing between -pi/10 and pi/10, with half of elements concentrated there.
     const double cfl_number = this->all_param.flow_solver_param.courant_friedrichs_lewy_number;
-    const double time_step = cfl_number * approximate_grid_spacing / this->maximum_local_wave_speed;
+    const double time_step = cfl_number * min_elem_length/ this->maximum_local_wave_speed;
     return time_step;
 }
 
 template <int dim, int nstate>
 double PeriodicTurbulence<dim,nstate>::get_adaptive_time_step_initial(std::shared_ptr<DGBase<dim,double>> dg)
 {
+    this->pcout << std::endl << "Warning: Hard-coded CFL adaptation to biased grid!!" << std::endl;
     // initialize the maximum local wave speed
     update_maximum_local_wave_speed(*dg);
     // compute time step based on advection speed (i.e. maximum local wave speed)
