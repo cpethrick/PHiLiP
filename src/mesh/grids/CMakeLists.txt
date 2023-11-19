@@ -4,6 +4,7 @@ set(GRIDS_SOURCE
     gaussian_bump.cpp
     curved_periodic_grid.cpp
     wavy_periodic_grid.cpp
+    biased_periodic_cube.cpp
     naca_airfoil_grid.cpp
     spline_channel.cpp
     straight_periodic_cube.cpp

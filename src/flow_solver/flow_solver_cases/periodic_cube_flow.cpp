@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <iostream>
 #include "mesh/grids/straight_periodic_cube.hpp"
+#include "mesh/grids/biased_periodic_cube.hpp"
 #include "mesh/gmsh_reader.hpp"
+#include <deal.II/grid/grid_out.h>
 
 namespace PHiLiP {
 
@@ -57,8 +59,16 @@ std::shared_ptr<Triangulation> PeriodicCubeFlow<dim,nstate>::generate_grid() con
 #endif
         );
         
-        Grids::straight_periodic_cube<dim, Triangulation>(grid, domain_left, domain_right,
+        Grids::biased_periodic_cube<dim, Triangulation>(grid, domain_left, domain_right,
                                                           number_of_cells_per_direction);
+        MPI_Barrier(MPI_COMM_WORLD);
+        const int mpi_rank = dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+        if(mpi_rank==0) {
+            dealii::GridOut output_grid;
+            std::ofstream output_file("biased_periodic_cube.vtk");
+            output_grid.write_vtk(*grid, output_file);
+        }
+
         return grid;
     }
 }
