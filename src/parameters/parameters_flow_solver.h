@@ -27,7 +27,8 @@ public:
         gaussian_bump,
         isentropic_vortex,
         kelvin_helmholtz_instability,
-        non_periodic_cube_flow
+        non_periodic_cube_flow,
+        tandem_spheres_flow,
         };
     FlowCaseType flow_case_type; ///< Selected FlowCaseType from the input file
 

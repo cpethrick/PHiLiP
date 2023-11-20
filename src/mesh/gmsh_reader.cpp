@@ -1261,6 +1261,8 @@ read_gmsh(std::string filename,
 //    Assert(dim==2, dealii::ExcInternalError());
     std::ifstream infile;
 
+    std::cout << "Filename  : " << filename << std::endl;
+
     open_file_toRead(filename, infile);
   
     std::string  line;
@@ -1290,7 +1292,9 @@ read_gmsh(std::string filename,
         unsigned int file_type, data_size;
   
         infile >> version >> file_type >> data_size;
-  
+        
+        std::cout << "Version is: "<< version << std::endl;
+
         Assert((version == 4.1), dealii::ExcNotImplemented());
         gmsh_file_format = static_cast<unsigned int>(version * 10);
   
