@@ -19,7 +19,7 @@ JFNKSolver<dim,real,MeshType>::JFNKSolver(std::shared_ptr< DGBase<dim, real, Mes
     , jacobian_vector_product(dg_input)
     , solver_control(max_GMRES_iter, 
                      epsilon_GMRES,
-                     false,         //log_history 
+                     true,         //log_history 
                      do_output)     //log_result 
     , solver_GMRES(solver_control,
             dealii::SolverGMRES<dealii::LinearAlgebra::distributed::Vector<double>>::AdditionalData(max_num_temp_vectors))
@@ -29,7 +29,7 @@ template <int dim, typename real, typename MeshType>
 void JFNKSolver<dim,real,MeshType>::solve (real dt,
         dealii::LinearAlgebra::distributed::Vector<double> &previous_step_solution)
 { 
-    double update_norm = 1.0;
+    double update_norm = 100000;
     int Newton_iter_counter = 0;
     
     jacobian_vector_product.reinit_for_next_timestep(dt, perturbation_magnitude, previous_step_solution);

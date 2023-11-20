@@ -1327,12 +1327,13 @@ void Euler<dim,nstate,real>
     // NEED TO PROVIDE AS INPUT ************************************** (ask Doug where this should be moved to, protected member?)
     const real total_inlet_pressure = pressure_inf*pow(1.0+0.5*gamm1*mach_inf_sqr, gam/gamm1);
     const real total_inlet_temperature = temperature_inf*pow(total_inlet_pressure/pressure_inf, gamm1/gam);
-
+    
+    //TEMP HARD CODED BOUNDARIES FOR TANDEM SPHERE
     if (boundary_type == 1000) {
         // Manufactured solution boundary condition
         boundary_manufactured_solution (pos, normal_int, soln_int, soln_grad_int, soln_bc, soln_grad_bc);
     } 
-    else if (boundary_type == 1001) {
+    else if (boundary_type == 1001 || boundary_type == 2 || boundary_type == 4) {
         // Wall boundary condition (slip for Euler, no-slip for Navier-Stokes; done through polymorphism)
         boundary_wall (normal_int, soln_int, soln_grad_int, soln_bc, soln_grad_bc);
     } 
@@ -1345,7 +1346,7 @@ void Euler<dim,nstate,real>
         // Inflow boundary condition
         boundary_inflow (total_inlet_pressure, total_inlet_temperature, normal_int, soln_int, soln_bc);
     } 
-    else if (boundary_type == 1004) {
+    else if (boundary_type == 1004 || boundary_type == 3) {
         // Riemann-based farfield boundary condition
         boundary_riemann (normal_int, soln_int, soln_bc);
     } 

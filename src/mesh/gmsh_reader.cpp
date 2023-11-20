@@ -350,6 +350,7 @@ void read_gmsh_entities(std::ifstream &infile, std::array<std::map<int, int>, 4>
 
         // we only care for 'tag' as key for tag_maps[2]
         infile >> entity_tag >> box_min_x >> box_min_y >> box_min_z >> box_max_x >> box_max_y >> box_max_z >> n_physicals;
+        std::cout << "number of tags: " << n_physicals;
         // if there is a physical tag, we will use it as boundary id below
         AssertThrow(n_physicals < 2, dealii::ExcMessage("More than one tag is not supported!"));
         // if there is no physical tag, use 0 as default

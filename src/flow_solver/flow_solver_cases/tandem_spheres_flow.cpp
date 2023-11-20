@@ -27,7 +27,8 @@ std::shared_ptr<Triangulation> TandemSpheresFlow<dim,nstate>::generate_grid() co
                 mesh_filename, 
                 this->all_param.flow_solver_param.mesh_reader_verbose_output,
                 this->all_param.do_renumber_dofs,
-                this->all_param.flow_solver_param.grid_degree);
+                0);
+                //this->all_param.flow_solver_param.grid_degree);
 
             // Assign boundaries
             // In the provided .msh files, the following boundary IDs are assigned
@@ -36,6 +37,7 @@ std::shared_ptr<Triangulation> TandemSpheresFlow<dim,nstate>::generate_grid() co
             // 4 "FrontSphere"
             // Need to assign spheres to 1001, wall
             // and FarField to 1004, farfield
+            /*
             std::cout << "About to change BC settings." << std::endl; 
             std::cout << "active_cell_iterator : " << (tandem_spheres_mesh->triangulation)->begin_active() 
                       << " end : " << (tandem_spheres_mesh->triangulation)->end();
@@ -58,6 +60,7 @@ std::shared_ptr<Triangulation> TandemSpheresFlow<dim,nstate>::generate_grid() co
                     }
                 }
             }
+            */
 
             return tandem_spheres_mesh->triangulation;
         } 

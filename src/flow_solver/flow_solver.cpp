@@ -485,6 +485,7 @@ int FlowSolver<dim,nstate>::run() const
         timer.start();
         while(ode_solver->current_time < final_time)
         {
+            pcout << "Current time: " << ode_solver->current_time << std::endl;
             time_step = next_time_step; // update time step
 
             // check if we need to decrease the time step
