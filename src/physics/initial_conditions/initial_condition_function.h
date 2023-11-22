@@ -333,6 +333,34 @@ protected:
 
 };
 
+/// Initial Condition Function: Cylinder flow
+template <int dim, int nstate, typename real>
+class InitialConditionFunction_CylinderFlow
+        : public InitialConditionFunction<dim,nstate,real>
+{
+protected:
+    using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
+    
+    // Euler physics pointer. Used to convert primitive to conservative.
+    std::shared_ptr < Physics::Euler<dim, nstate, double > > euler_physics;
+    
+    const real pi = atan(1.0)*4.0;
+
+public:
+    /// Constructor for InitialConditionFunction_CylinderFlow
+    InitialConditionFunction_CylinderFlow (
+            Parameters::AllParameters const *const param);
+
+    /// Value of initial condition
+    real value (const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
+    
+    /// Convert point in cartesian (x,y,z) to polar/cylindrical (r, theta, z)
+    dealii::Point<dim,real> cartesian_to_polar ( const dealii::Point<dim,real> &point) const;
+
+    ///Function S from HiOCFD4 AS1 test case
+    real smooth_ramp( const real r, const real r_m, const real r_a) const;
+};
+
 /// Initial condition 0.
 template <int dim, int nstate, typename real>
 class InitialConditionFunction_Zero : public InitialConditionFunction<dim,nstate,real>

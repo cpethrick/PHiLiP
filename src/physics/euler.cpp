@@ -1333,11 +1333,11 @@ void Euler<dim,nstate,real>
         // Manufactured solution boundary condition
         boundary_manufactured_solution (pos, normal_int, soln_int, soln_grad_int, soln_bc, soln_grad_bc);
     } 
-    else if (boundary_type == 1001 || boundary_type == 2 || boundary_type == 4) {
+    else if (boundary_type == 1001 || boundary_type == 2) { // || boundary_type == 4) {
         // Wall boundary condition (slip for Euler, no-slip for Navier-Stokes; done through polymorphism)
         boundary_wall (normal_int, soln_int, soln_grad_int, soln_bc, soln_grad_bc);
     } 
-    else if (boundary_type == 1002) {
+    else if (boundary_type == 1002 || boundary_type == 4) {
         // Pressure outflow boundary condition (back pressure)
         const real back_pressure = 0.99;
         boundary_pressure_outflow (total_inlet_pressure, back_pressure, soln_int, soln_bc);
@@ -1346,11 +1346,11 @@ void Euler<dim,nstate,real>
         // Inflow boundary condition
         boundary_inflow (total_inlet_pressure, total_inlet_temperature, normal_int, soln_int, soln_bc);
     } 
-    else if (boundary_type == 1004 || boundary_type == 3) {
+    else if (boundary_type == 1004) { // || boundary_type == 3) {
         // Riemann-based farfield boundary condition
         boundary_riemann (normal_int, soln_int, soln_bc);
     } 
-    else if (boundary_type == 1005) {
+    else if (boundary_type == 1005 || boundary_type == 3) {
         // Simple farfield boundary condition
         boundary_farfield(soln_bc);
     } 

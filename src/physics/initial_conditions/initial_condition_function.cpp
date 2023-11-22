@@ -451,6 +451,100 @@ inline real InitialConditionFunction_KHI<dim,nstate,real>
 }
 
 // ========================================================
+// 1D SINE -- Initial Condition for advection_explicit_time_study
+// ========================================================
+template <int dim, int nstate, typename real>
+InitialConditionFunction_CylinderFlow<dim,nstate,real>
+::InitialConditionFunction_CylinderFlow(
+        Parameters::AllParameters const *const param)
+        : InitialConditionFunction<dim,nstate,real>()
+{
+    // Euler object; create using dynamic_pointer_cast and the create_Physics factory
+    // This test should only be used for Euler
+    this->euler_physics = std::dynamic_pointer_cast<Physics::Euler<dim,dim+2,double>>(
+                Physics::PhysicsFactory<dim,dim+2,double>::create_Physics(param));
+}
+
+template <int dim, int nstate, typename real>
+inline real InitialConditionFunction_CylinderFlow<dim,nstate,real>
+::smooth_ramp( const real r, const real r_m, const real r_a)const
+{
+    if (r < (r_m - r_a))
+        return 0;
+    else if ( r < (r_m + r_a)) 
+        return 0.5 * (1 + tanh((2 * r_a * (r - r_m) )/(r_a*r_a - (r-r_m)*(r-r_m))));
+    else
+        return 1;
+}
+
+
+template <int dim, int nstate, typename real>
+inline dealii::Point<dim,real> InitialConditionFunction_CylinderFlow<dim,nstate,real>
+::cartesian_to_polar( const dealii::Point<dim,real> &point_cartesian) const 
+{
+    dealii::Point<dim,real> point_polar = point_cartesian;
+
+    point_polar[0] = pow(point_cartesian[0]*point_cartesian[0] + point_cartesian[1]*point_cartesian[1], 0.5);
+    point_polar[1] = atan2(point_cartesian[1],point_cartesian[0]); // returns domain (-pi, pi)
+    if (point_polar[1] <= 0)     point_polar[1] += 2 * pi; //want domain in (0, 2pi)
+    
+    return point_polar;
+}
+
+template <int dim, int nstate, typename real>
+inline real InitialConditionFunction_CylinderFlow<dim,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    const real p = this->euler_physics->pressure_inf;
+    const real T = this->euler_physics->temperature_inf;
+    const real rho = this->euler_physics->compute_density_from_pressure_temperature(p, T);
+
+    const dealii::Point<dim,real> point_polar = cartesian_to_polar(point);
+    const real r = point_polar[0];
+    const real theta = point_polar[1];
+    const real z = point_polar[2];
+    const real L = 2; // two diameters
+    const real u_inf = this->euler_physics->velocities_inf[0];
+    
+    real v = 0;
+    real w = 0;
+    real u = u_inf;
+    const real epsilon = 0.1;
+    if (r > 0.5 && r  < 1.5) {
+        u *= smooth_ramp(r, 1, 0.5);
+        if (0.5 < r && r <= 1.0){
+            w = epsilon * u_inf * smooth_ramp(r, 0.75, 0.25) * pow(sin(pi * z / L ),2);
+        } else {
+            w = epsilon * u_inf * (1 - smooth_ramp(r, 1.25, 0.25)) * pow(sin(pi * z / L ),2);
+        }
+        if (theta >= 0 && theta < pi){
+            if (0.5 < r && r <= 1.0){
+                v = epsilon * u_inf * smooth_ramp(r, 0.75, 0.25) * smooth_ramp(theta, pi/2, pi/2);
+            } else {
+                v = epsilon * u_inf *(1- smooth_ramp(r, 1.25, 0.25)) * smooth_ramp(theta, pi/2, pi/2);
+            }
+        } else {
+            if (0.5 < r && r <= 1.0){
+                v = epsilon * u_inf * smooth_ramp(r, 0.75, 0.25) *(1- smooth_ramp(theta, 3.0*pi/2, pi/2));
+            } else {
+                v = epsilon * u_inf * (1-smooth_ramp(r, 1.25, 0.25)) *(1- smooth_ramp(theta, 3.0*pi/2, pi/2));
+            }
+        }
+    } else if (r <= 0.5)    u = 0;
+
+    std::array<real,nstate> soln_primitive;
+    soln_primitive[0] = rho;
+    soln_primitive[1] = u;
+    soln_primitive[2] = v;
+    soln_primitive[3] = w;
+    soln_primitive[4] = p;
+
+    const std::array<real,nstate> soln_conservative = this->euler_physics->convert_primitive_to_conservative(soln_primitive);
+    return soln_conservative[istate];
+}
+
+
+// ========================================================
 // ZERO INITIAL CONDITION
 // ========================================================
 template <int dim, int nstate, typename real>
@@ -496,7 +590,7 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
         if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_BurgersRewienski<dim,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::burgers_viscous_snapshot) {
         if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_BurgersViscous<dim,nstate,real> > ();
-    } else if (flow_type == FlowCaseEnum::naca0012 || flow_type == FlowCaseEnum::gaussian_bump || flow_type == FlowCaseEnum::tandem_spheres_flow) {
+    } else if (flow_type == FlowCaseEnum::naca0012 || flow_type == FlowCaseEnum::gaussian_bump) { // || flow_type == FlowCaseEnum::tandem_spheres_flow) {
         if constexpr ((dim==2 || dim==3) && nstate==dim+2) {
             Physics::Euler<dim,nstate,double> euler_physics_double = Physics::Euler<dim, nstate, double>(
                     param,
@@ -527,6 +621,8 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
         if constexpr (dim>1 && nstate==dim+2) return std::make_shared<InitialConditionFunction_KHI<dim,nstate,real> > (param);
     } else if (flow_type == FlowCaseEnum::non_periodic_cube_flow) {
         if constexpr (dim==2 && nstate==1)  return std::make_shared<InitialConditionFunction_Zero<dim,nstate,real> > ();
+    } else if (flow_type == FlowCaseEnum::tandem_spheres_flow) {
+        if constexpr (dim == 3 && nstate == dim+2) return std::make_shared<InitialConditionFunction_CylinderFlow<dim,nstate,real>> (param);
     } else {
         std::cout << "Invalid Flow Case Type. You probably forgot to add it to the list of flow cases in initial_condition_function.cpp" << std::endl;
         std::abort();
@@ -554,6 +650,7 @@ template class InitialConditionFunction_BurgersInviscidEnergy <PHILIP_DIM, 1, do
 #endif
 #if PHILIP_DIM==3
 template class InitialConditionFunction_TaylorGreenVortex <PHILIP_DIM, PHILIP_DIM+2, double>;
+template class InitialConditionFunction_CylinderFlow <PHILIP_DIM, PHILIP_DIM+2, double>;
 template class InitialConditionFunction_TaylorGreenVortex_Isothermal <PHILIP_DIM, PHILIP_DIM+2, double>;
 #endif
 #if PHILIP_DIM>1

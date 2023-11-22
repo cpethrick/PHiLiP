@@ -25,9 +25,17 @@ std::shared_ptr<Triangulation> TandemSpheresFlow<dim,nstate>::generate_grid() co
             
             std::shared_ptr <HighOrderGrid<dim, double>> tandem_spheres_mesh = read_gmsh<dim, dim>(
                 mesh_filename, 
+                this->all_param.flow_solver_param.use_periodic_BC_in_x, 
+                this->all_param.flow_solver_param.use_periodic_BC_in_y, 
+                this->all_param.flow_solver_param.use_periodic_BC_in_z, 
+                this->all_param.flow_solver_param.x_periodic_id_face_1, 
+                this->all_param.flow_solver_param.x_periodic_id_face_2, 
+                this->all_param.flow_solver_param.y_periodic_id_face_1, 
+                this->all_param.flow_solver_param.y_periodic_id_face_2, 
+                this->all_param.flow_solver_param.z_periodic_id_face_1, 
+                this->all_param.flow_solver_param.z_periodic_id_face_2,
                 this->all_param.flow_solver_param.mesh_reader_verbose_output,
-                this->all_param.do_renumber_dofs,
-                0);
+                this->all_param.do_renumber_dofs);
                 //this->all_param.flow_solver_param.grid_degree);
 
             // Assign boundaries

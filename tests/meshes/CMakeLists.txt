@@ -11,6 +11,11 @@ configure_file(SD7003_1_cell_spanwise.msh SD7003_1_cell_spanwise.msh COPYONLY)
 configure_file(SD7003_4_cell_spanwise.msh SD7003_4_cell_spanwise.msh COPYONLY)
 configure_file(SD7003_12_cell_spanwise.msh SD7003_12_cell_spanwise.msh COPYONLY)
 configure_file(TandemSpheresHexMesh0.msh TandemSpheresHexMesh0.msh COPYONLY)
+configure_file(TandemSpheresHexMesh1.msh TandemSpheresHexMesh1.msh COPYONLY)
+configure_file(mesh_1.linear.msh mesh_1.linear.msh COPYONLY)
+configure_file(mesh_2.linear.msh mesh_2.linear.msh COPYONLY)
+configure_file(cylinder_coarse.msh cylinder_coarse.msh COPYONLY)
+
 
 set (filename "naca0012_hopw_ref0.msh")
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${filename})
