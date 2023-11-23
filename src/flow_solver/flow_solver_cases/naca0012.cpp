@@ -61,7 +61,25 @@ std::shared_ptr<Triangulation> NACA0012<dim,nstate>::generate_grid() const
         );
         dealii::GridGenerator::Airfoil::AdditionalData airfoil_data;
         dealii::GridGenerator::Airfoil::create_triangulation(*grid, airfoil_data);
-        grid->refine_global();
+    for (typename dealii::parallel::distributed::Triangulation<2>::active_cell_iterator cell = grid->begin_active(); cell != grid->end(); ++cell)
+    {
+        if(! cell->is_locally_owned()) {continue;}
+        for (unsigned int face=0; face<dealii::GeometryInfo<2>::faces_per_cell; ++face)
+        {
+            if (cell->face(face)->at_boundary())
+            {
+                unsigned int current_id = cell->face(face)->boundary_id();
+                if (current_id == 0 || current_id == 1 || current_id == 4 || current_id == 5)
+                {
+                    cell->face(face)->set_boundary_id (1004); // farfield
+                }
+                else
+                {
+                    cell->face(face)->set_boundary_id (1001); // wall bc
+                }
+            }
+        }
+    }
         return grid;
     } 
     else if constexpr(dim==3) {
@@ -75,8 +93,9 @@ std::shared_ptr<Triangulation> NACA0012<dim,nstate>::generate_grid() const
 }
 
 template <int dim, int nstate>
-void NACA0012<dim,nstate>::set_higher_order_grid(std::shared_ptr<DGBase<dim, double>> dg) const
+void NACA0012<dim,nstate>::set_higher_order_grid(std::shared_ptr<DGBase<dim, double>> /*dg*/) const
 {
+    /*
     const std::string mesh_filename = this->all_param.flow_solver_param.input_mesh_filename+std::string(".msh");
     const bool use_mesh_smoothing = false;
     std::shared_ptr<HighOrderGrid<dim,double>> naca0012_mesh = read_gmsh<dim, dim> (mesh_filename, this->all_param.do_renumber_dofs, 0, use_mesh_smoothing);
@@ -84,6 +103,7 @@ void NACA0012<dim,nstate>::set_higher_order_grid(std::shared_ptr<DGBase<dim, dou
     for (int i=0; i<this->all_param.flow_solver_param.number_of_mesh_refinements; ++i) {
         dg->high_order_grid->refine_global();
     }
+    */
 }
 
 template <int dim, int nstate>

@@ -9,26 +9,29 @@ namespace Grids {
 
 void naca_airfoil(
     dealii::parallel::distributed::Triangulation<2> &grid,
-    dealii::GridGenerator::Airfoil::AdditionalData airfoil_data)
+    dealii::GridGenerator::Airfoil::AdditionalData /*airfoil_data*/)
 {
-    // dealii::GridGenerator::Airfoil::AdditionalData airfoil_data;
-    // airfoil_data.airfoil_type = "NACA";
-    // airfoil_data.naca_id      = naca_id;
-    // airfoil_data.airfoil_length = 1.0;
-    // airfoil_data.height         = farfield_length;
-    // airfoil_data.length_b2      = farfield_length;
-    // airfoil_data.incline_factor = 0.0;
-    // airfoil_data.bias_factor    = 4.5; // default good enough?
-    // airfoil_data.refinements    = 0;
+    std::string naca_id = "0012";
+    double farfield_length = 20;
+    int n_subdivisions = 20;
+    dealii::GridGenerator::Airfoil::AdditionalData airfoil_data;
+    airfoil_data.airfoil_type = "NACA";
+    airfoil_data.naca_id      = naca_id;
+    airfoil_data.airfoil_length = 1.0;
+    airfoil_data.height         = farfield_length;
+    airfoil_data.length_b2      = farfield_length;
+    airfoil_data.incline_factor = 0.0;
+    airfoil_data.bias_factor    = 4.5; // default good enough?
+    airfoil_data.refinements    = 0;
 
 
-    // const int n_cells_airfoil = n_subdivisions[0] * 2 / 3;
-    // const int n_cells_downstream = n_subdivisions[0] - n_cells_airfoil;
-    // airfoil_data.n_subdivision_x_0 = n_cells_airfoil / 2;
-    // airfoil_data.n_subdivision_x_1 = n_cells_airfoil - airfoil_data.n_subdivision_x_0;
-    // airfoil_data.n_subdivision_x_2 = n_cells_downstream;
-    // airfoil_data.n_subdivision_y = n_subdivisions[1];
-    // airfoil_data.airfoil_sampling_factor = 3; // default 2
+    const int n_cells_airfoil = n_subdivisions * 2 / 3;
+    const int n_cells_downstream = n_subdivisions - n_cells_airfoil;
+    airfoil_data.n_subdivision_x_0 = n_cells_airfoil / 2;
+    airfoil_data.n_subdivision_x_1 = n_cells_airfoil - airfoil_data.n_subdivision_x_0;
+    airfoil_data.n_subdivision_x_2 = n_cells_downstream;
+    airfoil_data.n_subdivision_y = 100;
+    airfoil_data.airfoil_sampling_factor = 3; // default 2
     dealii::GridGenerator::Airfoil::create_triangulation(grid, airfoil_data);
 
     // Assign a manifold to have curved geometry
