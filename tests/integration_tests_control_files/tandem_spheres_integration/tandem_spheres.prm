@@ -19,13 +19,13 @@ set use_inverse_mass_on_the_fly = true
 subsection ODE solver
   set ode_output = quiet
   set ode_solver_type = runge_kutta
-  set runge_kutta_method = euler_im
+  set runge_kutta_method = dirk_2_im
   set output_solution_every_x_steps = 1
 end
 
 # freestream Mach number
 subsection euler
-  set mach_infinity = 0.1
+  set mach_infinity = 0.3
 end
 
 # freestream Reynolds number and Prandtl number
@@ -37,23 +37,29 @@ end
 subsection linear solver
   set linear_solver_output = verbose
   subsection gmres options
-    set linear_residual_tolerance = 1000.0
+    set linear_residual_tolerance = 10.0
   end
   subsection JFNK options
-    set newton_residual = 10.0
+    set newton_residual = 1.0
   end
 end
 
 subsection flow_solver
   set flow_case_type = tandem_spheres_flow
-  set poly_degree = 1
+  set poly_degree = 3
   set final_time = 10
-  set constant_time_step = 0.001
+  set constant_time_step = 0.0001
   #set courant_friedrichs_lewy_number = 0.003
   #set unsteady_data_table_filename = tgv_kinetic_energy_vs_time_table_for_energy_check
   subsection grid
-    set input_mesh_filename = ../../meshes/TandemSpheresHexMesh0
+    set input_mesh_filename = ../../meshes/cylinder_coarse
+    set grid_degree = 3
     #set input_mesh_filename = ../../meshes/3d_cube_periodic
     set use_gmsh_mesh = true
+    subsection gmsh_boundary_IDs
+      set use_periodic_BC_in_z = true
+      set z_periodic_id_face_1 = 5
+      set z_periodic_id_face_2 = 6
+    end
   end
 end

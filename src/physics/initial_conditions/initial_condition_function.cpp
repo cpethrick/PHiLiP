@@ -484,8 +484,12 @@ inline dealii::Point<dim,real> InitialConditionFunction_CylinderFlow<dim,nstate,
 {
     dealii::Point<dim,real> point_polar = point_cartesian;
 
-    point_polar[0] = pow(point_cartesian[0]*point_cartesian[0] + point_cartesian[1]*point_cartesian[1], 0.5);
-    point_polar[1] = atan2(point_cartesian[1],point_cartesian[0]); // returns domain (-pi, pi)
+    //translate point to origin
+    double x = point_cartesian[0]; // - 0.2;
+    double y = point_cartesian[1]; // - 0.2;
+
+    point_polar[0] = pow(x*x + y*y, 0.5);
+    point_polar[1] = atan2(y,x); // returns domain (-pi, pi)
     if (point_polar[1] <= 0)     point_polar[1] += 2 * pi; //want domain in (0, 2pi)
     
     return point_polar;
@@ -509,10 +513,12 @@ inline real InitialConditionFunction_CylinderFlow<dim,nstate,real>
     real v = 0;
     real w = 0;
     real u = u_inf;
+    //u *= smooth_ramp(r, 0.5, 0.2);
+
     const real epsilon = 0.1;
     if (r > 0.5 && r  < 1.5) {
         u *= smooth_ramp(r, 1, 0.5);
-        if (0.5 < r && r <= 1.0){
+        if (0.1 < r && r <= 1.0){
             w = epsilon * u_inf * smooth_ramp(r, 0.75, 0.25) * pow(sin(pi * z / L ),2);
         } else {
             w = epsilon * u_inf * (1 - smooth_ramp(r, 1.25, 0.25)) * pow(sin(pi * z / L ),2);
@@ -590,7 +596,7 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
         if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_BurgersRewienski<dim,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::burgers_viscous_snapshot) {
         if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_BurgersViscous<dim,nstate,real> > ();
-    } else if (flow_type == FlowCaseEnum::naca0012 || flow_type == FlowCaseEnum::gaussian_bump) { // || flow_type == FlowCaseEnum::tandem_spheres_flow) {
+    } else if (flow_type == FlowCaseEnum::naca0012 || flow_type == FlowCaseEnum::gaussian_bump || (flow_type == FlowCaseEnum::tandem_spheres_flow && param->flow_solver_param.use_gmsh_mesh == false)) {
         if constexpr ((dim==2 || dim==3) && nstate==dim+2) {
             Physics::Euler<dim,nstate,double> euler_physics_double = Physics::Euler<dim, nstate, double>(
                     param,

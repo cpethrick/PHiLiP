@@ -15,14 +15,18 @@ RungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::RungeKuttaODESolver(std::sh
 template <int dim, typename real, int n_rk_stages, typename MeshType> 
 void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, const bool pseudotime)
 {  
+    this->pcout << " in step in time" << std::endl;
     this->original_time_step = dt;
     this->solution_update = this->dg->solution; //storing u_n
+    this->pcout << "Assigned solution" << std::endl;
 
     //calculating stages **Note that rk_stage[i] stores the RHS at a partial time-step (not solution u)
     for (int i = 0; i < n_rk_stages; ++i){
+        this->pcout << "CHPT1" << std::endl;
 
         this->rk_stage[i]=0.0; //resets all entries to zero
         
+        this->pcout << "CHPT2" << std::endl;
         for (int j = 0; j < i; ++j){
             if (this->butcher_tableau->get_a(i,j) != 0){
                 this->rk_stage[i].add(this->butcher_tableau->get_a(i,j), this->rk_stage[j]);
@@ -66,13 +70,17 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, 
 
         } // u_n + dt * sum(a_ij * k_j) <explicit> + dt * a_ii * u^(i) <implicit>
             
+        this->pcout << "CHPT3" << std::endl;
         this->dg->solution = this->rk_stage[i];
+        this->pcout << "CHPT4" << std::endl;
 
         //set the DG current time for unsteady source terms
         this->dg->set_current_time(this->current_time + this->butcher_tableau->get_c(i)*dt);
         
-        //solve the system's right hande side
+        this->pcout << "Assembling residual.." << std::endl;
+        //solve the system's right hande side 
         this->dg->assemble_residual(); //RHS : du/dt = RHS = F(u_n + dt* sum(a_ij*k_j) + dt * a_ii * u^(i)))
+        this->pcout << "Done." << std::endl;
 
         if(this->all_parameters->use_inverse_mass_on_the_fly){
             this->dg->apply_inverse_global_mass_matrix(this->dg->right_hand_side, this->rk_stage[i]); //rk_stage[i] = IMM*RHS = F(u_n + dt*sum(a_ij*k_j))

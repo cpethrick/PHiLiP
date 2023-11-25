@@ -1097,7 +1097,7 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
             , dealii::ExcMessage("Can only do one at a time compute_dRdW or compute_dRdX or compute_d2R"));
 
     max_artificial_dissipation_coeff = 0.0;
-    //pcout << "Assembling DG residual...";
+    pcout << "Assembling DG residual...";
     if (compute_dRdW) {
         pcout << " with dRdW...";
 
@@ -1203,6 +1203,7 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
     //const dealii::MappingQ<dim,dim> mapping(high_order_grid->max_degree);
     //const dealii::MappingQGeneric<dim,dim> mapping(high_order_grid->max_degree);
     const auto mapping = (*(high_order_grid->mapping_fe_field));
+    pcout << "CHKPT 1" << std::endl;
 
     dealii::hp::MappingCollection<dim> mapping_collection(mapping);
 
@@ -1233,10 +1234,12 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
 
     solution.update_ghost_values();
 
+    pcout << "CHKPT 2" << std::endl;
 
     int assembly_error = 0;
     try {
 
+    pcout << "CHKPT 3" << std::endl;
         // update artificial dissipation discontinuity sensor only if using artificial dissipation
         if(all_parameters->artificial_dissipation_param.add_artificial_dissipation) update_artificial_dissipation_discontinuity_sensor();
         
@@ -1245,6 +1248,7 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
 
         // assembles and solves for auxiliary variable if necessary.
         assemble_auxiliary_residual();
+    pcout << "CHKPT 4" << std::endl;
 
         dealii::Timer timer;
         if(all_parameters->store_residual_cpu_time){
@@ -1254,7 +1258,7 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
         auto metric_cell = high_order_grid->dof_handler_grid.begin_active();
         for (auto soln_cell = dof_handler.begin_active(); soln_cell != dof_handler.end(); ++soln_cell, ++metric_cell) {
             if (!soln_cell->is_locally_owned()) continue;
-
+                // FAILING IN THIS LOOP.
             // Add right-hand side contributions this cell can compute
             assemble_cell_residual (
                 soln_cell,
@@ -1277,6 +1281,7 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
                 right_hand_side,
                 auxiliary_right_hand_side);
         } // end of cell loop
+    pcout << "CHKPT 5" << std::endl;
 
         if(all_parameters->store_residual_cpu_time){
             timer.stop();

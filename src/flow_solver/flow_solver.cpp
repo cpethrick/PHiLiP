@@ -91,6 +91,10 @@ FlowSolver<dim, nstate>::FlowSolver(
         SetInitialCondition<dim,nstate,double>::set_initial_condition(flow_solver_case->initial_condition_function, dg, &all_param);
     }
     dg->solution.update_ghost_values();
+
+    pcout << "About to assemble residual..." << std::endl;
+    dg->assemble_residual();
+    pcout << "Done." << std::endl;
     
     // Allocate ODE solver after initializing DG
     ode_solver->allocate_ode_system();
