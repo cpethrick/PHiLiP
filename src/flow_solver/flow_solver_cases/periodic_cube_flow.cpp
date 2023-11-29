@@ -63,7 +63,7 @@ std::shared_ptr<Triangulation> PeriodicCubeFlow<dim,nstate>::generate_grid() con
         
         if (grid_type == GridEnum::straight) {
             this->pcout << "- Generating straight periodic grid using dealii GridGenerator" << std::endl;
-            Grids::biased_periodic_cube<dim, Triangulation>(grid, domain_left, domain_right,
+            Grids::straight_periodic_cube<dim, Triangulation>(grid, domain_left, domain_right,
                                                             number_of_cells_per_direction);
         } else if (grid_type == GridEnum::biased) {
             this->pcout << "- Generating biased periodic grid using dealii GridGenerator" << std::endl;
