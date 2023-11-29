@@ -117,6 +117,14 @@ public:
     bool do_calculate_numerical_entropy;
     /// For TGV, flag to calculate and write overintegrated quantities (KE, enstrophy, etc)
     bool do_calculate_overintegrated_quantities;
+    /// For periodic turbulence tests, flag for grid type
+    enum PeriodicCubeGridType{
+        straight,
+        biased
+        };
+    /// For periodic turbulence tests, flag for grid type
+    PeriodicCubeGridType periodic_cube_grid_type;
+
 
     /// For KHI, the atwood number
     double atwood_number;

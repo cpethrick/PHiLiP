@@ -51,7 +51,9 @@ std::shared_ptr<Triangulation> PeriodicCubeFlow<dim,nstate>::generate_grid() con
             std::abort();
         }
     } else {
-        this->pcout << "- Generating grid using dealii GridGenerator" << std::endl;
+        using GridEnum = Parameters::FlowSolverParam::PeriodicCubeGridType;
+        GridEnum grid_type = this->all_param.flow_solver_param.periodic_cube_grid_type;
+
         
         std::shared_ptr<Triangulation> grid = std::make_shared<Triangulation> (
 #if PHILIP_DIM!=1
@@ -59,14 +61,17 @@ std::shared_ptr<Triangulation> PeriodicCubeFlow<dim,nstate>::generate_grid() con
 #endif
         );
         
-        Grids::biased_periodic_cube<dim, Triangulation>(grid, domain_left, domain_right,
-                                                          number_of_cells_per_direction);
-        MPI_Barrier(MPI_COMM_WORLD);
-        const int mpi_rank = dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
-        if(mpi_rank==0) {
-            dealii::GridOut output_grid;
-            std::ofstream output_file("biased_periodic_cube.vtk");
-            output_grid.write_vtk(*grid, output_file);
+        if (grid_type == GridEnum::straight) {
+            this->pcout << "- Generating straight periodic grid using dealii GridGenerator" << std::endl;
+            Grids::biased_periodic_cube<dim, Triangulation>(grid, domain_left, domain_right,
+                                                            number_of_cells_per_direction);
+        } else if (grid_type == GridEnum::biased) {
+            this->pcout << "- Generating biased periodic grid using dealii GridGenerator" << std::endl;
+            Grids::biased_periodic_cube<dim, Triangulation>(grid, domain_left, domain_right,
+                                                            number_of_cells_per_direction);
+        } else {
+            this->pcout << "Grid type not recognized. Aborting..." << std::endl;
+            std::abort();
         }
 
         return grid;

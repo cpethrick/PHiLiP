@@ -242,6 +242,15 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                               dealii::Patterns::Bool(),
                               "Flag to calculate overintegrated quantities (kinetic energy, enstrophy, etc) "
                               "and write to file. By default, do calculate.");
+            
+            prm.declare_entry("periodic_cube_grid_type", "straight",
+                              dealii::Patterns::Selection(
+                              " straight | "
+                              " biased "),
+                              "The type of periodic cube grid to use. "
+                              "Choices are "
+                              " <straight | "
+                              " biased >.");
         }
         prm.leave_subsection();
 
@@ -392,6 +401,9 @@ void FlowSolverParam::parse_parameters(dealii::ParameterHandler &prm)
             else if (density_initial_condition_type_string == "isothermal") {density_initial_condition_type = isothermal;}
             do_calculate_numerical_entropy = prm.get_bool("do_calculate_numerical_entropy");
             do_calculate_overintegrated_quantities = prm.get_bool("do_calculate_overintegrated_quantities");
+            const std::string periodic_cube_grid_type_string  = prm.get("periodic_cube_grid_type");
+            if      (periodic_cube_grid_type_string == "straight")          { periodic_cube_grid_type = straight;}
+            else if (periodic_cube_grid_type_string == "biased")        { periodic_cube_grid_type = biased;}
         }
         prm.leave_subsection();
 
