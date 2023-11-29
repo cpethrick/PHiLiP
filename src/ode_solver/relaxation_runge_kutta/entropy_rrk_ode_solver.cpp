@@ -209,7 +209,7 @@ real EntropyRRKODESolver<dim,real,n_rk_stages,MeshType>::compute_integrated_nume
     
     const int nstate = dim+2;
     double integrated_quantity = 0.0;
-
+    
     const double poly_degree = this->dg->all_parameters->flow_solver_param.poly_degree;
 
     const unsigned int n_dofs_cell = this->dg->fe_collection[poly_degree].dofs_per_cell;
@@ -243,39 +243,6 @@ real EntropyRRKODESolver<dim,real,n_rk_stages,MeshType>::compute_integrated_nume
 
     auto metric_cell = this->dg->high_order_grid->dof_handler_grid.begin_active();
     
-/*
-    const int overintegrate = 0;
-    const int nstate = dim+2;
-
-    double integrated_quantity = 0.0;
-
-    // Set the quadrature of size dim and 1D for sum-factorization.
-    dealii::QGauss<dim> quad_extra(this->dg->max_degree+1+overintegrate);
-    dealii::QGauss<1> quad_extra_1D(this->dg->max_degree+1+overintegrate);
-
-    const unsigned int n_quad_pts = quad_extra.size();
-    const unsigned int grid_degree = this->dg->high_order_grid->fe_system.tensor_degree();
-    const unsigned int poly_degree = this->dg->max_degree;
-    // Construct the basis functions and mapping shape functions.
-    OPERATOR::basis_functions<dim,2*dim> soln_basis(1, poly_degree, grid_degree); 
-    OPERATOR::mapping_shape_functions<dim,2*dim> mapping_basis(1, poly_degree, grid_degree);
-    // Build basis function volume operator and gradient operator from 1D finite element for 1 state.
-    soln_basis.build_1D_volume_operator(this->dg->oneD_fe_collection_1state[poly_degree], quad_extra_1D);
-    soln_basis.build_1D_gradient_operator(this->dg->oneD_fe_collection_1state[poly_degree], quad_extra_1D);
-    // Build mapping shape functions operators using the oneD high_ordeR_grid finite element
-    mapping_basis.build_1D_shape_functions_at_grid_nodes(this->dg->high_order_grid->oneD_fe_system, this->dg->high_order_grid->oneD_grid_nodes);
-    mapping_basis.build_1D_shape_functions_at_flux_nodes(this->dg->high_order_grid->oneD_fe_system, quad_extra_1D, this->dg->oneD_face_quadrature);
-    const std::vector<double> &quad_weights = quad_extra.get_weights();
-    // If in the future we need the physical quadrature node location, turn these flags to true and the constructor will
-    // automatically compute it for you. Currently set to false as to not compute extra unused terms.
-    const bool store_vol_flux_nodes = false;//currently doesn't need the volume physical nodal position
-    const bool store_surf_flux_nodes = false;//currently doesn't need the surface physical nodal position
-
-    const unsigned int n_dofs = this->dg->fe_collection[poly_degree].n_dofs_per_cell();
-    const unsigned int n_shape_fns = n_dofs / nstate;
-    std::vector<dealii::types::global_dof_index> dofs_indices (n_dofs);
-    auto metric_cell = this->dg->high_order_grid->dof_handler_grid.begin_active();
-*/
     // Changed for loop to update metric_cell.
     for (auto cell = this->dg->dof_handler.begin_active(); cell!= this->dg->dof_handler.end(); ++cell, ++metric_cell) {
         if (!cell->is_locally_owned()) continue;
@@ -324,42 +291,17 @@ real EntropyRRKODESolver<dim,real,n_rk_stages,MeshType>::compute_integrated_nume
             if(ishape == 0){
                 soln_coeff[istate].resize(n_shape_fns);
             }
-         
             soln_coeff[istate][ishape] = u(dofs_indices[idof]);
         }
         // Interpolate each state to the quadrature points using sum-factorization
         // with the basis functions in each reference direction.
         std::array<std::vector<double>,nstate> soln_at_q_vect;
-        std::array<dealii::Tensor<1,dim,std::vector<double>>,nstate> soln_grad_at_q_vect;
         for(int istate=0; istate<nstate; istate++){
             soln_at_q_vect[istate].resize(n_quad_pts);
             // Interpolate soln coeff to volume cubature nodes.
             soln_basis.matrix_vector_mult_1D(soln_coeff[istate], soln_at_q_vect[istate],
                                              soln_basis.oneD_vol_operator);
-            // We need to first compute the reference gradient of the solution, then transform that to a physical gradient.
-            dealii::Tensor<1,dim,std::vector<double>> ref_gradient_basis_fns_times_soln;
-            for(int idim=0; idim<dim; idim++){
-                ref_gradient_basis_fns_times_soln[idim].resize(n_quad_pts);
-                soln_grad_at_q_vect[istate][idim].resize(n_quad_pts);
-            }
-            // Apply gradient of reference basis functions on the solution at volume cubature nodes.
-            soln_basis.gradient_matrix_vector_mult_1D(soln_coeff[istate], ref_gradient_basis_fns_times_soln,
-                                                      soln_basis.oneD_vol_operator,
-                                                      soln_basis.oneD_grad_operator);
-            // Transform the reference gradient into a physical gradient operator.
-            for(int idim=0; idim<dim; idim++){
-                for(unsigned int iquad=0; iquad<n_quad_pts; iquad++){
-                    for(int jdim=0; jdim<dim; jdim++){
-                        //transform into the physical gradient
-                        soln_grad_at_q_vect[istate][idim][iquad] += metric_oper.metric_cofactor_vol[idim][jdim][iquad]
-                                                                  * ref_gradient_basis_fns_times_soln[jdim][iquad]
-                                                                  / metric_oper.det_Jac_vol[iquad];
-                    }
-                }
-            }
         }
-
-        // Loop over quadrature nodes, compute quantities to be integrated, and integrate them.
         for (unsigned int iquad=0; iquad<n_quad_pts; ++iquad) {
 
             std::array<double,nstate> soln_at_q;
@@ -367,23 +309,17 @@ real EntropyRRKODESolver<dim,real,n_rk_stages,MeshType>::compute_integrated_nume
             // Extract solution and gradient in a way that the physics ca n use them.
             for(int istate=0; istate<nstate; istate++){
                 soln_at_q[istate] = soln_at_q_vect[istate][iquad];
-                for(int idim=0; idim<dim; idim++){
-                    soln_grad_at_q[istate][idim] = soln_grad_at_q_vect[istate][idim][iquad];
-                }
             }
             
             //#####################################################################
             // Compute integrated quantities here
             //#####################################################################
             const double quadrature_entropy = this->euler_physics->compute_numerical_entropy_function(soln_at_q);
-            //Using std::cout because of cell->is_locally_owned check 
-            if (isnan(quadrature_entropy))  std::cout << "WARNING: NaN entropy detected at a node!"  << std::endl;
             integrated_quantity += quadrature_entropy * quad_weights[iquad] * metric_oper.det_Jac_vol[iquad];
             //#####################################################################
         }
     }
-
-    //MPI
+    
     integrated_quantity = dealii::Utilities::MPI::sum(integrated_quantity, this->mpi_communicator);
 
     return integrated_quantity;
