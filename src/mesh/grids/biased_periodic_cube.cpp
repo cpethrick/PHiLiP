@@ -128,7 +128,7 @@ dealii::Point<spacedim,real> BiasedManifold<dim,spacedim,chartdim>::mapping(cons
     //}
 */
     // Bias coordinates in the x direction to be more dense close to the middle
-    const double pt_new = pi/101;
+    const double pt_new = pi/50;
     const double pt_old = pi/2;
     if (chart_point[0] < -pt_old)      phys_point[0] = (chart_point[0] + pi ) * (-1*pt_new + pi) / (-1*pt_old + pi) - pi;
     else if (chart_point[0] < pt_old)  phys_point[0] = (chart_point[0]) * (pt_new) / (pt_old);

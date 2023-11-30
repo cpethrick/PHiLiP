@@ -130,7 +130,7 @@ double PeriodicTurbulence<dim,nstate>::get_adaptive_time_step(std::shared_ptr<DG
     } else if ( grid_type == GridEnum::biased) { //already should have aborted if grid type is neither biased nor straight
         // HARD CODED WARNING -- should probably loop through the grid and find min(extent_in_direction()). 
         const double pi = atan(1)*4.0;
-        const double pt_new = pi/101;
+        const double pt_new = pi/50;
         approximate_min_grid_spacing = 2 *pt_new / ( 0.5 * pow(number_of_degrees_of_freedom_per_state,(1.0/dim)) ); //extra spacing between -pt_new and pt_new, with half of elements concentrated there
     }
     const double cfl_number = this->all_param.flow_solver_param.courant_friedrichs_lewy_number;
