@@ -19,14 +19,16 @@ Periodic1DUnsteady<dim, nstate>::Periodic1DUnsteady(const PHiLiP::Parameters::Al
 
 template <int dim, int nstate>
 double Periodic1DUnsteady<dim, nstate>::compute_energy(
-        const std::shared_ptr <DGBase<dim, double>> dg
+        const std::shared_ptr <DGBase<dim, double>> dg,
+        const EnergyNormEnum norm_type
         ) const
 {
+    const bool use_M_norm = (norm_type == M) ? true : false;
     //Calculating energy via matrix-vector product
     dealii::LinearAlgebra::distributed::Vector<double> temp;
     temp.reinit(dg->solution);
     if(this->all_param.use_inverse_mass_on_the_fly){
-        dg->apply_global_mass_matrix(dg->solution, temp);
+        dg->apply_global_mass_matrix(dg->solution, temp, false, use_M_norm);
     } else{
         dg->global_mass_matrix.vmult(temp,dg->solution);
     } //replace stage_j with M*stage_j
@@ -58,12 +60,14 @@ void Periodic1DUnsteady<dim, nstate>::compute_unsteady_data_and_write_to_table(
         (void) unsteady_data_table;
     }
     else if (pde_type == PDEEnum::burgers_inviscid){
-        const double energy = this->compute_energy(dg);
+        const double energy_MpK = this->compute_energy(dg, MpK);
+        const double energy_M = this->compute_energy(dg, M);
     
         if ((current_iteration % output_solution_every_n_iterations) == 0){
             this->pcout << "    Iter: " << current_iteration
                         << "    Time: " << current_time
-                        << "    Energy: " << energy
+                        << "    Energy (M + K norm): " << energy_MpK
+                        << "    Energy (M norm): " << energy_M
                         << std::endl;
         }
     
@@ -76,7 +80,8 @@ void Periodic1DUnsteady<dim, nstate>::compute_unsteady_data_and_write_to_table(
             //omit writing if current calculation is for a reference solution
             unsteady_data_table->add_value("iteration", current_iteration);
             this->add_value_to_data_table(current_time,"time",unsteady_data_table);
-            this->add_value_to_data_table(energy,"energy",unsteady_data_table);
+            this->add_value_to_data_table(energy_MpK,"energy_MpK",unsteady_data_table);
+            this->add_value_to_data_table(energy_M,"energy_M",unsteady_data_table);
             std::ofstream unsteady_data_table_file(this->unsteady_data_table_filename_with_extension);
             unsteady_data_table->write_text(unsteady_data_table_file);
         }

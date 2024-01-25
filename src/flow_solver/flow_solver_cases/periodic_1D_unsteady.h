@@ -9,6 +9,9 @@ namespace FlowSolver {
 template <int dim, int nstate>
 class Periodic1DUnsteady : public PeriodicCubeFlow<dim,nstate>
 {
+private:
+
+    enum EnergyNormEnum {M, MpK};
 public:
 
     /// Constructor.
@@ -17,8 +20,11 @@ public:
     /// Destructor
     ~Periodic1DUnsteady() {};
 
-    /// Calculate energy as a matrix-vector product,  solution^T (M+K) solution
-    double compute_energy(const std::shared_ptr <DGBase<dim, double>> dg) const;
+    /// Calculate energy in specified norm as a matrix-vector product,  
+    /// solution^T (M+K) solution 
+    /// or solution^T (M) solution 
+    double compute_energy(const std::shared_ptr <DGBase<dim, double>> dg, const EnergyNormEnum norm_type = MpK) const;
+    
 protected:
 
     /// Compute the desired unsteady data and write it to a table
@@ -30,6 +36,7 @@ protected:
     
     /// Filename for unsteady data
     std::string unsteady_data_table_filename_with_extension;
+
     
 };
 
