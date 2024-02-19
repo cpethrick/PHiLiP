@@ -10,10 +10,6 @@ configure_file(3d_cube_periodic.msh 3d_cube_periodic.msh COPYONLY)
 configure_file(SD7003_1_cell_spanwise.msh SD7003_1_cell_spanwise.msh COPYONLY)
 configure_file(SD7003_4_cell_spanwise.msh SD7003_4_cell_spanwise.msh COPYONLY)
 configure_file(SD7003_12_cell_spanwise.msh SD7003_12_cell_spanwise.msh COPYONLY)
-configure_file(TandemSpheresHexMesh0.msh TandemSpheresHexMesh0.msh COPYONLY)
-configure_file(TandemSpheresHexMesh1.msh TandemSpheresHexMesh1.msh COPYONLY)
-configure_file(mesh_1.linear.msh mesh_1.linear.msh COPYONLY)
-configure_file(mesh_2.linear.msh mesh_2.linear.msh COPYONLY)
 configure_file(cylinder_coarse.msh cylinder_coarse.msh COPYONLY)
 
 
@@ -91,12 +87,5 @@ if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${filename})
     https://drive.google.com/drive/folders/1xaQRTCd8VXDeaV1alQ5oHI_YMm2X0X5R?usp=sharing
 and place them in
       ${CMAKE_CURRENT_SOURCE_DIR}, or simply run get_gmsh_mesh_files_local.sh"
-      )
-endif()
-
-set (filename "TandemSpheresHexMesh0.msh")
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${filename})
-    message(SEND_ERROR
-        "Missing tandem spheres grid. Please put in appropriate folder"
       )
 endif()

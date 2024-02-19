@@ -165,21 +165,27 @@ void FlowSolver<dim,nstate>::initialize_data_table_from_file(
         std::ifstream FILE (data_table_filename);
         std::getline(FILE, line); // read first line: column headers
         
+        const bool table_not_found = line.empty();
+
         // check that the file is not empty
-        if (line.empty()) {
-            pcout << "Error: Trying to read empty file named " << data_table_filename << std::endl;
-            std::abort();
+        if (table_not_found) {
+            pcout << "Warning: Trying to read empty file named " << data_table_filename << std::endl;
+            //std::abort();
         }
 
+        if (table_not_found == false)  // table does exist, then initialize new table
+        {
+        
         const std::vector<std::string> data_column_names = get_data_table_column_names(line);
         const int number_of_columns = data_column_names.size();
 
         std::getline(FILE, line); // read first line of data
         
         // check that there indeed is data to be read
-        if (line.empty()) {
-            pcout << "Error: Table has no data to be read" << std::endl;
-            std::abort();
+        //
+        if (table_not_found) {
+            pcout << "Warning: Table has no data to be read" << std::endl;
+            //std::abort();
         }
 
         std::vector<double> current_line_values(number_of_columns);
@@ -200,6 +206,7 @@ void FlowSolver<dim,nstate>::initialize_data_table_from_file(
                 data_table->set_scientific(data_column_names[i], true);
             }
             std::getline(FILE, line); // read next line
+        }
         }
     }
 }
