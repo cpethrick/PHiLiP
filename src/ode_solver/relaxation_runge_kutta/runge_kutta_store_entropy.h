@@ -57,11 +57,11 @@ protected:
     /** Stores solution at stage, rk_stage_solution */
     void store_stage_solutions(const int istage,
             const dealii::LinearAlgebra::distributed::Vector<double> rk_stage_i) override;
-    
+public:    
     /// Return the entropy variables from a solution vector u
     dealii::LinearAlgebra::distributed::Vector<double> compute_entropy_vars(
             const dealii::LinearAlgebra::distributed::Vector<double> &u,
-            std::shared_ptr<DGBase<dim,real,MeshType>> dg) const;
+            std::shared_ptr<DGBase<dim,real,MeshType>> dg) const override;
 
     // Euler physics pointer
     //std::shared_ptr < Physics::Euler<dim, dim+2, double > > euler_physics;

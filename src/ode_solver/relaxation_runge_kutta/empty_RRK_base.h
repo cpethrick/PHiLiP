@@ -47,6 +47,14 @@ public:
         // Return unmodified dt
         return dt;
     };
+
+    
+    /// Return the entropy variables from a solution vector u
+    virtual dealii::LinearAlgebra::distributed::Vector<double> compute_entropy_vars(
+            const dealii::LinearAlgebra::distributed::Vector<double> &u,
+            std::shared_ptr<DGBase<dim,real,MeshType>> /*dg*/) const
+    {return u;
+    };
     
 };
 

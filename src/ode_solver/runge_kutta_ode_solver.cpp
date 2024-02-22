@@ -102,6 +102,27 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, 
     }
     this->dg->solution = this->solution_update; // u_np1 = u_n + dt* sum(k_i * b_i)
 
+    //CALCULATING vMdudt
+    this->dg->assemble_residual(); // update RHS
+    dealii::LinearAlgebra::distributed::Vector<double> dudt_at_tnp1(this->dg->right_hand_side); // initialize as DG->right_hand_side
+    this->dg->apply_inverse_global_mass_matrix(this->dg->right_hand_side, dudt_at_tnp1); //rk_stage[i] = IMM*RHS = F(u_n + dt*sum(a_ij*k_j))
+    dealii::LinearAlgebra::distributed::Vector<double> v_at_tnp1 = relaxation_runge_kutta->compute_entropy_vars(this->dg->solution, this->dg);
+    dealii::LinearAlgebra::distributed::Vector<double> M_dudt(v_at_tnp1), MpK_dudt(v_at_tnp1);
+
+    this->dg->apply_global_mass_matrix(dudt_at_tnp1,M_dudt,
+            false, // use_auxiliary_eq,
+            true // use M norm
+            );
+    this->dg->apply_global_mass_matrix(dudt_at_tnp1,MpK_dudt,
+            false, // use_auxiliary_eq,
+            false // use M+K norm
+            );
+    double vT_M_dudt, vT_MpK_dudt;
+    vT_M_dudt = v_at_tnp1 * M_dudt;
+    vT_MpK_dudt = v_at_tnp1 * MpK_dudt;
+    
+    this->pcout << "vT_M_dudt  :    " <<     vT_M_dudt << std::endl;
+    this->pcout << "vT_MpK_dudt  :    " <<     vT_MpK_dudt << std::endl;
     // Calculate numerical entropy with FR correction. Does nothing if use has not selected param.
     this->dg->FR_entropy_contribution = relaxation_runge_kutta->compute_FR_entropy_contribution(dt, this->dg, this->rk_stage, true);
     this->dg->entropy_M_norm = relaxation_runge_kutta->compute_FR_entropy_contribution(dt, this->dg, this->rk_stage, false);
