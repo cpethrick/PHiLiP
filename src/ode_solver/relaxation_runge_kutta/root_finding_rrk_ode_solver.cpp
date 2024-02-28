@@ -59,6 +59,18 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
         double r_gamma_k = compute_root_function(gamma_k, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
         double r_gamma_km1 = compute_root_function(gamma_km1, u_n, step_direction, num_entropy_n,entropy_change_est,dg);
 
+        // calculation of root function slope at zero and at one
+        const double epsilon = 1E-3;
+        const double r_prime_zero = ( compute_root_function(0+epsilon, u_n, step_direction, num_entropy_n, entropy_change_est,dg)
+                                      - compute_root_function(0-epsilon, u_n, step_direction, num_entropy_n, entropy_change_est,dg)) 
+                                    / (2*epsilon);
+        const double r_prime_one  = ( compute_root_function(1+epsilon, u_n, step_direction, num_entropy_n, entropy_change_est,dg)
+                                      - compute_root_function(1-epsilon, u_n, step_direction, num_entropy_n, entropy_change_est,dg)) 
+                                    / (2*epsilon);
+        this->pcout << "r_prime_zero " << r_prime_zero << std::endl
+                    << "r_prime_one " << r_prime_one << std::endl;
+
+
         while ((residual > conv_tol) && (iter_counter < iter_limit)){
             if (r_gamma_km1 == r_gamma_k){
                 if (do_output) this->pcout << "    Roots are identical. Multiplying gamma_k by 1.001 and recomputing..." << std::endl;
