@@ -67,10 +67,6 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, 
 
         } // u_n + dt * sum(a_ij * k_j) <explicit> + dt * a_ii * u^(i) <implicit>
         
-        // If using the entropy formulation of RRK, solutions must be stored.
-        // Call store_stage_solutions before overwriting rk_stage with the derivative.
-        relaxation_runge_kutta->store_stage_solutions(i, rk_stage[i]);
-
         this->dg->solution = this->rk_stage[i];
 
         // Apply limiter at every RK stage
@@ -84,6 +80,10 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, 
                 this->dg->oneD_fe_collection_1state,
                 this->dg->oneD_quadrature_collection);
         }
+        
+        // If using the entropy formulation of RRK, solutions must be stored.
+        // Call store_stage_solutions before overwriting rk_stage with the derivative.
+        relaxation_runge_kutta->store_stage_solutions(i, this->dg->solution);
 
         //set the DG current time for unsteady source terms
         this->dg->set_current_time(this->current_time + this->butcher_tableau->get_c(i)*dt);
@@ -116,9 +116,6 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, 
     }
     this->dg->solution = this->solution_update; // u_np1 = u_n + dt* sum(k_i * b_i)
 
-    // Calculate numerical entropy with FR correction. Does nothing if use has not selected param.
-    this->FR_entropy_contribution_RRK_solver = relaxation_runge_kutta->compute_FR_entropy_contribution(dt, this->dg, this->rk_stage, true);
-
     // Apply limiter at every RK stage
     if (this->limiter) {
         this->limiter->limit(this->dg->solution,
@@ -130,6 +127,10 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, 
             this->dg->oneD_fe_collection_1state,
             this->dg->oneD_quadrature_collection);
     }
+    
+    // Calculate numerical entropy with FR correction. Does nothing if use has not selected param.
+    this->FR_entropy_contribution_RRK_solver = relaxation_runge_kutta->compute_FR_entropy_contribution(dt, this->dg, this->rk_stage, true);
+
     
     ++(this->current_iteration);
     this->current_time += dt;
