@@ -62,6 +62,8 @@ private:
     /// Storing cumulative entropy change for output 
     real FR_entropy_cumulative = 0;
 
+    real current_time = 0;
+
 };
 
 } // ODE namespace

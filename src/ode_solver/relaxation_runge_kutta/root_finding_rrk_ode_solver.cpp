@@ -49,6 +49,18 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
     const double conv_tol = dg->all_parameters->ode_solver_param.relaxation_runge_kutta_root_tolerance;
     int iter_counter = 0;
     const int iter_limit = 100;
+
+    if (this-> current_time < dt || abs(this->current_time - 7) < dt || abs(this->current_time - 14) < 2*dt) {
+        this->pcout << "Outputting full root function at t = " << current_time << std::endl;
+        const int n_values = 100;
+        double gamma_value, r_gamma_value;
+        const double start = -0.1, end = 1.1;
+        for (int i_val = 0; i_val < n_values+1; ++i_val) {
+            gamma_value = start + (end-start) / n_values*i_val;
+            r_gamma_value = compute_root_function(gamma_value, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
+            this->pcout << " root fn    gamma: " << gamma_value << " root: " << r_gamma_value << std::endl;
+        }
+    }
     if (use_secant){
 
         const double initial_guess_0 = this->relaxation_parameter - 1E-5;
@@ -153,6 +165,8 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
             iter_counter++;
         }    
     }
+    
+    this->current_time += dt;
 
     if (iter_limit == iter_counter) {
         this->pcout << "Error: Iteration limit reached and root finding was not successful." << std::endl;
