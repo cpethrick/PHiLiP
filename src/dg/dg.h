@@ -261,7 +261,7 @@ public:
     *   in each cell using sum-factorization techniques.
     */
     void apply_inverse_global_mass_matrix(
-        dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
+        const dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
         dealii::LinearAlgebra::distributed::Vector<double> &output_vector,
         const bool use_auxiliary_eq = false);
 
@@ -270,9 +270,10 @@ public:
     *   in each cell using sum-factorization techniques.
     */
     void apply_global_mass_matrix(
-        dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
+        const dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
         dealii::LinearAlgebra::distributed::Vector<double> &output_vector,
-        const bool use_auxiliary_eq = false);
+        const bool use_auxiliary_eq = false,
+        const bool use_unmodified_mass_matrix = false);
 
     /// Evaluates the maximum stable time step
     /** If exact_time_stepping = true, use the same time step for the entire solution

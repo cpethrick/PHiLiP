@@ -3,11 +3,13 @@
 
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/table_handler.h>
-#include <iostream>
 #include <deal.II/lac/vector.h>
 #include "parameters/all_parameters.h"
-#include "dg/dg.h"
+#include <iostream>
 #include <stdexcept>
+
+#include "dg/dg.h"
+#include "parameters/all_parameters.h"
 
 namespace PHiLiP {
 namespace ODE {
@@ -23,9 +25,9 @@ class ODESolverBase
 {
 public:
     /// Default constructor that will set the constants.
-    ODESolverBase(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input); ///< Constructor.
+    explicit ODESolverBase(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input); ///< Constructor.
 
-    virtual ~ODESolverBase() {}; ///< Destructor.
+    virtual ~ODESolverBase() = default; ///< Destructor.
 
     /// Table used to output solution vector at each time step
     dealii::TableHandler solutions_table;
@@ -114,6 +116,17 @@ public:
 protected:
     double original_time_step;///< Original time step before calling step_in_time
     double modified_time_step;///< Modified time step after calling step_in_time
+public:
+    
+    /// Entropy FR correction at the current timestep
+    /** Used in entropy-RRK ODE solver.
+     ** This is stored in ode_solver_base such that both flow solver case and ode solver can access it. */
+    double FR_entropy_contribution_RRK_solver = 0;
+    
+    /// Relaxation parameter
+    /** Used in RRK ODE solver.
+     ** This is stored in ode_solver_base such that both flow solver case and ode solver can access it. */
+    double relaxation_parameter_RRK_solver=1;
 
 protected:
     const MPI_Comm mpi_communicator; ///< MPI communicator.
