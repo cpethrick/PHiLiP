@@ -29,7 +29,7 @@ real RRKODESolverBase<dim,real,MeshType>::update_relaxation_parameter(const real
         relaxation_parameter=1.0;
         std::abort();
     }
-
+   std::cout << "Relaxation parameter: " << relaxation_parameter_RRK_solver << std::endl;
     return relaxation_parameter_RRK_solver;
 }
 

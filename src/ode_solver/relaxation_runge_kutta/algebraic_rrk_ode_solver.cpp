@@ -32,6 +32,7 @@ real AlgebraicRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(cons
     }
     numerator *= 2;
     gamma = (denominator < 1E-8) ? 1 : numerator/denominator;
+//    std::cout << "gamma: " << gamma << std::endl;
     return gamma;
 }
 

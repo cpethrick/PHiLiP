@@ -443,6 +443,7 @@ int FlowSolver<dim,nstate>::run() const
         if(flow_solver_param.adaptive_time_step == true) {
             pcout << "Setting initial adaptive time step... " << std::flush;
             time_step = flow_solver_case->get_adaptive_time_step_initial(dg);
+            pcout << "Time step set at " << std::setprecision(16) << time_step << std::endl;
         } else {
             pcout << "Setting constant time step... " << std::flush;
             time_step = flow_solver_case->get_constant_time_step(dg);

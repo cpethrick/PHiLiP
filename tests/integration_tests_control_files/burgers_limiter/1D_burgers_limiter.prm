@@ -7,14 +7,12 @@ set dimension = 1
 set use_weak_form = false
 set flux_nodes_type = GLL
 
-# Strong DG - LaxF
-set use_split_form = false
-set conv_num_flux = lax_friedrichs
-
 # NSFR - Ra
-#set use_split_form = true
+set use_split_form = true
 #set two_point_num_flux_type = Ra
-#set conv_num_flux = two_point_flux_with_lax_friedrichs_dissipation
+set conv_num_flux = two_point_flux_with_lax_friedrichs_dissipation
+#set conv_num_flux = two_point_flux
+set use_inverse_mass_on_the_fly = true
 
 # The PDE we want to solve
 set pde_type = burgers_inviscid
@@ -33,18 +31,23 @@ subsection ODE solver
 
   set print_iteration_modulo = 100
 
-  set ode_solver_type = runge_kutta
+  set ode_solver_type = rrk_explicit
+  #set ode_solver_type = runge_kutta
 
   set initial_time_step = 0.0001
 
   set runge_kutta_method = ssprk3_ex
 
-  set output_solution_every_x_steps = 100
+  #set output_solution_every_x_steps = 10
+  set output_solution_every_dt_time_intervals = 0.1
+  subsection rrk root solver
+    set rrk_root_solver_output = verbose
+  end
 
 end
 
 subsection flow_solver
-  set flow_case_type = burgers_limiter
+  set flow_case_type = periodic_1D_unsteady
   set poly_degree = 2
   set final_time = 2.0
   set courant_friedrichs_lewy_number = 0.1
@@ -53,6 +56,7 @@ subsection flow_solver
   subsection grid
     set grid_left_bound = 0.0
     set grid_right_bound = 2.0
-    set number_of_mesh_refinements = 5
+    #set number_of_mesh_refinements = 5
+    set number_of_grid_elements_per_dimension = 32
   end
 end

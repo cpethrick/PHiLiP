@@ -202,6 +202,8 @@ void MaximumPrincipleLimiter<dim, nstate, real>::limit(
 
             theta[istate] = std::min({ abs((global_max[istate] - soln_cell_avg[istate]) / maxscale),
                                         abs((global_min[istate] - soln_cell_avg[istate]) / minscale), 1.0 });
+
+            if (abs(theta[istate]-1.0) > 1E-13)  std::cout << " Limiter applied! ";
         }
 
         // Apply limiter on solution values at quadrature points

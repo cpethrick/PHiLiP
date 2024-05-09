@@ -173,6 +173,7 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
                         << "  Cumulative entropy change (FR):     " << this->FR_entropy_cumulative << std::endl
                         << std::endl;
         }
+        std::cout << "Entropy_cumulative: " << this->FR_entropy_cumulative << " ";
 
         return gamma_kp1;
     }
