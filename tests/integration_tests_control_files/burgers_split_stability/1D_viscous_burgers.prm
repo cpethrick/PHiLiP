@@ -1,0 +1,81 @@
+# Listing of Parameters
+# ---------------------
+# Number of dimensions
+
+set dimension = 1 
+#set run_type = flow_simulation
+set run_type = integration_test
+set test_type = time_refinement_study
+set pde_type = burgers_viscous
+
+# Note: this is required to correctly calculate energy
+set use_periodic_bc = true
+
+# for split form & energy-stable flux
+set use_weak_form = false 
+set flux_nodes_type = GLL
+set use_split_form = true
+set conv_num_flux = two_point_flux
+
+#set flux_reconstruction = cDG # or other
+
+set use_inverse_mass_on_the_fly = true
+
+# ODE solver
+subsection ODE solver
+  #set ode_solver_type = runge_kutta #this is modified by the test
+  set ode_solver_type = rrk_explicit #this is modified by the test
+  set output_solution_every_dt_time_intervals = 0.01
+  #set output_solution_every_x_steps = 1
+  set initial_time_step = 1E-3 #this is modified by the test 
+  set runge_kutta_method = dirk_2_im
+end
+
+subsection burgers
+  set diffusion_coefficient = 1
+  set reynolds_number = 5 
+end
+
+subsection linear solver
+  #set linear_solver_output = verbose
+  subsection gmres options
+    set linear_residual_tolerance = 1e-7
+  end
+  subsection JFNK options
+    set newton_residual = 6e-7
+  end
+end
+  
+
+# Diffusion tensor needs to be set to identity as 
+# default value is set up for a manufactured solution
+subsection manufactured solution convergence study
+  set diffusion_00 = 1
+  set diffusion_01 = 0
+  set diffusion_02 = 0
+  set diffusion_01 = 0
+  set diffusion_11 = 1
+  set diffusion_12 = 0
+  set diffusion_20 = 0
+  set diffusion_21 = 0
+  set diffusion_22 = 1
+end
+
+set enable_higher_order_vtk_output = true
+
+subsection time_refinement_study
+  set number_of_times_to_solve = 5
+  set refinement_ratio = 0.5
+end
+
+subsection flow_solver
+  set flow_case_type = burgers_viscous_exact 
+  set poly_degree = 7
+  set final_time = 0.1
+  set unsteady_data_table_filename = viscous_burgers_unsteady_data
+  subsection grid
+    set grid_left_bound = -3.14159265358979323
+    set grid_right_bound = 3.14159265358979323
+    set number_of_grid_elements_per_dimension = 32
+  end
+end

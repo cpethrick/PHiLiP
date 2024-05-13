@@ -48,6 +48,46 @@ inline real ExactSolutionFunction_1DSine<dim,nstate,real>
 }
 
 // ========================================================
+// VISCOUS BURGERS EXACT -- Sinusoidal initial condition
+// on 1D domain, having an exact analytical solution
+// ========================================================
+template <int dim, int nstate, typename real>
+ExactSolutionFunction_ViscousBurgersExact<dim,nstate,real>
+::ExactSolutionFunction_ViscousBurgersExact(double time_compare, const double reynolds_input )
+        : ExactSolutionFunction<dim,nstate,real>()
+        , t(time_compare)
+        , reynolds(reynolds_input)
+{
+    std::cout << "Warning: code currently assumes R = 10! Fix this before PR!" << std::endl;
+}
+
+template <int dim, int nstate, typename real>
+inline real ExactSolutionFunction_ViscousBurgersExact<dim,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
+{
+    const unsigned int truncation_limit = 25; // This is high enough for double-precision
+
+    //Assemble Fourier coefficients
+    double a[truncation_limit] {0};
+    for (unsigned int n = 0; n<truncation_limit; ++n){
+        a[n] = pow(-1.0, n) * std::cyl_bessel_i(n, reynolds*0.5);
+    }
+    //a_n are okay
+
+    //Exact solution
+    const double x = point[0];
+    double num = 0;
+    double den = a[0];
+    for (unsigned int n = 1; n<truncation_limit; ++n){
+        const double n_d = (double)n;
+        num += 4 * n_d * a[n] * exp(-n_d*n_d*t) * sin(n_d*x);
+        den += 2 * a[n] * exp(-n_d*n_d*t) * cos(n_d*x);
+    }
+    return num/den;
+}
+
+
+// ========================================================
 // Inviscid Isentropic Vortex 
 // ========================================================
 template <int dim, int nstate, typename real>
@@ -124,6 +164,8 @@ ExactSolutionFactory<dim,nstate, real>::create_ExactSolutionFunction(
     const FlowCaseEnum flow_type = flow_solver_parameters.flow_case_type;
     if (flow_type == FlowCaseEnum::periodic_1D_unsteady){
         if constexpr (dim==1 && nstate==dim)  return std::make_shared<ExactSolutionFunction_1DSine<dim,nstate,real> > (time_compare);
+    } else if (flow_type == FlowCaseEnum::burgers_viscous_exact){
+        if constexpr (dim==1 && nstate==dim)  return std::make_shared<ExactSolutionFunction_ViscousBurgersExact<dim,nstate,real> > (time_compare); // , param->burgers_param.reynolds_number); // for now assume R=10.
     } else if (flow_type == FlowCaseEnum::isentropic_vortex){
         if constexpr (dim>1 && nstate==dim+2)  return std::make_shared<ExactSolutionFunction_IsentropicVortex<dim,nstate,real> > (time_compare);
     } else {

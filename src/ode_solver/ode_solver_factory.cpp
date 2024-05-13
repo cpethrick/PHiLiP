@@ -208,7 +208,7 @@ std::shared_ptr<EmptyRRKBase<dim,real,MeshType>> ODESolverFactory<dim,real,MeshT
         enum NumEntropyEnum {energy, nonlinear};
         NumEntropyEnum numerical_entropy_type;
         std::string rrk_type_string;
-        if (pde_type == PDEEnum::burgers_inviscid){
+        if (pde_type == PDEEnum::burgers_inviscid || pde_type == PDEEnum::burgers_viscous){
             numerical_entropy_type = NumEntropyEnum::energy;
             rrk_type_string = "Algebraic";
         } else if ((pde_type == PDEEnum::euler || pde_type == PDEEnum::navier_stokes)

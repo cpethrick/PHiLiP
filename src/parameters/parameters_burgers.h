@@ -31,6 +31,12 @@ public:
     */
     bool rewienski_manufactured_solution;
 
+    /**Reynolds number for viscous Burgers exact solution.
+     * Larger Reynolds number corresponds to larger amplitude
+     * of the initial sine wave. Naming per Benton 1972.
+     */
+    double reynolds_number;
+
     /// Declares the possible variables and sets the defaults.
     static void declare_parameters (dealii::ParameterHandler &prm);
     /// Parses input file and sets the variables.

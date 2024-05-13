@@ -26,6 +26,7 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           " naca0012 | "
                           " burgers_rewienski_snapshot | "
                           " burgers_inviscid | "
+                          " burgers_viscous_exact | "
                           " convection_diffusion | "
                           " advection | "
                           " periodic_1D_unsteady | "
@@ -47,6 +48,7 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           " naca0012 | "
                           " burgers_rewienski_snapshot | "
                           " burgers_inviscid | "
+                          " burgers_viscous_exact | "
                           " convection_diffusion | "
                           " advection | "
                           " periodic_1D_unsteady | "
@@ -328,6 +330,7 @@ void FlowSolverParam::parse_parameters(dealii::ParameterHandler &prm)
         else if (flow_case_type_string == "burgers_rewienski_snapshot") {flow_case_type = burgers_rewienski_snapshot;}
         else if (flow_case_type_string == "naca0012")                   {flow_case_type = naca0012;}
         else if (flow_case_type_string == "burgers_inviscid")           {flow_case_type = burgers_inviscid;}
+        else if (flow_case_type_string == "burgers_viscous_exact")      {flow_case_type = burgers_viscous_exact;}
         else if (flow_case_type_string == "convection_diffusion")       {flow_case_type = convection_diffusion;}
         else if (flow_case_type_string == "advection")                  {flow_case_type = advection;}
         else if (flow_case_type_string == "periodic_1D_unsteady")       {flow_case_type = periodic_1D_unsteady;}

@@ -317,7 +317,30 @@ inline real InitialConditionFunction_1DSine<dim,nstate,real>
     }
     return value;
 }
+// ========================================================
+// VISCOUS BURGERS EXACT -- Sinusoidal initial condition
+// on 1D domain, having an exact analytical solution
+// ========================================================
+template <int dim, int nstate, typename real>
+InitialConditionFunction_ViscousBurgersExact<dim,nstate,real>
+::InitialConditionFunction_ViscousBurgersExact (const double reynolds_input)
+        : InitialConditionFunction<dim,nstate,real>()
+        , reynolds(reynolds_input)
+{
+    // Nothing to do here yet
+}
 
+template <int dim, int nstate, typename real>
+inline real InitialConditionFunction_ViscousBurgersExact<dim,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
+{
+    real value = 0;
+    const real pi = dealii::numbers::PI;
+    if(point[0] >= -pi && point[0] <= pi){
+        value = -reynolds * sin(point[0]);
+    }
+    return value;
+}
 // ========================================================
 // Inviscid Isentropic Vortex
 // ========================================================
@@ -710,6 +733,9 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
         if constexpr (nstate==dim && dim<3) return std::make_shared<InitialConditionFunction_BurgersInviscid<dim, nstate, real> >();
     } else if (flow_type == FlowCaseEnum::burgers_inviscid && param->use_energy==true) {
         if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_BurgersInviscidEnergy<dim,nstate,real> > ();
+    } else if (flow_type == FlowCaseEnum::burgers_viscous_exact) {
+        if constexpr (dim==1 && nstate==1) return std::make_shared<InitialConditionFunction_ViscousBurgersExact<dim,nstate,real> > (
+                    param->burgers_param.reynolds_number);
     } else if (flow_type == FlowCaseEnum::advection && param->use_energy==true) {
         if constexpr (nstate==1) return std::make_shared<InitialConditionFunction_AdvectionEnergy<dim,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::advection && param->use_energy==false) {

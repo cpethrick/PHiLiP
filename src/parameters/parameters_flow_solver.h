@@ -21,6 +21,7 @@ public:
         naca0012,
         burgers_rewienski_snapshot,
         burgers_inviscid,
+        burgers_viscous_exact,
         convection_diffusion,
         advection,
         periodic_1D_unsteady,
