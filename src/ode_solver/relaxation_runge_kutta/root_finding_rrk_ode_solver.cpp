@@ -1,5 +1,6 @@
 #include "root_finding_rrk_ode_solver.h"
 #include "physics/euler.h"
+#include "physics/burgers.h"
 #include "physics/physics_factory.h"
 
 namespace PHiLiP {
@@ -20,7 +21,7 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
             ) 
 {
     // Console output is based on linearsolverparam
-    const bool do_output = (dg->all_parameters->ode_solver_param.rrk_root_solver_output == Parameters::OutputEnum::verbose); 
+    const bool do_output = true; //(dg->all_parameters->ode_solver_param.rrk_root_solver_output == Parameters::OutputEnum::verbose); 
 
     // Note: there is some overlap in computations here and in runge_kutta_ode_solver.
     // In future optimization, this could be improved.
@@ -224,13 +225,19 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_integrated_numerical_en
     if (parameters_euler.pde_type != Parameters::AllParameters::PartialDifferentialEquation::euler
             &&
             parameters_euler.pde_type != Parameters::AllParameters::PartialDifferentialEquation::navier_stokes){
-        this->pcout << "ERROR: Only implemented for Euler or Navier-Stokes. Aborting..." << std::endl;
-        std::abort();
+        this->pcout << "WARNING: hard-coded for Burgers!" << std::endl;
+        //std::abort();
     }
+
+#if PHILIP_DIM==1
+    std::shared_ptr < Physics::Burgers<dim, dim, double > > euler_physics = std::dynamic_pointer_cast<Physics::Burgers<dim,dim,double>>(
+                Physics::PhysicsFactory<dim,dim,double>::create_Physics(dg->all_parameters));
+    const int nstate = dim;
+#else
     std::shared_ptr < Physics::Euler<dim, dim+2, double > > euler_physics = std::dynamic_pointer_cast<Physics::Euler<dim,dim+2,double>>(
                 Physics::PhysicsFactory<dim,dim+2,double>::create_Physics(&parameters_euler));
-    
     const int nstate = dim+2;
+#endif
     double integrated_quantity = 0.0;
 
     const double poly_degree = dg->all_parameters->flow_solver_param.poly_degree;
@@ -340,8 +347,10 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_integrated_numerical_en
             //#####################################################################
             // Compute integrated quantities here
             //#####################################################################
-            const double quadrature_entropy = euler_physics->compute_numerical_entropy_function(soln_at_q);
-            integrated_quantity += quadrature_entropy * quad_weights[iquad] * metric_oper.det_Jac_vol[iquad];
+            if constexpr(dim==nstate){
+                const double quadrature_entropy = euler_physics->compute_numerical_entropy_function(soln_at_q);
+                integrated_quantity += quadrature_entropy * quad_weights[iquad] * metric_oper.det_Jac_vol[iquad];
+            }
             //#####################################################################
         }
     }

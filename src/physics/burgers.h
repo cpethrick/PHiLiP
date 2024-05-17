@@ -78,6 +78,9 @@ public:
     std::array<real,nstate> compute_conservative_variables_from_entropy_variables (
                 const std::array<real,nstate> &entropy_var) const;
 
+    /// Computes numerical entropy. For burgers, this is 1/2 u^2 (energy).
+    real compute_numerical_entropy_function(const std::array<real,nstate> &conservative_soln) const;
+
     /// Spectral radius of convective term Jacobian is 'c'
     std::array<real,nstate> convective_eigenvalues (
         const std::array<real,nstate> &/*solution*/,

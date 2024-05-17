@@ -31,6 +31,8 @@ template <int dim, typename real, typename MeshType>
 dealii::LinearAlgebra::distributed::Vector<double> RKNumEntropy<dim,real,MeshType>::compute_entropy_vars(const dealii::LinearAlgebra::distributed::Vector<double> &u,
         std::shared_ptr<DGBase<dim,real,MeshType>> dg) const
 {
+    if constexpr(dim==1)
+        return u;
     // hard-code nstate for Euler/NS - ODESolverFactory has already ensured that we use Euler/NS
     const unsigned int nstate = dim + 2;
     // Currently only implemented for constant p

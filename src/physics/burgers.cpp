@@ -116,6 +116,19 @@ std::array<real,nstate> Burgers<dim, nstate, real>
 }
 
 template <int dim, int nstate, typename real>
+real Burgers<dim, nstate, real>
+::compute_numerical_entropy_function (
+    const std::array<real,nstate> &entropy_var) const
+{
+    
+    real u2 = 0.0;
+    for (int d=0; d<dim; d++) { 
+        u2 = u2 + entropy_var[d]*entropy_var[d]; 
+    }    
+    
+    return 0.5*u2;
+}
+template <int dim, int nstate, typename real>
 real Burgers<dim,nstate,real>
 ::diffusion_coefficient () const
 {
