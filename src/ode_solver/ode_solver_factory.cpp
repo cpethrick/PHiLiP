@@ -210,6 +210,7 @@ std::shared_ptr<EmptyRRKBase<dim,real,MeshType>> ODESolverFactory<dim,real,MeshT
         std::string rrk_type_string;
         if (pde_type == PDEEnum::burgers_inviscid){
             numerical_entropy_type = NumEntropyEnum::nonlinear;
+            //numerical_entropy_type = NumEntropyEnum::energy;
             rrk_type_string = "Root-finding";
         } else if ((pde_type == PDEEnum::euler || pde_type == PDEEnum::navier_stokes)
                     && (two_point_num_flux_type != NumFluxEnum::KG)){
