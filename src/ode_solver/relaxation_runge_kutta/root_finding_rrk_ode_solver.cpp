@@ -20,7 +20,7 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
             ) 
 {
     // Console output is based on linearsolverparam
-    const bool do_output = (dg->all_parameters->ode_solver_param.rrk_root_solver_output == Parameters::OutputEnum::verbose); 
+    const bool do_output = true;//(dg->all_parameters->ode_solver_param.rrk_root_solver_output == Parameters::OutputEnum::verbose); 
 
     // Note: there is some overlap in computations here and in runge_kutta_ode_solver.
     // In future optimization, this could be improved.
@@ -149,7 +149,7 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
         return -1;
     } else { // Root-finding was successful
 
-        if (do_output) {
+        if (false) { // Output no longer makes sense.
             // Use [ gamma * dt * (v^T (M+K) du/dt - v^T (M) du/dt ) ] as a workaround to calculate [ gamma * (v^T (K) du/dt) ]
             const double FR_entropy_contribution = gamma_kp1 *(
                     compute_entropy_change_estimate(dt, dg, rk_stage, false) 
@@ -200,9 +200,19 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_numerical_entropy(
         const dealii::LinearAlgebra::distributed::Vector<double> &u,
         std::shared_ptr<DGBase<dim,real,MeshType>> dg) const 
 {
-    real num_entropy = compute_integrated_numerical_entropy(u,dg);
+    dealii::LinearAlgebra::distributed::Vector<double> entropy_var = this->compute_entropy_vars(u,dg);
+    dealii::LinearAlgebra::distributed::Vector<double> MpK_u(entropy_var);
+    dg->apply_global_mass_matrix(u,MpK_u,
+            false, // use_auxiliary_eq,
+            false // use M+K norm
+            );
 
-    return num_entropy;
+    const real q_correction = compute_integrated_numerical_entropy(u,dg); // hard-code to return q=-rho(gamma-1) rather than -rho s
+
+    //const real entropy = entropy_var * MpK_u - q_correction;
+    const real entropy = q_correction;
+    this->pcout << entropy << std::endl;
+    return entropy;
     
 }
 
@@ -340,8 +350,9 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_integrated_numerical_en
             //#####################################################################
             // Compute integrated quantities here
             //#####################################################################
-            const double quadrature_entropy = euler_physics->compute_numerical_entropy_function(soln_at_q);
-            integrated_quantity += quadrature_entropy * quad_weights[iquad] * metric_oper.det_Jac_vol[iquad];
+            const double q = euler_physics->compute_numerical_entropy_function(soln_at_q);
+            //const double q = soln_at_q[0] * 0.4; // rho * gamma-1. Assue gamma  = 1.4.
+            integrated_quantity += q * quad_weights[iquad] * metric_oper.det_Jac_vol[iquad];
             //#####################################################################
         }
     }
@@ -369,7 +380,8 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_entropy_change_estimate
             if (use_M_norm_for_entropy_change_est)
                 dg->apply_global_mass_matrix(rk_stage[istage], mass_matrix_times_rk_stage,
                         false, // use_auxiliary_eq,
-                        true // use_M_norm
+                        //false // use M+K norm!
+                        true // use M norm
                         );
             else
                 dg->apply_global_mass_matrix(rk_stage[istage],mass_matrix_times_rk_stage);

@@ -115,6 +115,7 @@ real RKNumEntropy<dim,real,MeshType>::compute_FR_entropy_contribution(const real
         const std::vector<dealii::LinearAlgebra::distributed::Vector<double>> &rk_stage,
         const bool compute_K_norm) const
 {
+    return 0; // no FR contribution in this implementation..
     double entropy_contribution = 0;
 
     for (int istage = 0; istage<n_rk_stages; ++istage){
