@@ -194,9 +194,9 @@ std::array<real, nstate> LaxFriedrichsRiemannSolverDissipation<dim,nstate,real>
 ::evaluate_riemann_solver_dissipation (
     const std::array<real, nstate> &soln_int,
     const std::array<real, nstate> &soln_ext,
-    const dealii::Tensor<1,dim,real> &normal_int) const
+    const dealii::Tensor<1,dim,real> &/*normal_int*/) const
 {
-    const real conv_max_eig_int = pde_physics->max_convective_normal_eigenvalue(soln_int,normal_int);
+    /*const real conv_max_eig_int = pde_physics->max_convective_normal_eigenvalue(soln_int,normal_int);
     const real conv_max_eig_ext = pde_physics->max_convective_normal_eigenvalue(soln_ext,normal_int);
     // Replaced the std::max with an if-statement for the AD to work properly.
     //const real conv_max_eig = std::max(conv_max_eig_int, conv_max_eig_ext);
@@ -205,12 +205,14 @@ std::array<real, nstate> LaxFriedrichsRiemannSolverDissipation<dim,nstate,real>
         conv_max_eig = conv_max_eig_int;
     } else {
         conv_max_eig = conv_max_eig_ext;
-    }
+    }*/
     //conv_max_eig = std::max(conv_max_eig_int, conv_max_eig_ext);
     // Scalar dissipation
     std::array<real, nstate> numerical_flux_dot_n;
     for (int s=0; s<nstate; s++) {
-        numerical_flux_dot_n[s] = - 0.5 * conv_max_eig * (soln_ext[s]-soln_int[s]);
+        //numerical_flux_dot_n[s] = - 0.5 * conv_max_eig * (soln_ext[s]-soln_int[s]);
+        const double epsilon = 1.0/100.0;
+        numerical_flux_dot_n[s] = - epsilon * abs(soln_ext[s]-soln_int[s]);
     }
 
     return numerical_flux_dot_n;
