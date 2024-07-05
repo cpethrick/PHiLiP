@@ -373,11 +373,17 @@ template <int dim, int nstate, typename real>
 inline real InitialConditionFunction_ViscousBurgersExact<dim,nstate,real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
 {
+    /*
     real value = 0;
     const real pi = dealii::numbers::PI;
     if(point[0] >= -pi && point[0] <= pi){
         value = -reynolds * sin(point[0]);
     }
+    return value;
+    */
+
+    real value = 0;
+    value = exp(-30.0 * point[0] * point[0]);
     return value;
 }
 
