@@ -211,7 +211,7 @@ std::array<real, nstate> LaxFriedrichsRiemannSolverDissipation<dim,nstate,real>
     std::array<real, nstate> numerical_flux_dot_n;
     for (int s=0; s<nstate; s++) {
         //numerical_flux_dot_n[s] = - 0.5 * conv_max_eig * (soln_ext[s]-soln_int[s]);
-        const double epsilon = 1.0/25.0;
+        const double epsilon = 5.0;
         numerical_flux_dot_n[s] = - epsilon * (soln_ext[s]-soln_int[s]);
         numerical_flux_dot_n[s] *= normal_int[0];
     }
