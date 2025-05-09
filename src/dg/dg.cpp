@@ -764,6 +764,8 @@ void DGBase<dim,real,MeshType>::assemble_cell_residual (
         current_cell_rhs_aux,
         compute_auxiliary_right_hand_side,
         compute_dRdW, compute_dRdX, compute_d2R);
+    
+    std::cout << "Outputting only the volume term... " <<  current_cell_rhs[0] << std::endl;
 
     (void) fe_values_collection_face_int;
     (void) fe_values_collection_face_ext;
@@ -1056,6 +1058,7 @@ void DGBase<dim,real,MeshType>::assemble_cell_residual (
             // but will be evaluated when we visit the other cell.
         }
     } // end of face loop
+    std::cout << "Outputting  volume + face term... " <<  current_cell_rhs[0] << std::endl;
 
     if(compute_auxiliary_right_hand_side) {
         // Add local contribution from current cell to global vector
@@ -2374,6 +2377,7 @@ void DGBase<dim,real,MeshType>::reinit_operators_for_mass_matrix(
 template <int dim, typename real, typename MeshType>
 void DGBase<dim,real,MeshType>::evaluate_mass_matrices (bool do_inverse_mass_matrix)
 {   
+    this->pcout << "Evaluating mass matrix.." << std::endl;
     using FR_enum = Parameters::AllParameters::Flux_Reconstruction;
     const FR_enum FR_Type = this->all_parameters->flux_reconstruction_type;
     
@@ -2555,6 +2559,7 @@ void DGBase<dim,real,MeshType>::evaluate_local_metric_dependent_mass_matrix_and_
     OPERATOR::local_Flux_Reconstruction_operator_aux<dim,2*dim> &reference_FR_aux,
     OPERATOR::derivative_p<dim,2*dim> &deriv_p)
 {   
+    std::cout << "In function evaluate_local_metric_dependent_mass_matrix_and_set_in_global_mass_matrix " << std::endl;
     using FR_enum = Parameters::AllParameters::Flux_Reconstruction;
     const FR_enum FR_Type = this->all_parameters->flux_reconstruction_type;
     
@@ -2573,15 +2578,37 @@ void DGBase<dim,real,MeshType>::evaluate_local_metric_dependent_mass_matrix_and_
         dealii::FullMatrix<real> local_mass_matrix_aux_state(n_shape_fns);
         dealii::FullMatrix<real> local_mass_matrix_aux_inv_state(n_shape_fns);
         // compute mass matrix and inverse the standard way
+        std::cout << "Here" << std::endl;
+            std::cout << "Cartesian?" << Cartesian_element << std::endl;
+            std::cout << "WA?" << this->all_parameters->use_weight_adjusted_mass << std::endl;
         if(this->all_parameters->use_weight_adjusted_mass == false){
             //check if Cartesian grid because we can factor out determinant of Jacobian
+            std::cout << "Cartesian?" << Cartesian_element << std::endl;
             if(Cartesian_element){
+
+               
+                std::cout << "Jacobian: " << metric_oper.det_Jac_vol[0] << std::endl;
                 local_mass_matrix_state.add(metric_oper.det_Jac_vol[0],
                                             reference_mass_matrix.tensor_product_state(
                                             1,
                                             reference_mass_matrix.oneD_vol_operator,
                                             reference_mass_matrix.oneD_vol_operator,
                                             reference_mass_matrix.oneD_vol_operator));
+                std::cout << "Printing local mass matrix..." << std::endl;
+                for (unsigned int idof=0; idof<n_shape_fns; idof++){
+                    for (unsigned int idof2=0; idof2<n_shape_fns; idof2++){
+                        std::cout << local_mass_matrix_state[idof][idof2] << " ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl << std::endl;
+                const std::vector<real> &quad_weights = volume_quadrature_collection[poly_degree].get_weights();
+                local_mass_matrix_state = reference_mass_matrix.build_dim_mass_matrix(
+                                            1,
+                                            n_shape_fns, n_quad_pts,
+                                            basis,
+                                            metric_oper.det_Jac_vol,
+                                            quad_weights);
                 if(use_auxiliary_eq){
                     local_mass_matrix_aux_state.add(1.0, local_mass_matrix_state);
                 }
@@ -2592,6 +2619,14 @@ void DGBase<dim,real,MeshType>::evaluate_local_metric_dependent_mass_matrix_and_
                                                 1,
                                                 n_shape_fns));
                 }
+                std::cout << "Printing local ADJUSTED mass matrix..." << std::endl;
+                for (unsigned int idof=0; idof<n_shape_fns; idof++){
+                    for (unsigned int idof2=0; idof2<n_shape_fns; idof2++){
+                        std::cout << local_mass_matrix_state[idof][idof2] << " ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl << std::endl;
                 if(use_auxiliary_eq){
                     if(FR_Type_Aux != FR_Aux_enum::kDG){
                         local_mass_matrix_aux_state.add(metric_oper.det_Jac_vol[0],

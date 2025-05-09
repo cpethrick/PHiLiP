@@ -167,12 +167,12 @@ dealii::Tensor<1,3,double> ManufacturedSolutionParam::get_default_advection_vect
 {
     dealii::Tensor<1,3,double> default_advection_vector;
 
-    const double pi = atan(1)*4.0;
-    const double ee = exp(1);
+    //const double pi = atan(1)*4.0;
+    //const double ee = exp(1);
 
-    default_advection_vector[0] = 1.1;
-    default_advection_vector[1] = -pi/ee;
-    default_advection_vector[2] = ee/pi;
+    default_advection_vector[0] = 1.0; //1.1;
+    default_advection_vector[1] = 0.0; //-pi/ee;
+    default_advection_vector[2] = 0.0; //ee/pi;
 
     return default_advection_vector;
 }

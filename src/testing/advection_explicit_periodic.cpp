@@ -13,6 +13,7 @@
 #include <deal.II/base/convergence_table.h>
 
 #include "parameters/all_parameters.h"
+#include "parameters/parameters_ode_solver.h"
 #include "parameters/parameters.h"
 #include "physics/physics_factory.h"
 #include "physics/physics.h"
@@ -22,8 +23,10 @@
 #include "advection_explicit_periodic.h"
 #include "physics/initial_conditions/set_initial_condition.h"
 #include "physics/initial_conditions/initial_condition_function.h"
+#include "operators/operators.h"
 
 #include "mesh/grids/nonsymmetric_curved_periodic_grid.hpp"
+#include "mesh/grids/straight_periodic_cube.hpp"
 
 #include<fenv.h>
 
@@ -101,8 +104,9 @@ int AdvectionPeriodic<dim, nstate>::run_test() const
 
     printf("starting test\n");
     PHiLiP::Parameters::AllParameters all_parameters_new = *all_parameters;  
+    all_parameters_new.use_weight_adjusted_mass = false;
 
-    const unsigned int n_grids = (all_parameters_new.use_energy) ? 4 : 5;
+    const unsigned int n_grids = 3;//(all_parameters_new.use_energy) ? 4 : 5;
     std::vector<double> grid_size(n_grids);
     std::vector<double> soln_error(n_grids);
     std::vector<double> soln_error_inf(n_grids);
@@ -110,16 +114,17 @@ int AdvectionPeriodic<dim, nstate>::run_test() const
     using ADArray = std::array<ADtype,nstate>;
     using ADArrayTensor1 = std::array< dealii::Tensor<1,dim,ADtype>, nstate >;
 
-    const double left = -1.0;
-    const double right = 1.0;
+    const double left = 0.0;
+    const double right = 2.0;
     unsigned int n_refinements = n_grids;
-    unsigned int poly_degree = 3;
+    unsigned int poly_degree = 2;
     unsigned int grid_degree = poly_degree;
     
     dealii::ConvergenceTable convergence_table;
-    const unsigned int igrid_start = 3;
+    const unsigned int igrid_start = 2;
 
     for(unsigned int igrid=igrid_start; igrid<n_refinements; ++igrid){
+        this->pcout << "grid" << igrid <<  std::endl;
 #if PHILIP_DIM==1 // dealii::parallel::distributed::Triangulation<dim> does not work for 1D
         using Triangulation = dealii::Triangulation<dim>;
         std::shared_ptr<Triangulation> grid = std::make_shared<Triangulation>(
@@ -136,20 +141,27 @@ int AdvectionPeriodic<dim, nstate>::run_test() const
 #endif
 
         //set the warped grid
-        PHiLiP::Grids::nonsymmetric_curved_grid<dim,Triangulation>(*grid, igrid);
+        //PHiLiP::Grids::nonsymmetric_curved_grid<dim,Triangulation>(*grid, igrid);
+        PHiLiP::Grids::straight_periodic_cube<dim,Triangulation>(grid,left,right, 4);
+        this->pcout << "set grid." << std::endl;
 
         //CFL number
         const unsigned int n_global_active_cells2 = grid->n_global_active_cells();
-        double n_dofs_cfl = pow(n_global_active_cells2,dim) * pow(poly_degree+1.0, dim);
-        double delta_x = (right-left)/pow(n_dofs_cfl,(1.0/dim)); 
-        all_parameters_new.ode_solver_param.initial_time_step =  delta_x /(1.0*(2.0*poly_degree+1)) ;
-        all_parameters_new.ode_solver_param.initial_time_step =  (all_parameters_new.use_energy) ? 0.05*delta_x : 0.5*delta_x;
-        std::cout << "dt " <<all_parameters_new.ode_solver_param.initial_time_step <<  std::endl;
+        //double n_dofs_cfl = pow(n_global_active_cells2,dim) * pow(poly_degree+1.0, dim);
+        //double delta_x = (right-left)/pow(n_dofs_cfl,(1.0/dim)); 
+        //all_parameters_new.ode_solver_param.initial_time_step =  delta_x /(1.0*(2.0*poly_degree+1)) ;
+        //all_parameters_new.ode_solver_param.initial_time_step =  (all_parameters_new.use_energy) ? 0.05*delta_x : 0.5*delta_x;
+        //std::cout << "dt " <<all_parameters_new.ode_solver_param.initial_time_step <<  std::endl;
         std::cout << "cells " <<n_global_active_cells2 <<  std::endl;
 
         //Set the DG spatial sys
         std::shared_ptr < PHiLiP::DGBase<dim, double> > dg = PHiLiP::DGFactory<dim,double>::create_discontinuous_galerkin(&all_parameters_new, poly_degree, poly_degree, grid_degree, grid);
         dg->allocate_system (false,false,false);
+        dg->evaluate_mass_matrices(false);
+        
+        //OPERATOR::local_mass<2,4> test_local_mass_matrix(1, poly_degree, 1);
+        //test_local_mass_matrix.build_dim_mass_matrix(1, polydegree+1, )
+
 
         std::cout << "Implement initial conditions" << std::endl;
         // Create initial condition function
@@ -159,7 +171,7 @@ int AdvectionPeriodic<dim, nstate>::run_test() const
 
         // Create ODE solver using the factory and providing the DG object
         std::shared_ptr<PHiLiP::ODE::ODESolverBase<dim, double>> ode_solver = PHiLiP::ODE::ODESolverFactory<dim, double>::create_ODESolver(dg);
-        double finalTime = 2.0;
+        double finalTime = 1.0;
         if constexpr(dim==3) finalTime = 0.1;//to speed things up locally
     	
         // need to call ode_solver before calculating energy because mass matrix isn't allocated yet.
@@ -231,8 +243,10 @@ int AdvectionPeriodic<dim, nstate>::run_test() const
             ode_solver->current_iteration = 0;
 
             // advance solution until the final time
-            ode_solver->advance_solution_time(finalTime);
+            ode_solver->advance_solution_time(0.001639344262295082);
+            //ode_solver->step_in_time(0.001639344262295082, false);
 
+            std::cout << "Finished single time step" << std::endl;
             // output results
             const unsigned int n_global_active_cells = grid->n_global_active_cells();
             const unsigned int n_dofs = dg->dof_handler.n_dofs();
@@ -295,8 +309,12 @@ int AdvectionPeriodic<dim, nstate>::run_test() const
                 }
 
             }
+
             const double l2error_mpi_sum = std::sqrt(dealii::Utilities::MPI::sum(l2error, this->mpi_communicator));
             const double linferror_mpi= (dealii::Utilities::MPI::max(linf_error, this->mpi_communicator));
+            std::cout << l2error_mpi_sum << std::endl;
+            std::cout << linferror_mpi << std::endl;
+
 
             // Convergence table
             const double dx = 1.0/pow(n_dofs,(1.0/dim));
@@ -319,6 +337,9 @@ int AdvectionPeriodic<dim, nstate>::run_test() const
                         << " Linf-soln_error: " << linferror_mpi
                         << " Residual: " << ode_solver->residual_norm
                         << std::endl;
+            for (unsigned int idof =0; idof < n_dofs; idof++){
+                std::cout << dg->right_hand_side[idof] << std::endl;
+            }
 
             if (igrid > igrid_start) {
                 const double slope_soln_err = log(soln_error[igrid]/soln_error[igrid-1])

@@ -296,9 +296,9 @@ inline real InitialConditionFunction_ConvDiff<dim,nstate,real>
 {
     real value = 1.0;
     if constexpr(dim >= 1)
-        value *= sin(dealii::numbers::PI*point[0]);
+        value *= sin(dealii::numbers::PI*point[0]) +0.01;
     if constexpr(dim >= 2)
-        value *= sin(dealii::numbers::PI*point[1]);
+        value *= 0;
     if constexpr(dim == 3)
         value *= sin(dealii::numbers::PI*point[2]);
 

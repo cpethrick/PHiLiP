@@ -37,6 +37,15 @@
 namespace PHiLiP {
 namespace OPERATOR {
 
+void display_matrix(const dealii::FullMatrix<double> M, const unsigned int matrix_dim)
+{
+    for (unsigned int i = 0; i < matrix_dim; ++i){
+        for (unsigned int j = 0; j < matrix_dim; ++j){
+            std::cout << M[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 //Constructor
 template <int dim, int n_faces>
 OperatorsBase<dim,n_faces>::OperatorsBase(
@@ -1279,10 +1288,17 @@ dealii::FullMatrix<double> local_mass<dim,n_faces>::build_dim_mass_matrix(
                            * basis_dim[iquad][trial_index]
                            * det_Jac[iquad]
                            * quad_weights[iquad];
+                    //std::cout << iquad << " quad_weight " << (quad_weights[iquad]);
+                    //std::cout << " det_Jac " << (det_Jac[iquad]);
+                    //std::cout << (" ");
                 }
+                std::cout << std::endl;
                 mass_matrix_dim[trial_index][test_index] = value;
                 mass_matrix_dim[test_index][trial_index] = value;
+                //std::cout << mass_matrix_dim[test_index][trial_index] << " ";
             }
+            //std::cout << std::endl;
+
         }
     }
     return mass_matrix_dim;
@@ -1511,6 +1527,7 @@ void local_Flux_Reconstruction_operator<dim,n_faces>::get_FR_correction_paramete
     else if(FR_param_type == FR_enum::cPlus){ 
         get_c_plus_parameter(curr_cell_degree, c); 
     }
+    std::cout << "c parameter: " << std::setprecision(16) << c << std::endl;
 }
 template <int dim, int n_faces>  
 void local_Flux_Reconstruction_operator<dim,n_faces>::build_local_Flux_Reconstruction_operator(
@@ -1522,9 +1539,11 @@ void local_Flux_Reconstruction_operator<dim,n_faces>::build_local_Flux_Reconstru
 {
     dealii::FullMatrix<double> derivative_p_temp(n_dofs);
     derivative_p_temp.add(c, pth_derivative);
+    std::cout << c << std::endl;
     dealii::FullMatrix<double> Flux_Reconstruction_operator_temp(n_dofs);
     derivative_p_temp.Tmmult(Flux_Reconstruction_operator_temp, local_Mass_Matrix);
     Flux_Reconstruction_operator_temp.mmult(Flux_Reconstruction_operator, pth_derivative);
+    display_matrix(Flux_Reconstruction_operator, n_dofs);
 }
 
 
@@ -1607,6 +1626,7 @@ dealii::FullMatrix<double> local_Flux_Reconstruction_operator<dim,n_faces>::buil
     return Flux_Reconstruction_operator;
 }        
 
+
 template <int dim, int n_faces>  
 dealii::FullMatrix<double> local_Flux_Reconstruction_operator<dim,n_faces>::build_dim_Flux_Reconstruction_operator(
     const dealii::FullMatrix<double> &local_Mass_Matrix,
@@ -1618,12 +1638,20 @@ dealii::FullMatrix<double> local_Flux_Reconstruction_operator<dim,n_faces>::buil
         dim_FR_operator = this->oneD_vol_operator;
     }
     if (dim >= 2){
+        std::cout << "FR1D" << std::endl;
+        display_matrix(this->oneD_vol_operator, int(pow(n_dofs, 1.0/dim)));
         dealii::FullMatrix<double> FR1(n_dofs);
         FR1 = this->tensor_product_state(nstate, this->oneD_vol_operator, local_Mass_Matrix, local_Mass_Matrix);
+        std::cout << "FR1"<< std::endl;
+        display_matrix(FR1,n_dofs);
         dealii::FullMatrix<double> FR2(n_dofs);
+        std::cout << "FR2" << std::endl;
         FR2 = this->tensor_product_state(nstate, local_Mass_Matrix, this->oneD_vol_operator, local_Mass_Matrix);
+        display_matrix(FR2,n_dofs);
         dealii::FullMatrix<double> FR_cross1(n_dofs);
         FR_cross1 = this->tensor_product_state(nstate, this->oneD_vol_operator, this->oneD_vol_operator, local_Mass_Matrix);
+        std::cout << "FR_cross" << std::endl;
+        display_matrix(FR_cross1, n_dofs);
         dim_FR_operator.add(1.0, FR1, 1.0, FR2, 1.0, FR_cross1);
     }
     if constexpr (dim == 3){
