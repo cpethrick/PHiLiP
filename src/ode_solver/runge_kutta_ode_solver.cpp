@@ -61,6 +61,7 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::calculate_stage_solutio
     
     // If using the entropy formulation of RRK, solutions must be stored.
     // Call store_stage_solutions before overwriting rk_stage with the derivative.
+    // Note that empty RK class does not store anything.
     this->relaxation_runge_kutta->store_stage_solutions(istage, this->rk_stage[istage]);
 
     this->dg->solution = this->rk_stage[istage];

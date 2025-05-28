@@ -195,7 +195,7 @@ std::shared_ptr<ODESolverBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
             return nullptr;
         }
     } else if (ode_solver_type == ODEEnum::low_storage_runge_kutta_solver) {
-         std::shared_ptr<LowStorageRKTableauBase<dim,real,MeshType>> ls_rk_tableau = create_LowStorageRKTableau(dg_input);;
+         std::shared_ptr<LowStorageRKTableauBase<dim,real,MeshType>> ls_rk_tableau =std::dynamic_pointer_cast<LowStorageRKTableauBase<dim,real,MeshType>>(rk_tableau); //  create_LowStorageRKTableau(dg_input);;
 
         // Hard-coded templating of n_rk_stages because it is not known at compile time
         pcout << "Creating Low-Storage Runge Kutta ODE Solver with " 
@@ -321,6 +321,12 @@ std::shared_ptr<RKTableauBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
     if (rk_method == RKMethodEnum::dirk_2_im)   return std::make_shared<DIRK2Implicit<dim, real, MeshType>>  (n_rk_stages, "2nd order diagonally-implicit (implicit)");
     if (rk_method == RKMethodEnum::dirk_3_im)   return std::make_shared<DIRK3Implicit<dim, real, MeshType>>  (n_rk_stages, "3nd order diagonally-implicit (implicit)");
     else {
+        const int num_delta = dg_input->all_parameters->ode_solver_param.num_delta;
+        if (rk_method == RKMethodEnum::RK3_2_5F_3SStarPlus)   return std::make_shared<RK3_2_5F_3SStarPlus<dim, real, MeshType>> (n_rk_stages, num_delta, "RK3_2_5F_3SStarPlus");
+        if (rk_method == RKMethodEnum::RK4_3_5_3SStar)      return std::make_shared<RK4_3_5_3SStar<dim, real, MeshType>>    (n_rk_stages, num_delta, "RK4_3_5_3SStar");
+        if (rk_method == RKMethodEnum::RK4_3_9F_3SStarPlus)      return std::make_shared<RK4_3_9F_3SStarPlus<dim, real, MeshType>>    (n_rk_stages, num_delta, "RK4_3_9F_3SStarPlus");
+        if (rk_method == RKMethodEnum::RK5_4_10F_3SStarPlus)      return std::make_shared<RK5_4_10F_3SStarPlus<dim, real, MeshType>>    (n_rk_stages, num_delta, "RK5_4_10F_3SStarPlus");
+        /*
         // Return dummy RK method when running LSRK method because an RK tableau has to be created
         if (rk_method == RKMethodEnum::RK3_2_5F_3SStarPlus){
             pcout << "WARNING: returning dummy RK method!" << std::endl;
@@ -337,7 +343,7 @@ std::shared_ptr<RKTableauBase<dim,real,MeshType>> ODESolverFactory<dim,real,Mesh
         if (rk_method == RKMethodEnum::RK5_4_10F_3SStarPlus) {
             pcout << "WARNING: returning dummy RK method!" << std::endl;
             return std::make_shared<SSPRK3Explicit<dim, real, MeshType>> (n_rk_stages, "3rd order SSP (explicit)");
-        }            
+        } */           
         pcout << "Error: invalid RK method. Aborting..." << std::endl;
         std::abort();
         return nullptr;
@@ -371,7 +377,7 @@ std::shared_ptr<EmptyRRKBase<dim,real,MeshType>> ODESolverFactory<dim,real,MeshT
         if (pde_type == PDEEnum::burgers_inviscid){
             numerical_entropy_type = NumEntropyEnum::energy;
             rrk_type_string = "Algebraic";
-        } else if ((pde_type == PDEEnum::euler || pde_type == PDEEnum::navier_stokes)
+        } else if ((pde_type == PDEEnum::euler || pde_type == PDEEnum::navier_stokes || pde_type == PDEEnum::advection) // temporarily adding advection to test code; should be reverted
                     && (two_point_num_flux_type != NumFluxEnum::KG)){
             numerical_entropy_type = NumEntropyEnum::nonlinear;
             rrk_type_string = "Root-finding";
