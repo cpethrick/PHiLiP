@@ -23,11 +23,6 @@ void RKTableauButcherBase<dim,real, MeshType> :: set_tableau ()
     this->pcout << "Assigned RK method: " << this->rk_method_string << std::endl;
 }
 
-template <int dim, typename real, typename MeshType> 
-double RKTableauButcherBase<dim,real, MeshType> :: get_a (const int i, const int j) const
-{
-    return butcher_tableau_a[i][j];
-}
 
 template <int dim, typename real, typename MeshType> 
 double RKTableauButcherBase<dim,real, MeshType> :: get_c (const int i) const

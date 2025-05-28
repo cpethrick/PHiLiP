@@ -38,11 +38,8 @@ public:
     /** This returns zero as a default constructor.
      *  It is included in the base class because the algebraic version of RRK
      *  needs to access a coeffs.
-     *  Currently, the base implementation just warns the user that 
-     *  there is no a matrix stored.
-     *  The A part can be found from the low storage coeffs, but has not been implemented.
      **/
-    virtual double get_a(const int i, const int j) const;
+    double get_a(const int i, const int j) const;
     
 protected:
 
@@ -56,6 +53,9 @@ protected:
      *  standard Butcher RK
      **/
     dealii::Table<1,double> butcher_tableau_b;
+
+    /// Butcher tableau "a"
+    dealii::Table<2,double> butcher_tableau_a;
     
 
 };

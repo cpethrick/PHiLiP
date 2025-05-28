@@ -24,9 +24,6 @@ public:
     /// Default constructor that will set the constants.
     RKTableauButcherBase(const int n_rk_stages, const std::string rk_method_string_input); 
 
-    /// Returns Butcher tableau "a" coefficient at position [i][j]
-    double get_a(const int i, const int j) const override;
-
     /// Returns Butcher tableau "c" coefficient at position [i]
     double get_c(const int i) const;
 
@@ -35,8 +32,6 @@ public:
 
 protected:
 
-    /// Butcher tableau "a"
-    dealii::Table<2,double> butcher_tableau_a;
 
     /// Butcher tableau "c"
     dealii::Table<1,double> butcher_tableau_c;

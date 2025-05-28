@@ -47,12 +47,12 @@ void LowStorageRKTableauBase<dim,real, MeshType> :: set_tableau ()
     set_beta();
     set_delta();
     set_b_hat();
-    set_b();
+    set_a_and_b();
     this->pcout << "Assigned RK method: " << this->rk_method_string << std::endl;
 }
 
 template <int dim, typename real, typename MeshType> 
-void LowStorageRKTableauBase<dim,real, MeshType> :: set_b ()
+void LowStorageRKTableauBase<dim,real, MeshType> :: set_a_and_b ()
 {
     // Symbols, equation numbers & sections herein correspond to Ketcheson 2010 paper.
 
@@ -129,11 +129,17 @@ void LowStorageRKTableauBase<dim,real, MeshType> :: set_b ()
         sum_b+=b_vec[i];
     }
 
+    this->butcher_tableau_a.reinit(this->n_rk_stages,this->n_rk_stages);
+    for (int i = 0; i < this->n_rk_stages; ++i){
+        for (int j = 0; j < this->n_rk_stages; ++j){
+            this->butcher_tableau_a[i][j] = A[i][j];
+        }
+    }
+
     // Check that sum(b) = 1
     if (abs(sum_b-1.0) > 1E-8){
         this->pcout << "WARNING: Butcher b vector does not sum to 1 !" << std::endl;
     }
-    
 
     print_table(this->butcher_tableau_b,this->n_rk_stages);
 
