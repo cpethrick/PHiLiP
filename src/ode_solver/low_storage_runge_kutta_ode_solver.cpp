@@ -24,6 +24,9 @@ template <int dim, typename real, int n_rk_stages, typename MeshType>
 void LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::calculate_stage_solution(int istage, real dt, const bool pseudotime)
 {
     if (this->ode_param.use_relaxation_runge_kutta) {
+        if (false){ //istage == n_rk_stages) {//do nothing
+    }
+        else{
 
     this->rk_stage[istage]=0.0; //resets all entries to zero
     
@@ -44,7 +47,7 @@ void LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::calculate_st
     this->rk_stage[istage].add(1.0,this->solution_update); //u_n + dt * sum(a_ij * k_j)
     
     //implicit solve if there is a nonzero diagonal element
-    if (!this->butcher_tableau_aii_is_zero[istage]){
+    if (false){ //!this->butcher_tableau_aii_is_zero[istage]){
         /* // AD version - keeping in comments as it may be useful for future testing
         // Solve (M/dt - dRdW) / a_ii * dw = R
         // w = w + dw
@@ -77,7 +80,7 @@ void LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::calculate_st
 
     this->dg->solution = this->rk_stage[istage];
 
-
+        }
     }
     else{
     if(istage == 0) prep_for_step_in_time();
@@ -132,19 +135,8 @@ template <int dim, typename real, int n_rk_stages, typename MeshType>
 void LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::sum_stages (real dt, const bool /*pseudotime*/)
 {
     if (this->ode_param.use_relaxation_runge_kutta) {
-        // Calculate last stage (e.g., next solution) using Butcher tableau b
-        // This is done because I'm not sure whether it's valid to just modify the dt of the shu-osher form.
-        // this->solution_update; // holds u_n
-        // this->relaxation_runge_kutta; // holds all stage solutions currently
-
-
-        for (int istage=0; istage < n_rk_stages; ++istage) {
-            // calculate the residual at this stage (expensive !!)
-            this->dg->solution = this->relaxation_runge_kutta->rk_stage_solution[istage];
-            this->dg->assemble_residual();
-            this->dg->apply_inverse_global_mass_matrix(this->dg->right_hand_side,storage_register_2); //store in an arbitrary register. It will be reinitialized in prep_for_step_in_time.
-            // storage_register_2 *= dt* this->butcher_tableau->get_b(istage);
-            this->solution_update.add(this->butcher_tableau->get_b(istage) * dt, storage_register_2);
+        for (int istage = 0; istage < n_rk_stages; ++istage){
+                this->solution_update.add(dt* this->butcher_tableau->get_b(istage),this->rk_stage[istage]);
         }
     } else {
         double sum_delta = 0.0;
@@ -169,8 +161,6 @@ void LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::sum_stages (
 
         if ((this->ode_param.ode_output) == Parameters::OutputEnum::verbose &&
         (this->current_iteration%this->ode_param.print_iteration_modulo) == 0 ) {
-            this->pcout << " Time is: " << this->current_time + dt <<std::endl;
-            this->pcout << std::endl;
         }
     }
 }
@@ -302,6 +292,7 @@ double LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::get_automa
 template <int dim, typename real, int n_rk_stages, typename MeshType> 
 void LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::allocate_runge_kutta_system ()
 {
+    this->pcout << "Allocating in Low Storage" << std::endl;
     // Clear the rk_stage object for memory optimization
     //this->rk_stage.clear();
     // Continue with allocating LSRK
@@ -325,8 +316,13 @@ void LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::allocate_run
     
     this->pcout << std::endl;
 
+    this->pcout << "About to set tableau " << this->butcher_tableau->rk_method_string <<  std::endl;
+
+    
+
     this->butcher_tableau->set_tableau();
    
+    this->pcout << "Done allocation tasks" << std::endl;
 }
 
 

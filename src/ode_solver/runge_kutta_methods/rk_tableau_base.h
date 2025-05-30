@@ -45,6 +45,7 @@ protected:
 
     dealii::ConditionalOStream pcout; ///< Parallel std::cout that only outputs on mpi_rank==0
     
+public://for debugging
     /// String identifying the RK method
     const std::string rk_method_string;
     

@@ -47,6 +47,7 @@ void LowStorageRKTableauBase<dim,real, MeshType> :: set_tableau ()
     set_beta();
     set_delta();
     set_b_hat();
+    this->pcout << "Set standard values" << std::endl;
     set_a_and_b();
     this->pcout << "Assigned RK method: " << this->rk_method_string << std::endl;
 }
@@ -68,6 +69,7 @@ void LowStorageRKTableauBase<dim,real, MeshType> :: set_a_and_b ()
         beta[i][i-1] = butcher_tableau_beta[i];
         
         // first eq of sec 4.3
+        if (i < this->n_rk_stages){
         beta[i+1][i-1] = -1.0 * this->get_gamma(i+1,1) / this->get_gamma(i,1) * beta[i][i-1];
         // second eq of sec 4.3
         alpha[i+1][0] = this->get_gamma(i+1,2) - this->get_gamma(i+1,1) / this->get_gamma(i,1) * this->get_gamma(i,2);
@@ -75,6 +77,7 @@ void LowStorageRKTableauBase<dim,real, MeshType> :: set_a_and_b ()
         alpha[i+1][i-1] = -1.0 * this->get_gamma(i+1,1) / this->get_gamma(i,1) * this->get_gamma(i,0);
         //fourth equation of sec 4.3
         alpha[i+1][i] = 1.0 - alpha[i+1][i-1] - alpha[i+1][0];
+        }
 
     
     }

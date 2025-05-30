@@ -11,6 +11,7 @@ RKTableauBase<dim,real, MeshType> :: RKTableauBase (const int n_rk_stages_input,
     , pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
     , rk_method_string(rk_method_string_input)
 {
+    this->pcout << "Created RK tableau " << rk_method_string << std::endl;
 }
 
 template <int dim, typename real, typename MeshType> 
