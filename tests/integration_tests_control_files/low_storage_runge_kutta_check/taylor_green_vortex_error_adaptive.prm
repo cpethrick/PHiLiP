@@ -28,7 +28,7 @@ subsection ODE solver
   #set ode_solver_type = rrk_explicit
   #set runge_kutta_method = ssprk3_ex
   set ode_solver_type = low_storage_runge_kutta
-  set runge_kutta_method = RK4_3_5_3SStar
+  set runge_kutta_method = RK4_3_9F_3SStarPlus
   subsection low-storage rk solver
     set atol = 1e-3
     set rtol = 1e-3
@@ -37,7 +37,7 @@ subsection ODE solver
     set beta3 = 0.0
   end
   subsection rrk root solver
-    set use_relaxation_runge_kutta = false
+    set use_relaxation_runge_kutta = true
   end
 end
 
@@ -56,8 +56,8 @@ subsection flow_solver
   set final_time = 14
   set courant_friedrichs_lewy_number = 0.48
   set unsteady_data_table_filename = tgv_CFL048_cDG
-  set adaptive_time_step = true
-  #set error_adaptive_time_step = true
+  #set adaptive_time_step = true
+  set error_adaptive_time_step = true
   set end_exactly_at_final_time = false
   subsection grid
     set grid_left_bound = 0.0

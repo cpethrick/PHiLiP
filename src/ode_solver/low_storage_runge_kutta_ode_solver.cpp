@@ -3,6 +3,158 @@
 namespace PHiLiP {
 namespace ODE {
 
+template <int dim, int nstate, typename real>
+real compute_pressure ( const std::array<real,nstate> &conservative_soln )
+{
+    const real density = conservative_soln[0];
+
+    const real tot_energy  = conservative_soln[nstate-1];
+
+    dealii::Tensor<1,dim,real> vel;
+    for (int d=0; d<dim; ++d) { vel[d] = conservative_soln[1+d]/density; }
+
+    real vel2 = 0.0;
+    for (int d=0; d<dim; d++) { 
+        vel2 = vel2 + vel[d]*vel[d]; 
+    }    
+    real pressure = 0.4*(tot_energy - 0.5*density*vel2);
+    
+    return pressure;
+}
+template <int dim, int nstate, typename real>
+real compute_entropy (const real density, const real pressure)
+{
+    // copy density and pressure such that the check will not modify originals
+    if (density>0 && pressure>0) {
+        real entropy = pressure * pow(density, -1.4);
+        entropy = log(entropy);
+        return entropy;
+    } else {
+        return 1E16;
+    }
+
+}
+template <int dim, int nstate, typename real>
+real compute_numerical_entropy_function ( const std::array<real,nstate> &conservative_soln )
+{
+    const real pressure = compute_pressure<dim,nstate,real>(conservative_soln);
+    const real density = conservative_soln[0];
+
+    const real entropy = compute_entropy<dim,nstate,real>(density, pressure);
+
+    const real numerical_entropy_function = - density * entropy;
+
+    return numerical_entropy_function;
+}
+
+template <int dim, typename real, int n_rk_stages, typename MeshType> 
+double LowStorageRungeKuttaODESolver<dim ,real,n_rk_stages, MeshType>::compute_current_integrated_numerical_entropy(
+        const std::shared_ptr <DGBase<dim, double,MeshType>> dg
+        ) const
+{
+    const double poly_degree = dg->all_parameters->flow_solver_param.poly_degree;
+    const int nstate = 5; // hard code for Euler/NS
+
+    const unsigned int n_dofs_cell = dg->fe_collection[poly_degree].dofs_per_cell;
+    const unsigned int n_quad_pts = dg->volume_quadrature_collection[poly_degree].size();
+    const unsigned int n_shape_fns = n_dofs_cell / nstate;
+
+    OPERATOR::vol_projection_operator<dim,2*dim,double> vol_projection(1, poly_degree, dg->max_grid_degree);
+    vol_projection.build_1D_volume_operator(dg->oneD_fe_collection_1state[poly_degree], dg->oneD_quadrature_collection[poly_degree]);
+
+    // Construct the basis functions and mapping shape functions.
+    OPERATOR::basis_functions<dim,2*dim,double> soln_basis(1, poly_degree, dg->max_grid_degree); 
+    soln_basis.build_1D_volume_operator(dg->oneD_fe_collection_1state[poly_degree], dg->oneD_quadrature_collection[poly_degree]);
+
+    OPERATOR::mapping_shape_functions<dim,2*dim,double> mapping_basis(1, poly_degree, dg->max_grid_degree);
+    mapping_basis.build_1D_shape_functions_at_grid_nodes(dg->high_order_grid->oneD_fe_system, dg->high_order_grid->oneD_grid_nodes);
+    mapping_basis.build_1D_shape_functions_at_flux_nodes(dg->high_order_grid->oneD_fe_system, dg->oneD_quadrature_collection[poly_degree], dg->oneD_face_quadrature);
+
+    std::vector<dealii::types::global_dof_index> dofs_indices (n_dofs_cell);
+    
+    double integrand_numerical_entropy_function=0;
+    double integral_numerical_entropy_function=0;
+    const std::vector<double> &quad_weights = dg->volume_quadrature_collection[poly_degree].get_weights();
+
+    auto metric_cell = dg->high_order_grid->dof_handler_grid.begin_active();
+    // Changed for loop to update metric_cell.
+    for (auto cell = dg->dof_handler.begin_active(); cell!= dg->dof_handler.end(); ++cell, ++metric_cell) {
+        if (!cell->is_locally_owned()) continue;
+        cell->get_dof_indices (dofs_indices);
+        
+        // We first need to extract the mapping support points (grid nodes) from high_order_grid.
+        const dealii::FESystem<dim> &fe_metric = dg->high_order_grid->fe_system;
+        const unsigned int n_metric_dofs = fe_metric.dofs_per_cell;
+        const unsigned int n_grid_nodes  = n_metric_dofs / dim;
+        std::vector<dealii::types::global_dof_index> metric_dof_indices(n_metric_dofs);
+        metric_cell->get_dof_indices (metric_dof_indices);
+        std::array<std::vector<double>,dim> mapping_support_points;
+        for(int idim=0; idim<dim; idim++){
+            mapping_support_points[idim].resize(n_grid_nodes);
+        }
+        // Get the mapping support points (physical grid nodes) from high_order_grid.
+        // Store it in such a way we can use sum-factorization on it with the mapping basis functions.
+        const std::vector<unsigned int > &index_renumbering = dealii::FETools::hierarchic_to_lexicographic_numbering<dim>(dg->max_grid_degree);
+        for (unsigned int idof = 0; idof< n_metric_dofs; ++idof) {
+            const double val = (dg->high_order_grid->volume_nodes[metric_dof_indices[idof]]);
+            const unsigned int istate = fe_metric.system_to_component_index(idof).first; 
+            const unsigned int ishape = fe_metric.system_to_component_index(idof).second; 
+            const unsigned int igrid_node = index_renumbering[ishape];
+            mapping_support_points[istate][igrid_node] = val; 
+        }
+        // Construct the metric operators.
+        OPERATOR::metric_operators<double, dim, 2*dim> metric_oper(nstate, poly_degree, dg->max_grid_degree, false, false);
+        // Build the metric terms to compute the gradient and volume node positions.
+        // This functions will compute the determinant of the metric Jacobian and metric cofactor matrix. 
+        // If flags store_vol_flux_nodes and store_surf_flux_nodes set as true it will also compute the physical quadrature positions.
+        metric_oper.build_volume_metric_operators(
+            n_quad_pts, n_grid_nodes,
+            mapping_support_points,
+            mapping_basis,
+            dg->all_parameters->use_invariant_curl_form);
+
+        // Fetch the modal soln coefficients
+        // We immediately separate them by state as to be able to use sum-factorization
+        // in the interpolation operator. If we left it by n_dofs_cell, then the matrix-vector
+        // mult would sum the states at the quadrature point.
+        // That is why the basis functions are based off the 1state oneD fe_collection.
+        std::array<std::vector<double>,nstate> soln_coeff;
+        for (unsigned int idof = 0; idof < n_dofs_cell; ++idof) {
+            const unsigned int istate = dg->fe_collection[poly_degree].system_to_component_index(idof).first;
+            const unsigned int ishape = dg->fe_collection[poly_degree].system_to_component_index(idof).second;
+            if(ishape == 0){
+                soln_coeff[istate].resize(n_shape_fns);
+            }
+            soln_coeff[istate][ishape] = dg->solution(dofs_indices[idof]);
+        }
+        // Interpolate each state to the quadrature points using sum-factorization
+        // with the basis functions in each reference direction.
+        std::array<std::vector<double>,nstate> soln_at_q;
+        for(int istate=0; istate<nstate; istate++){
+            soln_at_q[istate].resize(n_quad_pts);
+            // Interpolate soln coeff to volume cubature nodes.
+            soln_basis.matrix_vector_mult_1D(soln_coeff[istate], soln_at_q[istate],
+                                             soln_basis.oneD_vol_operator);
+        }
+
+        // Loop over quadrature nodes, compute quantities to be integrated, and integrate them.
+        for (unsigned int iquad=0; iquad<n_quad_pts; ++iquad) {
+
+            std::array<double,nstate> soln_state;
+            // Extract solution in a way that the physics ca n use them.
+            for(int istate=0; istate<nstate; istate++){
+                soln_state[istate] = soln_at_q[istate][iquad];
+            }
+            integrand_numerical_entropy_function = compute_numerical_entropy_function<dim,nstate,double>(soln_state);
+            integral_numerical_entropy_function += integrand_numerical_entropy_function * quad_weights[iquad] * metric_oper.det_Jac_vol[iquad];
+        }
+    }
+    // update integrated quantities and return
+    const double mpi_integrated_numerical_entropy = dealii::Utilities::MPI::sum(integral_numerical_entropy_function, this->mpi_communicator);
+
+    return mpi_integrated_numerical_entropy;
+}
+
 template <int dim, typename real, int n_rk_stages, typename MeshType> 
 LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::LowStorageRungeKuttaODESolver(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input,
         std::shared_ptr<LowStorageRKTableauBase<dim,real,MeshType>> rk_tableau_input,
@@ -135,9 +287,18 @@ template <int dim, typename real, int n_rk_stages, typename MeshType>
 void LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::sum_stages (real dt, const bool /*pseudotime*/)
 {
     if (this->ode_param.use_relaxation_runge_kutta) {
+        if (this->ode_param.use_relaxation_runge_kutta){
+            // Store u_n_hat in storage_register 4
+            storage_register_4.reinit(this->dg->solution);
+            storage_register_4 = this->solution_update;
+        }
         for (int istage = 0; istage < n_rk_stages; ++istage){
                 this->solution_update.add(dt* this->butcher_tableau->get_b(istage),this->rk_stage[istage]);
+                storage_register_4.add(dt * this->butcher_tableau->get_b_hat(istage), this->rk_stage[istage]);
         }
+
+        if (this->butcher_tableau->get_b_hat(n_rk_stages) != 0) //MAy cause segfault here
+            storage_register_4.add(dt * this->butcher_tableau->get_b_hat(n_rk_stages),this->solution_update);
     } else {
         double sum_delta = 0.0;
         if (!is_3Sstarplus){
@@ -188,8 +349,8 @@ real LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::adjust_time_
     /*Empty function for now*/ 
     if (this->ode_param.use_relaxation_runge_kutta){
 
-        this->relaxation_parameter_RRK_solver = this->relaxation_runge_kutta->update_relaxation_parameter(dt, this->dg, this->rk_stage, this->solution_update);
-        dt *= this->relaxation_parameter_RRK_solver;
+        //this->relaxation_parameter_RRK_solver = this->relaxation_runge_kutta->update_relaxation_parameter(dt, this->dg, this->rk_stage, this->solution_update);
+        //dt *= this->relaxation_parameter_RRK_solver;
         this->modified_time_step = dt;
     }
     return dt;
@@ -203,6 +364,10 @@ double LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::get_automa
 
     // error based step size 
     if (!is_3Sstarplus){ //False
+        if (this->ode_param.use_relaxation_runge_kutta){
+            storage_register_2=storage_register_4; // storage for u_n_hat
+            storage_register_1 = this->solution_update;
+        }
         // loop sums elements at each mpi processor
         for (dealii::LinearAlgebra::distributed::Vector<double>::size_type i = 0; i < storage_register_1.local_size(); ++i) {
             error = storage_register_1.local_element(i) - storage_register_2.local_element(i);
@@ -210,19 +375,34 @@ double LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::get_automa
         }
     } else { // True
         // loop sums elements at each mpi processor
+        if (this->ode_param.use_relaxation_runge_kutta){
+            storage_register_1 = this->solution_update;
+        }
+
+        //Calculate entropy from storage_register_1 and storage_register_4
+        // Set error = eta(S1) - eta(s4)
+        /*
         for (dealii::LinearAlgebra::distributed::Vector<double>::size_type i = 0; i < storage_register_1.local_size(); ++i) {
             error = storage_register_1.local_element(i) - storage_register_4.local_element(i);
             w = w + pow(error / (atol + rtol * std::max(std::abs(storage_register_1.local_element(i)), std::abs(storage_register_4.local_element(i)))), 2);
-        }
+        } */
+        this->dg->solution = storage_register_1;
+        double numerical_entropy_unp1 = compute_current_integrated_numerical_entropy(this->dg);
+        this->dg->solution = storage_register_4;
+        double numerical_entropy_unp1_hat = compute_current_integrated_numerical_entropy(this->dg);
+        w += pow( (numerical_entropy_unp1-numerical_entropy_unp1_hat) / (atol + rtol * std::max(std::abs(numerical_entropy_unp1),std::abs(numerical_entropy_unp1_hat))), 2);
+        // Won't need to do the loop through all elems here. Just find entropy.
+        // When advancing to dissipative cases, would need to account for the entropy change estimate.
     }
 
     // sum over all elements
-    w = dealii::Utilities::MPI::sum(w, this->mpi_communicator);
-    w = pow(w / global_size, 0.5);
+    //w = dealii::Utilities::MPI::sum(w, this->mpi_communicator);
+    w = pow(w,  0.5);
     epsilon[2] = epsilon[1];
     epsilon[1] = epsilon[0];
     epsilon[0] = 1.0 / w;
     dt = pow(epsilon[0], 1.0 * beta1/rk_order) * pow(epsilon[1], 1.0 * beta2/rk_order) * pow(epsilon[2], 1.0 * beta3/rk_order) * dt;
+    this->pcout << epsilon[1] << " " << dt;
     return dt;
 }
 

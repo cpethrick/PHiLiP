@@ -115,6 +115,12 @@ protected:
     /// Storage for the third beta controller value
     const double beta3;
 
+
+public:
+
+    double compute_current_integrated_numerical_entropy(
+            const std::shared_ptr <DGBase<dim, double, MeshType>> dg
+            ) const;
 };
 
 } // ODE namespace
