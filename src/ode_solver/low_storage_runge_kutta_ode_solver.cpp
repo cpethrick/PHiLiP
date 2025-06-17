@@ -352,6 +352,29 @@ real LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::adjust_time_
         //this->relaxation_parameter_RRK_solver = this->relaxation_runge_kutta->update_relaxation_parameter(dt, this->dg, this->rk_stage, this->solution_update);
         //dt *= this->relaxation_parameter_RRK_solver;
         this->modified_time_step = dt;
+        this->dg->solution = this->solution_update;
+        double numerical_entropy_un = compute_current_integrated_numerical_entropy(this->dg);
+        //Construct u_np1
+        dealii::LinearAlgebra::distributed::Vector<double> u_np1_temp = this->solution_update;
+        for (int istage = 0; istage < n_rk_stages; ++istage){
+                u_np1_temp.add(dt* this->butcher_tableau->get_b(istage),this->rk_stage[istage]);
+        }
+        this->dg->solution = u_np1_temp;
+        double numerical_entropy_unp1 = compute_current_integrated_numerical_entropy(this->dg);
+        w += pow( (numerical_entropy_un-numerical_entropy_unp1) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1))), 2);
+        // Won't need to do the loop through all elems here. Just find entropy.
+        // When advancing to dissipative cases, would need to account for the entropy change estimate.
+    
+
+    // sum over all elements:w
+    //
+    //w = dealii::Utilities::MPI::sum(w, this->mpi_communicator);
+    w = pow(w,  0.5);
+    epsilon[2] = epsilon[1];
+    epsilon[1] = epsilon[0];
+    epsilon[0] = 1.0 / w;
+    double adjustment_factor = pow(epsilon[0], 1.0 * beta1/rk_order) * pow(epsilon[1], 1.0 * beta2/rk_order) * pow(epsilon[2], 1.0 * beta3/rk_order);
+    this->pcout << adjustment_factor <<  " " << dt;
     }
     return dt;
 }
@@ -376,16 +399,17 @@ double LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::get_automa
     } else { // True
         // loop sums elements at each mpi processor
         if (this->ode_param.use_relaxation_runge_kutta){
-            storage_register_1 = this->solution_update;
+            storage_register_1 = this->solution_update; // At the end of the step, this stores u_np1
+
         }
 
         //Calculate entropy from storage_register_1 and storage_register_4
         // Set error = eta(S1) - eta(s4)
-        /*
         for (dealii::LinearAlgebra::distributed::Vector<double>::size_type i = 0; i < storage_register_1.local_size(); ++i) {
             error = storage_register_1.local_element(i) - storage_register_4.local_element(i);
             w = w + pow(error / (atol + rtol * std::max(std::abs(storage_register_1.local_element(i)), std::abs(storage_register_4.local_element(i)))), 2);
-        } */
+        } 
+        /*
         this->dg->solution = storage_register_1;
         double numerical_entropy_unp1 = compute_current_integrated_numerical_entropy(this->dg);
         this->dg->solution = storage_register_4;
@@ -393,6 +417,7 @@ double LowStorageRungeKuttaODESolver<dim,real,n_rk_stages, MeshType>::get_automa
         w += pow( (numerical_entropy_unp1-numerical_entropy_unp1_hat) / (atol + rtol * std::max(std::abs(numerical_entropy_unp1),std::abs(numerical_entropy_unp1_hat))), 2);
         // Won't need to do the loop through all elems here. Just find entropy.
         // When advancing to dissipative cases, would need to account for the entropy change estimate.
+        // */
     }
 
     // sum over all elements

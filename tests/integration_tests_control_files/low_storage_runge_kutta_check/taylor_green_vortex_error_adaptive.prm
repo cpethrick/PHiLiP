@@ -30,8 +30,8 @@ subsection ODE solver
   set ode_solver_type = low_storage_runge_kutta
   set runge_kutta_method = RK4_3_9F_3SStarPlus
   subsection low-storage rk solver
-    set atol = 1e-3
-    set rtol = 1e-3
+    set atol = 1e-2
+    set rtol = 1e-2
     set beta1 = 0.70
     set beta2 = -0.23
     set beta3 = 0.0
@@ -54,7 +54,7 @@ subsection flow_solver
   set flow_case_type = taylor_green_vortex
   set poly_degree = 3
   set final_time = 14
-  set courant_friedrichs_lewy_number = 0.48
+  set courant_friedrichs_lewy_number = 0.10
   set unsteady_data_table_filename = tgv_CFL048_cDG
   #set adaptive_time_step = true
   set error_adaptive_time_step = true
@@ -62,7 +62,7 @@ subsection flow_solver
   subsection grid
     set grid_left_bound = 0.0
     set grid_right_bound = 6.28318530717958623200
-    set number_of_grid_elements_per_dimension = 4
+    set number_of_grid_elements_per_dimension = 8
   end
   subsection taylor_green_vortex
     set do_calculate_numerical_entropy = true
