@@ -136,6 +136,15 @@ void ODESolverParam::declare_parameters (dealii::ParameterHandler &prm)
                               dealii::Patterns::Double(),
                               "Tolerance for root-finding problem in entropy RRK ode solver."
                               "Defult 5E-10 is suitable in most cases.");
+
+            prm.declare_entry("relaxation_runge_kutta_type", "global",
+                              dealii::Patterns::Selection("global|local"),
+                              "Types of relaxation runge kutta solver."
+                              " global will evaluate entropy across all parallel cores: GLOBAL entropy guarantee"
+                              " local will evaluate entropy locally to eack core: LOCAL entropy guarantee"
+                              " choose global for global conservation"
+                              " or local for better parallel performance on large cases"
+                              " default is global.");
         }
         prm.leave_subsection();
 
@@ -285,6 +294,9 @@ void ODESolverParam::parse_parameters (dealii::ParameterHandler &prm)
             else if (output_string_rrk == "quiet")   rrk_root_solver_output = quiet;
 
             relaxation_runge_kutta_root_tolerance = prm.get_double("relaxation_runge_kutta_root_tolerance");
+            const std::string relaxation_runge_kutta_type_string = prm.get("relaxation_runge_kutta_type");
+            if (relaxation_runge_kutta_type_string == "global")    relaxation_runge_kutta_type = RRKTypeEnum::global;
+            else if (relaxation_runge_kutta_type_string == "local")    relaxation_runge_kutta_type = RRKTypeEnum::local;
         }
         prm.leave_subsection();
 

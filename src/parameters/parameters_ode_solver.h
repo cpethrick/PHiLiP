@@ -90,6 +90,15 @@ public:
     /// Tolerance for RRK root solver, default value 5E-10
     double relaxation_runge_kutta_root_tolerance;
 
+    /// Types of relaxation runge kutta
+    enum RRKTypeEnum {
+        global, // evaluate entropy across all parallel cores: GLOBAL entropy guarantee
+        local // evaluate entropy locally to eack core: LOCAL entropy guarantee
+    };
+
+    /// Flag to do local or global version of RRK
+    RRKTypeEnum relaxation_runge_kutta_type;
+
     static void declare_parameters (dealii::ParameterHandler &prm); ///< Declares the possible variables and sets the defaults.
     void parse_parameters (dealii::ParameterHandler &prm); ///< Parses input file and sets the variables.
 };

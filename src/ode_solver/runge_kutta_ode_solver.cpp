@@ -101,8 +101,10 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, 
     // Calculates relaxation parameter and modify the time step size as dt*=relaxation_parameter.
     // if not using RRK, the relaxation parameter will be set to 1, such that dt is not modified.
     this->relaxation_parameter_RRK_solver = relaxation_runge_kutta->update_relaxation_parameter(dt, this->dg, this->rk_stage, this->solution_update);
+    std::cout << "MPI Rank: " << dealii::Utilities::MPI::this_mpi_process(this->mpi_communicator) << "Local relaxation parameter: " << this->relaxation_parameter_RRK_solver << std::endl;
+
+    // If using local RRK, this dt will be different on each core.
     dt *= this->relaxation_parameter_RRK_solver;
-    this->modified_time_step = dt;
 
     //assemble solution from stages
     for (int i = 0; i < n_rk_stages; ++i){
@@ -132,6 +134,13 @@ void RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::step_in_time (real dt, 
     }
     
     ++(this->current_iteration);
+
+    //If using local RRK, need to advance time by MINIMUM dt across all partitions.
+    using RRKTypeEnum = Parameters::ODESolverParam::RRKTypeEnum;
+    if (this->dg->all_parameters->ode_solver_param.relaxation_runge_kutta_type == RRKTypeEnum::local){
+        dt = dealii::Utilities::MPI::min(dt, this->mpi_communicator); 
+    }
+    this->modified_time_step = dt;
     this->current_time += dt;
 }
 

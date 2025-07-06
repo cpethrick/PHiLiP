@@ -302,7 +302,7 @@ void DGBase<dim,real,MeshType>::set_all_cells_fe_degree ( const unsigned int deg
 }
 
 template <int dim, typename real, typename MeshType>
-unsigned int DGBase<dim,real,MeshType>::get_max_fe_degree()
+unsigned int DGBase<dim,real,MeshType>::get_max_fe_degree(const bool do_mpi_max)
 {
     unsigned int max_fe_degree = 0;
 
@@ -310,11 +310,15 @@ unsigned int DGBase<dim,real,MeshType>::get_max_fe_degree()
         if(cell->is_locally_owned() && cell->active_fe_index() > max_fe_degree)
             max_fe_degree = cell->active_fe_index();
 
-    return dealii::Utilities::MPI::max(max_fe_degree, MPI_COMM_WORLD);
+    if (do_mpi_max) {
+        return dealii::Utilities::MPI::max(max_fe_degree, MPI_COMM_WORLD);
+    } else{
+        return max_fe_degree;
+    }
 }
 
 template <int dim, typename real, typename MeshType>
-unsigned int DGBase<dim,real,MeshType>::get_min_fe_degree()
+unsigned int DGBase<dim,real,MeshType>::get_min_fe_degree(const bool do_mpi_min)
 {
     unsigned int min_fe_degree = max_degree;
 
@@ -322,7 +326,11 @@ unsigned int DGBase<dim,real,MeshType>::get_min_fe_degree()
         if(cell->is_locally_owned() && cell->active_fe_index() < min_fe_degree)
             min_fe_degree = cell->active_fe_index();
 
-    return dealii::Utilities::MPI::min(min_fe_degree, MPI_COMM_WORLD);
+    if (do_mpi_min) {
+        return dealii::Utilities::MPI::min(min_fe_degree, MPI_COMM_WORLD);
+    } else{
+        return min_fe_degree;
+    }
 }
 
 template <int dim, typename real, typename MeshType>

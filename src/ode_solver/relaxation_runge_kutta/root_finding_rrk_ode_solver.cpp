@@ -33,7 +33,6 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
     
     // Compute entropy change estimate in M norm , [ v^T (M) du/dt ]
     const double entropy_change_est = compute_entropy_change_estimate(dt, dg, rk_stage);
-    if (do_output) this->pcout <<"Entropy change estimate: " << std::setprecision(16) << entropy_change_est << std::endl;
 
     // n and np1 denote timestep indices
     const dealii::LinearAlgebra::distributed::Vector<double> u_n = solution_update;
@@ -49,6 +48,8 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
     const double conv_tol = dg->all_parameters->ode_solver_param.relaxation_runge_kutta_root_tolerance;
     int iter_counter = 0;
     const int iter_limit = 100;
+    
+    bool local_is_converged = false;
     if (use_secant){
 
         const double initial_guess_0 = this->relaxation_parameter - 1E-5;
@@ -58,34 +59,35 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
         double gamma_km1 = initial_guess_0;
         double r_gamma_k = compute_root_function(gamma_k, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
         double r_gamma_km1 = compute_root_function(gamma_km1, u_n, step_direction, num_entropy_n,entropy_change_est,dg);
-
-        while ((residual > conv_tol) && (iter_counter < iter_limit)){
+        //while ((dealii::Utilities::MPI::max(residual, this->mpi_communicator) > conv_tol) && (iter_counter < iter_limit)){
+        while ((!local_is_converged) && (iter_counter < iter_limit)){
             if (r_gamma_km1 == r_gamma_k){
-                if (do_output) this->pcout << "    Roots are identical. Multiplying gamma_k by 1.001 and recomputing..." << std::endl;
                 gamma_k *= 1.001;
                 r_gamma_km1 = compute_root_function(gamma_km1, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
                 r_gamma_k = compute_root_function(gamma_k, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
             }
             if ((gamma_k < 0.5) || (gamma_k > 1.5)) {
-                if (do_output) this->pcout << "    Gamma is far from 1. Setting gamma_k = 1 and contining iterations." << std::endl;
                 gamma_k = 1.0;
                 r_gamma_k = compute_root_function(gamma_k, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
 
             }
             // Secant method, as recommended by Rogowski et al. 2022
-            gamma_kp1 = gamma_k - r_gamma_k * (gamma_k - gamma_km1)/(r_gamma_k-r_gamma_km1);
-            residual = abs(gamma_kp1 - gamma_k);
-            iter_counter ++;
+            if (!local_is_converged){ //logic on LOCAL residual
+                gamma_kp1 = gamma_k - r_gamma_k * (gamma_k - gamma_km1)/(r_gamma_k-r_gamma_km1);
+                residual = (abs(gamma_kp1 - gamma_k));
 
-            //update values
-            gamma_km1 = gamma_k;
-            gamma_k = gamma_kp1;
-            r_gamma_km1 = r_gamma_k;
-            r_gamma_k = compute_root_function(gamma_k, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
+                //update values
+                gamma_km1 = gamma_k;
+                gamma_k = gamma_kp1;
+                r_gamma_km1 = r_gamma_k;
+                r_gamma_k = compute_root_function(gamma_k, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
+            }
+            iter_counter ++;
             
             //output
             if (do_output) {
-                this->pcout << "Iter: " << iter_counter
+                std::cout << "MPI rank:  " << dealii::Utilities::MPI::this_mpi_process(this->mpi_communicator) << "Iter: " << iter_counter 
+                //this->pcout << "Iter: " << iter_counter
                             << " gamma_k: " << gamma_k
                             << " residual: " << residual << std::endl;
             }
@@ -98,6 +100,7 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
                 r_gamma_km1 = compute_root_function(gamma_km1, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
                 residual = 1.0;
             }
+            local_is_converged = (residual < conv_tol);
         }
 
         // If secant method fails to find a root within the specified number of iterations, fall back on bisection method.
@@ -118,7 +121,7 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
 
         double residual = 1.0;
 
-        while ((residual > conv_tol) && (iter_counter < iter_limit)){
+        while ((!local_is_converged) && (iter_counter < iter_limit)){
             if (root_l_limit * root_u_limit > 0){
                 this->pcout << "Bisection solver: No root in the interval. Increasing interval size..." << std::endl;
                 l_limit -= 0.1;
@@ -126,8 +129,9 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
             }
 
             gamma_kp1 = 0.5 * (l_limit + u_limit);
-            if (do_output) this->pcout << "Iter: " << iter_counter;
-            if (do_output) this->pcout << " Gamma by bisection is " << gamma_kp1;
+            if (do_output) std::cout << "MPI rank:  " << dealii::Utilities::MPI::this_mpi_process(this->mpi_communicator) << "Iter: " << iter_counter ;
+            //if (do_output) this->pcout << "Iter: " << iter_counter;
+            if (do_output) std::cout << " Gamma by bisection is " << gamma_kp1;
             double root_at_gamma = compute_root_function(gamma_kp1, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
             if (root_at_gamma < 0) {
                 l_limit = gamma_kp1;
@@ -139,9 +143,11 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
             residual = u_limit-l_limit;
             if (do_output) this->pcout << " With residual " << residual << std::endl;
             iter_counter++;
+            local_is_converged = (residual < conv_tol);
         }    
     }
 
+    MPI_Barrier(this->mpi_communicator);
     if (iter_limit == iter_counter) {
         this->pcout << "Error: Iteration limit reached and root finding was not successful." << std::endl;
         secant_failed = true;
@@ -212,9 +218,12 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_integrated_numerical_en
         const dealii::LinearAlgebra::distributed::Vector<double> &u,
         std::shared_ptr<DGBase<dim,real,MeshType>> dg) const
 {
+    using RRKTypeEnum = Parameters::ODESolverParam::RRKTypeEnum;
+    const bool use_global_RRK = (dg->all_parameters->ode_solver_param.relaxation_runge_kutta_type == RRKTypeEnum::global);
+
     // This function is reproduced from flow_solver_cases/periodic_turbulence
     // Check that poly_degree is uniform everywhere
-    if (dg->get_max_fe_degree() != dg->get_min_fe_degree()) {
+    if (dg->get_max_fe_degree(use_global_RRK) != dg->get_min_fe_degree(use_global_RRK)) {
         // Note: This function may have issues with nonuniform p. Should test in debug mode if developing in the future.
         this->pcout << "ERROR: compute_integrated_quantities() is untested for nonuniform p. Aborting..." << std::endl;
         std::abort();
@@ -346,7 +355,9 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_integrated_numerical_en
         }
     }
     //MPI
-    integrated_quantity = dealii::Utilities::MPI::sum(integrated_quantity, this->mpi_communicator);
+    if (use_global_RRK) {
+        integrated_quantity = dealii::Utilities::MPI::sum(integrated_quantity, this->mpi_communicator);
+    }
 
     return integrated_quantity;
 }
@@ -381,7 +392,21 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_entropy_change_estimate
         //transform solution into entropy variables
         dealii::LinearAlgebra::distributed::Vector<double> entropy_var_hat_global = this->compute_entropy_vars(this->rk_stage_solution[istage],dg);
         
-        double entropy = entropy_var_hat_global * mass_matrix_times_rk_stage;
+        // entropy_var_hat_global is a DISTRIBUTED vector as is mass_matrix_times_rk_stage
+        // Want to find LOCAL entropyies
+        // That is, without doing the MPI sum...
+        // Should loop through all elems and manually += the local contribution.
+        double entropy=0;
+        using RRKTypeEnum = Parameters::ODESolverParam::RRKTypeEnum;
+        if (dg->all_parameters->ode_solver_param.relaxation_runge_kutta_type == RRKTypeEnum::global){
+            entropy = entropy_var_hat_global * mass_matrix_times_rk_stage;
+        } else{ //local
+            // Hard-code dot product without taking MPI sum.
+            for (unsigned int i = 0; i < entropy_var_hat_global.size(); ++i) {
+                entropy += entropy_var_hat_global(i) * mass_matrix_times_rk_stage(i);
+            }
+            //intentional omission of MPI sum.
+        }
         
         entropy_change_estimate += this->butcher_tableau->get_b(istage) * entropy;
     }

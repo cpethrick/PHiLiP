@@ -171,10 +171,10 @@ public:
     void set_all_cells_fe_degree ( const unsigned int degree );
 
     /// Gets the maximum value of currently active FE degree
-    unsigned int get_max_fe_degree();
+    unsigned int get_max_fe_degree(const bool do_mpi_max=true);
 
     /// Gets the minimum value of currently active FE degree
-    unsigned int get_min_fe_degree();
+    unsigned int get_min_fe_degree(const bool do_mpi_min=true);
     
     /// Returns the coordinates of the most refined cell.
     dealii::Point<dim> coordinates_of_highest_refined_cell(bool check_for_p_refined_cell = false);
