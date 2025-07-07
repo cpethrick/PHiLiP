@@ -1,5 +1,6 @@
 #include "root_finding_rrk_ode_solver.h"
 #include "physics/euler.h"
+#include <deal.II/base/index_set.h>
 #include "physics/physics_factory.h"
 
 namespace PHiLiP {
@@ -18,9 +19,12 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
             const std::vector<dealii::LinearAlgebra::distributed::Vector<double>> &rk_stage,
             const dealii::LinearAlgebra::distributed::Vector<double> &solution_update
             ) 
-{
+{ 
     // Console output is based on linearsolverparam
     const bool do_output = (dg->all_parameters->ode_solver_param.rrk_root_solver_output == Parameters::OutputEnum::verbose); 
+    
+    using RRKTypeEnum = Parameters::ODESolverParam::RRKTypeEnum;
+    const bool use_global_RRK = (dg->all_parameters->ode_solver_param.relaxation_runge_kutta_type == RRKTypeEnum::global);
 
     // Note: there is some overlap in computations here and in runge_kutta_ode_solver.
     // In future optimization, this could be improved.
@@ -86,14 +90,20 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
             
             //output
             if (do_output) {
-                std::cout << "MPI rank:  " << dealii::Utilities::MPI::this_mpi_process(this->mpi_communicator) << "Iter: " << iter_counter 
-                //this->pcout << "Iter: " << iter_counter
-                            << " gamma_k: " << gamma_k
-                            << " residual: " << residual << std::endl;
+                if (use_global_RRK) {
+                    this->pcout << "Iter: " << iter_counter
+                                << " gamma_k: " << gamma_k
+                                << " residual: " << residual << std::endl;
+                } else {
+                    std::cout << "MPI rank:  " << dealii::Utilities::MPI::this_mpi_process(this->mpi_communicator) << "Iter: " << iter_counter 
+                                << " gamma_k: " << gamma_k
+                                << " residual: " << residual << std::endl;
+                }
             }
             
             if (isnan(gamma_k) || isnan(gamma_km1)) {
-                if (do_output) this->pcout << "    NaN detected. Restarting iterations from 1.0." << std::endl;
+                if (do_output && use_global_RRK) this->pcout << "    NaN detected. Restarting iterations from 1.0." << std::endl;
+                if (do_output && !use_global_RRK) std::cout << "    NaN detected. Restarting iterations from 1.0." << std::endl;
                 gamma_k   = 1.0 - 1E-5;
                 r_gamma_k = compute_root_function(gamma_k, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
                 gamma_km1 = 1.0 + 1E-5;
@@ -105,7 +115,8 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
 
         // If secant method fails to find a root within the specified number of iterations, fall back on bisection method.
         if (iter_limit == iter_counter) {
-            this->pcout << "Secant method failed to find a root within the iteration limit. Restarting with bisection method." << std::endl;
+            if (use_global_RRK)     this->pcout << "Secant method failed to find a root within the iteration limit. Restarting with bisection method." << std::endl;
+            else                    std::cout   << "Secant method failed to find a root within the iteration limit. Restarting with bisection method." << std::endl;
             secant_failed = true;
         }
     }
@@ -123,15 +134,21 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
 
         while ((!local_is_converged) && (iter_counter < iter_limit)){
             if (root_l_limit * root_u_limit > 0){
-                this->pcout << "Bisection solver: No root in the interval. Increasing interval size..." << std::endl;
+                if (use_global_RRK)    this->pcout << "Bisection solver: No root in the interval. Increasing interval size..." << std::endl;
+                else                   std::cout   << "Bisection solver: No root in the interval. Increasing interval size..." << std::endl;
                 l_limit -= 0.1;
                 u_limit += 0.1;
             }
 
             gamma_kp1 = 0.5 * (l_limit + u_limit);
-            if (do_output) std::cout << "MPI rank:  " << dealii::Utilities::MPI::this_mpi_process(this->mpi_communicator) << "Iter: " << iter_counter ;
-            //if (do_output) this->pcout << "Iter: " << iter_counter;
-            if (do_output) std::cout << " Gamma by bisection is " << gamma_kp1;
+            if (do_output && use_global_RRK) {
+                std::cout << "MPI rank:  " << dealii::Utilities::MPI::this_mpi_process(this->mpi_communicator) << "Iter: " << iter_counter ;
+                std::cout << " Gamma by bisection is " << gamma_kp1 << std::endl;
+            }
+            if (do_output && !use_global_RRK){
+                this->pcout << "Iter: " << iter_counter ;
+                this->pcout << " Gamma by bisection is " << gamma_kp1 << std::endl;
+            }
             double root_at_gamma = compute_root_function(gamma_kp1, u_n, step_direction, num_entropy_n, entropy_change_est,dg);
             if (root_at_gamma < 0) {
                 l_limit = gamma_kp1;
@@ -141,7 +158,8 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
                 root_u_limit = root_at_gamma;
             }
             residual = u_limit-l_limit;
-            if (do_output) this->pcout << " With residual " << residual << std::endl;
+            if (do_output && use_global_RRK)  this->pcout << " With residual " << residual << std::endl;
+            if (do_output && !use_global_RRK) std::cout   << " With residual " << residual << std::endl;
             iter_counter++;
             local_is_converged = (residual < conv_tol);
         }    
@@ -149,7 +167,8 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
 
     MPI_Barrier(this->mpi_communicator);
     if (iter_limit == iter_counter) {
-        this->pcout << "Error: Iteration limit reached and root finding was not successful." << std::endl;
+        if (do_output && use_global_RRK) this->pcout << "Error: Iteration limit reached and root finding was not successful." << std::endl;
+        if (do_output && !use_global_RRK) std::cout << "Error: Iteration limit reached and root finding was not successful." << std::endl;
         secant_failed = true;
         std::abort();
         return -1;
@@ -402,8 +421,12 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_entropy_change_estimate
             entropy = entropy_var_hat_global * mass_matrix_times_rk_stage;
         } else{ //local
             // Hard-code dot product without taking MPI sum.
+
+            //for (auto index = (entropy_var_hat_global.locally_owned_elements()).begin(); index != (entropy_var_hat_global.locally_owned_elements()).end(); index++) {
             for (unsigned int i = 0; i < entropy_var_hat_global.size(); ++i) {
-                entropy += entropy_var_hat_global(i) * mass_matrix_times_rk_stage(i);
+
+                if (entropy_var_hat_global.in_local_range(i))
+                    entropy += entropy_var_hat_global(i) * mass_matrix_times_rk_stage(i);
             }
             //intentional omission of MPI sum.
         }
