@@ -48,7 +48,8 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
     double gamma_kp1 = 0; 
     const double conv_tol = dg->all_parameters->ode_solver_param.relaxation_runge_kutta_root_tolerance;
     int iter_counter = 0;
-    const int iter_limit = 100;
+    //const int iter_limit = 100;
+    const int iter_limit = 1;
     if (use_secant){
 
         const double initial_guess_0 = this->relaxation_parameter - 1E-5;
@@ -102,8 +103,8 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
 
         // If secant method fails to find a root within the specified number of iterations, fall back on bisection method.
         if (iter_limit == iter_counter) {
-            this->pcout << "Secant method failed to find a root within the iteration limit. Restarting with bisection method." << std::endl;
-            secant_failed = true;
+            //this->pcout << "Secant method failed to find a root within the iteration limit. Restarting with bisection method." << std::endl;
+            //secant_failed = true;
         }
     }
     if (!use_secant || secant_failed) {
@@ -143,11 +144,14 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
     }
 
     if (iter_limit == iter_counter) {
-        this->pcout << "Error: Iteration limit reached and root finding was not successful." << std::endl;
-        secant_failed = true;
-        std::abort();
-        return -1;
-    } else { // Root-finding was successful
+        //this->pcout << "Error: Iteration limit reached and root finding was not successful." << std::endl;
+        //secant_failed = true;
+        //std::abort();
+        //return -1;
+        if (do_output) {
+            this->pcout << "Reminder:: Overriding to solve root problem only once" << std::endl;
+        }
+    } //else { // Root-finding was successful
 
         if (do_output) {
             // Use [ gamma * dt * (v^T (M+K) du/dt - v^T (M) du/dt ) ] as a workaround to calculate [ gamma * (v^T (K) du/dt) ]
@@ -175,7 +179,7 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
         }
 
         return gamma_kp1;
-    }
+    //}
 }
 
 

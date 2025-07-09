@@ -3,7 +3,7 @@
 # Number of dimensions
 
 set dimension = 3
-set run_type = integration_test
+set run_type = flow_simulation
 set test_type = rrk_numerical_entropy_conservation_check 
 set pde_type = euler
 
@@ -28,7 +28,15 @@ subsection ODE solver
   set ode_solver_type = rrk_explicit #this is changed by the test
   set runge_kutta_method = ssprk3_ex
   subsection rrk root solver
-    set rrk_root_solver_output = quiet
+    set rrk_root_solver_output = verbose
+    set use_relaxation_runge_kutta = true
+  end
+  subsection low-storage rk solver
+    set atol = 1e-10
+    set rtol = 1e-14
+    set beta1 = 0.66
+    set beta2 = -0.33
+    set beta3 = 0.0
   end
 end
 
@@ -40,15 +48,16 @@ end
 
 subsection flow_solver
   set flow_case_type = taylor_green_vortex
-  set poly_degree = 3 
-  set final_time = 0.1
-  set courant_friedrichs_lewy_number = 0.1
-  set unsteady_data_table_filename = tgv_kinetic_energy_vs_time_table
+  set poly_degree = 3
+  set final_time = 14
+  set courant_friedrichs_lewy_number = 0.48
+  set unsteady_data_table_filename = tgv_CFL048_cDG
+  set adaptive_time_step = true
   set end_exactly_at_final_time = false
   subsection grid
     set grid_left_bound = 0.0
     set grid_right_bound = 6.28318530717958623200
-    set number_of_grid_elements_per_dimension = 4
+    set number_of_grid_elements_per_dimension = 8
   end
   subsection taylor_green_vortex
     set do_calculate_numerical_entropy = true

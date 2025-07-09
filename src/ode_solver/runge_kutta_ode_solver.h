@@ -38,6 +38,33 @@ public:
 protected:
     /// Stores Butcher tableau a and b, which specify the RK method
     std::shared_ptr<RKTableauButcherBase<dim,real,MeshType>> butcher_tableau;
+
+    /// Storage for the weighted/relative error estimate
+    real w;
+
+        /// Storage for the error estimate at step n-1, n, and n+1
+    double epsilon[3];
+
+    /// Storage for the absolute tolerance
+    const double atol;
+
+    /// Storage for the relative tolerance
+    const double rtol;
+        /// Storage for the first beta controller value
+    const double beta1;
+
+    /// Storage for the second beta controller value
+    const double beta2;
+
+    /// Storage for the third beta controller value
+    const double beta3;
+
+    double initial_entropy;
+public:
+
+    double compute_current_integrated_numerical_entropy(
+            const std::shared_ptr <DGBase<dim, double, MeshType>> dg
+            ) const;
 };
 
 } // ODE namespace
