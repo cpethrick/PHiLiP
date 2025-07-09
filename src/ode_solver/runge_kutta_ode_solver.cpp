@@ -278,10 +278,10 @@ real RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::adjust_time_step (real 
 
     // Calculates relaxation parameter and modify the time step size as dt*=relaxation_parameter.
     // if not using RRK, the relaxation parameter will be set to 1, such that dt is not modified.
-    this->relaxation_parameter_RRK_solver = this->relaxation_runge_kutta->update_relaxation_parameter(dt, this->dg, this->rk_stage, this->solution_update);
-    this->pcout << "Relaxation parameter from RRK: " << this->relaxation_parameter_RRK_solver << std::endl;
+    //this->relaxation_parameter_RRK_solver = this->relaxation_runge_kutta->update_relaxation_parameter(dt, this->dg, this->rk_stage, this->solution_update);
+    //this->pcout << "Relaxation parameter from RRK: " << this->relaxation_parameter_RRK_solver << std::endl;
     //dt *= this->relaxation_parameter_RRK_solver;
-    this->modified_time_step = dt;
+    //this->modified_time_step = dt;
 
     this->dg->solution = this->solution_update; // at this point, the solution_update holds u_n
     double numerical_entropy_un = compute_current_integrated_numerical_entropy(this->dg);    
@@ -298,23 +298,23 @@ real RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::adjust_time_step (real 
     }
     this->dg->solution = u_np1_temp;
     double numerical_entropy_unp1 = compute_current_integrated_numerical_entropy(this->dg);
-    this->pcout << numerical_entropy_unp1 << std::endl;
+    //this->pcout << numerical_entropy_unp1 << std::endl;
     w = pow( (numerical_entropy_un-numerical_entropy_unp1) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1))), 2);
     //w = pow( (numerical_entropy_un-initial_entropy) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(initial_entropy))), 2);
-    this->pcout << (numerical_entropy_un-numerical_entropy_unp1) << " " << 
-                    (numerical_entropy_un-numerical_entropy_unp1) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1)))
-                    << " " << (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1))) << " " <<  
-        w << std::endl;
+    //this->pcout << (numerical_entropy_un-numerical_entropy_unp1) << " " << 
+    //                (numerical_entropy_un-numerical_entropy_unp1) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1)))
+    //                << " " << (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1))) << " " <<  
+    //    w << std::endl;
     w = pow(w,  0.5);
     epsilon[2] = epsilon[1];
     epsilon[1] = epsilon[0];
     epsilon[0] = 1.0 / w;
     double rk_order = this->ode_param.rk_order;
     double adjustment_factor = pow(epsilon[0], 1.0 * beta1/rk_order) * pow(epsilon[1], 1.0 * beta2/rk_order) * pow(epsilon[2], 1.0 * beta3/rk_order);
-    this->pcout << epsilon[0] << " " << epsilon[1] << " "  << epsilon[2] << std::endl;
-    this->pcout << "Adjustment factor from PID: " <<  adjustment_factor <<  " " << std::endl << std::endl;
+    //this->pcout << epsilon[0] << " " << epsilon[1] << " "  << epsilon[2] << std::endl;
+    //this->pcout << "Adjustment factor from PID: " <<  adjustment_factor <<  " " << std::endl << std::endl;
     adjustment_factor = (adjustment_factor-1.0) /-266 + 1.0;
-    this->pcout << "Scale by 100: " << adjustment_factor << std::endl;
+    //this->pcout << "Scale by 100: " << adjustment_factor << std::endl;
 
     if (isinf(adjustment_factor)){
         adjustment_factor = 1.0;
