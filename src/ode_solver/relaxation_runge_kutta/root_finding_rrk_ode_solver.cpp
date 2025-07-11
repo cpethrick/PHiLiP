@@ -16,9 +16,10 @@ template <int dim, typename real, typename MeshType>
 real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(const real dt,
             std::shared_ptr<DGBase<dim,real,MeshType>> dg,
             const std::vector<dealii::LinearAlgebra::distributed::Vector<double>> &rk_stage,
-            const dealii::LinearAlgebra::distributed::Vector<double> &solution_update
+            const dealii::LinearAlgebra::distributed::Vector<double> &/*solution_update*/
             ) 
 {
+    /*
     // Console output is based on linearsolverparam
     const bool do_output = (dg->all_parameters->ode_solver_param.rrk_root_solver_output == Parameters::OutputEnum::verbose); 
 
@@ -30,9 +31,20 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
         step_direction.add(this->butcher_tableau->get_b(i), rk_stage[i]);
     }
     step_direction *= dt;
-    
+    */
     // Compute entropy change estimate in M norm , [ v^T (M) du/dt ]
     const double entropy_change_est = compute_entropy_change_estimate(dt, dg, rk_stage);
+
+    this->pcout << entropy_change_est << std::endl;
+
+
+    ///////////
+    //
+    // HIJACKING THIS FUNCTION
+    return entropy_change_est;
+    //
+    ///////////
+    /*
     if (do_output) this->pcout <<"Entropy change estimate: " << std::setprecision(16) << entropy_change_est << std::endl;
 
     // n and np1 denote timestep indices
@@ -179,6 +191,7 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
         }
 
         return gamma_kp1;
+        */
     //}
 }
 

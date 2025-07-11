@@ -279,6 +279,9 @@ real RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::adjust_time_step (real 
     // Calculates relaxation parameter and modify the time step size as dt*=relaxation_parameter.
     // if not using RRK, the relaxation parameter will be set to 1, such that dt is not modified.
     //this->relaxation_parameter_RRK_solver = this->relaxation_runge_kutta->update_relaxation_parameter(dt, this->dg, this->rk_stage, this->solution_update);
+
+    // hijack this function to instead return the entropy change estimate.
+    const double entropy_change_est = this->relaxation_runge_kutta->update_relaxation_parameter(dt, this->dg, this->rk_stage, this->solution_update);
     //this->pcout << "Relaxation parameter from RRK: " << this->relaxation_parameter_RRK_solver << std::endl;
     //dt *= this->relaxation_parameter_RRK_solver;
     //this->modified_time_step = dt;
@@ -299,7 +302,7 @@ real RungeKuttaODESolver<dim,real,n_rk_stages,MeshType>::adjust_time_step (real 
     this->dg->solution = u_np1_temp;
     double numerical_entropy_unp1 = compute_current_integrated_numerical_entropy(this->dg);
     //this->pcout << numerical_entropy_unp1 << std::endl;
-    w = pow( (numerical_entropy_un-numerical_entropy_unp1) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1))), 2);
+    w = pow( (numerical_entropy_un-numerical_entropy_unp1+entropy_change_est) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1))), 2);
     //w = pow( (numerical_entropy_un-initial_entropy) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(initial_entropy))), 2);
     //this->pcout << (numerical_entropy_un-numerical_entropy_unp1) << " " << 
     //                (numerical_entropy_un-numerical_entropy_unp1) / (atol + rtol * std::max(std::abs(numerical_entropy_un),std::abs(numerical_entropy_unp1)))
