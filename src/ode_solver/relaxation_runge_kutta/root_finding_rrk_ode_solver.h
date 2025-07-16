@@ -62,6 +62,10 @@ private:
     /// Storing cumulative entropy change for output 
     real FR_entropy_cumulative = 0;
 
+    int counter_solve_frequency = 0;
+
+    real last_gamma = 1.0;
+    
 };
 
 } // ODE namespace

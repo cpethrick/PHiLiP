@@ -90,6 +90,8 @@ public:
     /// Tolerance for RRK root solver, default value 5E-10
     double relaxation_runge_kutta_root_tolerance;
 
+    int frequency_to_update_relaxation_parameter;
+
     /// Types of relaxation runge kutta
     enum RRKTypeEnum {
         global, // evaluate entropy across all parallel cores: GLOBAL entropy guarantee

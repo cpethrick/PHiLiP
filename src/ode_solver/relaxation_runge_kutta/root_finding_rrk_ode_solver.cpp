@@ -22,6 +22,13 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
 { 
     // Console output is based on linearsolverparam
     const bool do_output = (dg->all_parameters->ode_solver_param.rrk_root_solver_output == Parameters::OutputEnum::verbose); 
+
+    int frequency_at_which_to_calculate = dg->all_parameters->ode_solver_param.frequency_to_update_relaxation_parameter;
+    counter_solve_frequency++;
+    if ( counter_solve_frequency % frequency_at_which_to_calculate != 0){
+        if (do_output) this->pcout << "Not re-calculating gamma."<< std::endl;
+        return last_gamma;
+    }
     
     using RRKTypeEnum = Parameters::ODESolverParam::RRKTypeEnum;
     const bool use_global_RRK = (dg->all_parameters->ode_solver_param.relaxation_runge_kutta_type == RRKTypeEnum::global);
@@ -199,8 +206,10 @@ real RootFindingRRKODESolver<dim,real,MeshType>::compute_relaxation_parameter(co
                         << std::endl;
         }
 
-        return gamma_kp1;
     }
+   last_gamma = gamma_kp1;
+   return gamma_kp1;
+   
 }
 
 

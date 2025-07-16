@@ -145,6 +145,13 @@ void ODESolverParam::declare_parameters (dealii::ParameterHandler &prm)
                               " choose global for global conservation"
                               " or local for better parallel performance on large cases"
                               " default is global.");
+
+            prm.declare_entry("frequency_to_update_relaxation_parameter", "1",
+                              dealii::Patterns::Integer(0, dealii::Patterns::Integer::max_int_value),
+                              "Frequency at which to update relaxation parameter gamma "
+                              "By default, update every iteration. "
+                              "Consider increasing this number to sacrifice some entropy change "
+                              "but improve computational cost.");
         }
         prm.leave_subsection();
 
@@ -297,6 +304,8 @@ void ODESolverParam::parse_parameters (dealii::ParameterHandler &prm)
             const std::string relaxation_runge_kutta_type_string = prm.get("relaxation_runge_kutta_type");
             if (relaxation_runge_kutta_type_string == "global")    relaxation_runge_kutta_type = RRKTypeEnum::global;
             else if (relaxation_runge_kutta_type_string == "local")    relaxation_runge_kutta_type = RRKTypeEnum::local;
+
+            frequency_to_update_relaxation_parameter = prm.get_integer("frequency_to_update_relaxation_parameter");
         }
         prm.leave_subsection();
 
