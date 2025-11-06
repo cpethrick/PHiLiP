@@ -628,6 +628,9 @@ foreach(dim RANGE 1 2)
         set(NMPI 1)
     else()
         set(NMPI ${MPIMAX})
+        if (NMPI GREATER 8)
+            set(NPMI 8)
+        endif()
     endif()
     add_test(
       NAME ${TEST_TARGET}
