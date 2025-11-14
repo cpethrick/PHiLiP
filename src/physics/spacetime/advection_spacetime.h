@@ -4,7 +4,7 @@
 #include <deal.II/base/tensor.h>
 
 #include "parameters/all_parameters.h"
-#include "convection_diffusion.h"
+#include "../convection_diffusion.h"
 
 namespace PHiLiP {
 namespace Physics {
