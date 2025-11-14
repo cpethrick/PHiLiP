@@ -78,7 +78,7 @@ namespace Physics {
  * from Euler without re-writing.
  */
 template <int dim, int nstate, typename real>
-class EulerSpacetime : public Euler<dim, nstate, real>
+class EulerSpacetime : public Euler<dim, nspecies, nstate, real>
 {
 protected:
     // For overloading the virtual functions defined in PhysicsBase
@@ -103,7 +103,7 @@ public:
         const two_point_num_flux_enum                             two_point_num_flux_type = two_point_num_flux_enum::KG,
         const bool                                                has_nonzero_diffusion = false,
         const bool                                                has_nonzero_physical_source = false):
-        Euler<dim,nstate,real>(parameters_input,ref_length,gamma_gas,mach_inf,angle_of_attack,side_slip_angle,manufactured_solution_function,two_point_num_flux_type,has_nonzero_diffusion,has_nonzero_physical_source){
+        Euler<dim,nspecies,nstate,real>(parameters_input,ref_length,gamma_gas,mach_inf,angle_of_attack,side_slip_angle,manufactured_solution_function,two_point_num_flux_type,has_nonzero_diffusion,has_nonzero_physical_source){
             this->velocities_inf=0;
             if(dim==1) {
                 this->velocities_inf[0] = 1.0;
