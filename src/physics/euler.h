@@ -438,7 +438,7 @@ protected:
         std::array<real,nstate> &soln_bc) const;
 
     /// Get manufactured solution value
-    virtual std::array<real,nstate> get_manufactured_solution_value(
+    std::array<real,nstate> get_manufactured_solution_value(
         const dealii::Point<dim,real> &pos) const;
 
     /// Get manufactured solution gradient
