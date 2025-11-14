@@ -5,9 +5,10 @@ SET(SOURCE
     physics_factory.cpp
     physics.cpp
     convection_diffusion.cpp
-    advection_spacetime.cpp
+    spacetime/advection_spacetime.cpp
     burgers.cpp
     euler.cpp
+    spacetime/euler_spacetime.cpp
     manufactured_solution.cpp
     mhd.cpp
     navier_stokes.cpp

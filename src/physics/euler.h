@@ -141,11 +141,11 @@ public:
     // std::array<real,nstate> manufactured_solution (const dealii::Point<dim,double> &pos) const;
 
     /// Convective flux: \f$ \mathbf{F}_{conv} \f$
-    std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
+    virtual std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
         const std::array<real,nstate> &conservative_soln) const override;
 
     /// Convective normal flux: \f$ \mathbf{F}_{conv} \cdot \hat{n} \f$
-    std::array<real,nstate> convective_normal_flux (const std::array<real,nstate> &conservative_soln, const dealii::Tensor<1,dim,real> &normal) const;
+    virtual std::array<real,nstate> convective_normal_flux (const std::array<real,nstate> &conservative_soln, const dealii::Tensor<1,dim,real> &normal) const;
 
     /// Convective flux Jacobian: \f$ \frac{\partial \mathbf{F}_{conv}}{\partial w} \cdot \mathbf{n} \f$
     dealii::Tensor<2,nstate,real> convective_flux_directional_jacobian (
@@ -194,7 +194,7 @@ public:
         const real current_time) const;
 
     /// Convective flux contribution to the source term
-    std::array<real,nstate> convective_source_term (
+    virtual std::array<real,nstate> convective_source_term (
         const dealii::Point<dim,real> &pos) const;
 
 protected:
@@ -294,7 +294,7 @@ public:
     real compute_pressure_from_density_temperature ( const real density, const real temperature ) const;
 
     ///  Evaluates convective flux based on the chosen split form.
-    std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux (
+    virtual std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux (
         const std::array<real,nstate> &conservative_soln1,
         const std::array<real,nstate> &conservative_soln2) const override;
 
@@ -342,7 +342,7 @@ public:
         const std::array<real,nstate> &convervative_soln2) const;
 
     /// Boundary condition handler
-    void boundary_face_values (
+    virtual void boundary_face_values (
         const int /*boundary_type*/,
         const dealii::Point<dim, real> &/*pos*/,
         const dealii::Tensor<1,dim,real> &/*normal*/,
@@ -442,11 +442,11 @@ protected:
         std::array<real,nstate> &soln_bc) const;
 
     /// Get manufactured solution value
-    std::array<real,nstate> get_manufactured_solution_value(
+    virtual std::array<real,nstate> get_manufactured_solution_value(
         const dealii::Point<dim,real> &pos) const;
 
     /// Get manufactured solution gradient
-    std::array<dealii::Tensor<1,dim,real>,nstate> get_manufactured_solution_gradient(
+    virtual std::array<dealii::Tensor<1,dim,real>,nstate> get_manufactured_solution_gradient(
         const dealii::Point<dim,real> &pos) const;
 
     /** Entropy conserving split form flux of Kennedy and Gruber.

@@ -9,7 +9,7 @@
 #include "manufactured_solution.h"
 #include "physics.h"
 #include "convection_diffusion.h"
-#include "advection_spacetime.h"
+#include "spacetime/advection_spacetime.h"
 #include "burgers.h"
 #include "burgers_rewienski.h"
 #include "euler.h"
