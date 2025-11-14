@@ -345,34 +345,6 @@ std::array<real,nstate> MHD<dim, nstate, real>
 }
 
 template <int dim, int nstate, typename real>
-std::array<real,nstate> MHD<dim,nstate,real>
-::convective_normal_flux (const std::array<real,nstate> &conservative_soln, const dealii::Tensor<1,dim,real> &normal) const
-{
-    std::array<real, nstate> conv_normal_flux;
-    const real density = conservative_soln[0];
-    const real pressure = compute_pressure (conservative_soln);
-    const dealii::Tensor<1,dim,real> vel = compute_velocities(conservative_soln);
-    //const real normal_vel = vel*normal;
-    real normal_vel = 0.0;
-    for (int d=0; d<dim; ++d) {
-        normal_vel += vel[d]*normal[d];
-    }
-    const real total_energy = conservative_soln[nstate-1];
-    const real specific_total_enthalpy = (total_energy + pressure) / density;
-
-    const real rhoV = density*normal_vel;
-    // Density equation
-    conv_normal_flux[0] = rhoV;
-    // Momentum equation
-    for (int velocity_dim=0; velocity_dim<dim; ++velocity_dim){
-        conv_normal_flux[1+velocity_dim] = rhoV*vel[velocity_dim] + normal[velocity_dim] * pressure;
-    }
-    // Energy equation
-    conv_normal_flux[nstate-1] = rhoV*specific_total_enthalpy;
-    return conv_normal_flux;
-}
-
-template <int dim, int nstate, typename real>
 dealii::Tensor<2,nstate,real> MHD<dim,nstate,real>
 ::convective_flux_directional_jacobian (
     const std::array<real,nstate> &conservative_soln,
