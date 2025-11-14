@@ -122,10 +122,6 @@ public:
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
         const std::array<real,nstate> &conservative_soln) const override;
 
-    /// Convective normal flux: \f$ \mathbf{F}_{conv} \cdot \hat{n} \f$
-    std::array<real,nstate> convective_normal_flux (const std::array<real,nstate> &conservative_soln, const dealii::Tensor<1,dim,real> &normal) const override;
-
-
     /// Convective flux contribution to the source term
     std::array<real,nstate> convective_source_term (
         const dealii::Point<dim,real> &pos) const override;
@@ -147,10 +143,16 @@ public:
         std::array<real,nstate> &/*soln_bc*/,
         std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const override;
 
-
-    /// Get manufactured solution value
-    std::array<real,nstate> get_manufactured_solution_value(
-        const dealii::Point<dim,real> &pos) const override;
+    /// Purely upwind boundary
+    /// For temporal dimension surfaces only.
+    /// Dirichlet on the t=0 surface, outflow on t=t_f surface.
+    void boundary_purely_upwind(
+        const dealii::Point<dim, real> &/*pos*/,
+        const dealii::Tensor<1,dim,real> &normal_int,
+        const std::array<real,nstate> &soln_int,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
+        std::array<real,nstate> &soln_bc,
+        std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
 
     /// Get manufactured solution gradient
     std::array<dealii::Tensor<1,dim,real>,nstate> get_manufactured_solution_gradient(
