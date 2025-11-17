@@ -1484,6 +1484,40 @@ real InitialConditionFunction_Multispecies_IsentropicVortex<dim,nspecies,nstate,
     return value;
 }
 
+// Initial condition for Euler spacetime manufactured solution
+// From Friedrich et al 2019 Eq. 4.4
+// ========================================================
+template <int dim, int nspecies, int nstate, typename real>
+InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate,real>
+::InitialConditionFunction_EulerSpacetimeManufactured()
+    : InitialConditionFunction<dim,nspecies,nstate,real>()
+{
+    // Nothing to do here yet
+}
+
+template <int dim, int nspecies, int nstate, typename real>
+real InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate, real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    const double pi = atan(1.0)*4;
+    std::array<real,nstate> soln;
+    soln[0] = 2 + sin(2 * pi  * (point[0]));
+    std::array<real,dim> soln_momentums;
+    soln_momentums[0] = 2 + sin(2 * pi * (point[0] ));
+    if constexpr(dim==3) {
+        soln_momentums [1] = 0.0;
+    }
+    // last dim: always zero because we store an additional unused state
+    soln_momentums[dim-1] = 0.0;
+
+    for (int idim=0; idim < dim; ++idim){
+        soln[idim+1] = soln_momentums[idim];
+    }
+    
+    soln[dim-1] = pow(2 + sin(2 * pi * point[0]),2);
+
+    return soln[istate];
+}
 // ========================================================
 // ZERO INITIAL CONDITION
 // ========================================================
@@ -1645,6 +1679,7 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
     } else if (flow_type == FlowCaseEnum::multi_species_isentropic_vortex) {
         if constexpr (dim==2 && nspecies==2 && nstate==dim+nspecies+1) return std::make_shared<InitialConditionFunction_Multispecies_IsentropicVortex<dim,nspecies,nstate,real> >(param);
     } else {
+        if constexpr (dim>=2 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate,real> > ();
         std::cout << "Invalid Flow Case Type. You probably forgot to add it to the list of flow cases in initial_condition_function.cpp" << std::endl;
         std::abort();
         return std::make_shared<InitialConditionFunction_Zero<dim, nspecies, nstate, real> >();

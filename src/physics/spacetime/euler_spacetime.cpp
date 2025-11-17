@@ -6,13 +6,13 @@ namespace PHiLiP {
 namespace Physics {
 
 
-template <int dim, int nstate, typename real>
-std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
+template <int dim, int nspecies, int nstate, typename real>
+std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate,real>
 ::convective_flux (const std::array<real,nstate> &conservative_soln) const
 {
     std::array<dealii::Tensor<1,dim,real>,nstate> conv_flux;
     const real density = conservative_soln[0];
-    const real pressure = this->template compute_pressure<real>(conservative_soln);
+    const real pressure = this->compute_pressure(conservative_soln);
     const dealii::Tensor<1,dim,real> vel = this->template compute_velocities<real>(conservative_soln);
     const real specific_total_energy = conservative_soln[nstate-1]/conservative_soln[0];
     const real specific_total_enthalpy = specific_total_energy + pressure/density;
@@ -38,8 +38,8 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
     return conv_flux;
 }
 
-template <int dim, int nstate, typename real>
-std::array<real,nstate> EulerSpacetime<dim,nstate,real>
+template <int dim, int nspecies, int nstate, typename real>
+std::array<real,nstate> EulerSpacetime<dim,nspecies,nstate,real>
 ::convective_source_term (
     const dealii::Point<dim,real> &/*pos*/) const
 {
@@ -52,8 +52,8 @@ std::array<real,nstate> EulerSpacetime<dim,nstate,real>
     return convective_source_term;
 }
 
-template <int dim, int nstate, typename real>
-std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
+template <int dim, int nspecies, int nstate, typename real>
+std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate,real>
 ::get_manufactured_solution_gradient (
     const dealii::Point<dim,real> &pos) const
 {
@@ -72,8 +72,8 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
     return manufactured_solution_gradient;
 }
 
-template <int dim, int nstate, typename real>
-void EulerSpacetime<dim,nstate,real>
+template <int dim, int nspecies, int nstate, typename real>
+void EulerSpacetime<dim,nspecies,nstate,real>
 ::boundary_face_values (
    const int boundary_type,
    const dealii::Point<dim, real> &pos,
@@ -89,13 +89,13 @@ void EulerSpacetime<dim,nstate,real>
     } else {
         this->pcout << "Warning: Only pure upwind has been verified for EulerSpacetime!" << std::endl
               << "Proceed with caution!" << std::endl;
-        return Euler<dim,nstate,real>::boundary_face_values (boundary_type,pos,normal_int,soln_int,soln_grad_int,soln_bc,soln_grad_bc);
+        return Euler<dim,nspecies,nstate,real>::boundary_face_values (boundary_type,pos,normal_int,soln_int,soln_grad_int,soln_bc,soln_grad_bc);
     }
 }
 
 
-template <int dim, int nstate, typename real>
-void EulerSpacetime<dim,nstate,real>::
+template <int dim, int nspecies, int nstate, typename real>
+void EulerSpacetime<dim,nspecies,nstate,real>::
 boundary_purely_upwind(
     const dealii::Point<dim, real> &pos,
     const dealii::Tensor<1,dim,real> &normal_int,
@@ -147,8 +147,8 @@ boundary_purely_upwind(
     this->pcout << "Warning: haven't yet implemented boundary_purely_upwind! " << std::endl;
 }
 
-template <int dim, int nstate, typename real>
-std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>::
+template <int dim, int nspecies, int nstate, typename real>
+std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate,real>::
 convective_numerical_split_flux (
         const std::array<real,nstate> &/*conservative_soln1*/,
         const std::array<real,nstate> &/*conservative_soln2*/) const
@@ -160,11 +160,11 @@ convective_numerical_split_flux (
     return nothing_tensor;
 }
 #if PHILIP_DIM>1
-template class EulerSpacetime < PHILIP_DIM, PHILIP_DIM+2, double >;
-template class EulerSpacetime < PHILIP_DIM, PHILIP_DIM+2, FadType>;
-template class EulerSpacetime < PHILIP_DIM, PHILIP_DIM+2, RadType>;
-template class EulerSpacetime < PHILIP_DIM, PHILIP_DIM+2, FadFadType>;
-template class EulerSpacetime < PHILIP_DIM, PHILIP_DIM+2, RadFadType>;
+template class EulerSpacetime < PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double >;
+template class EulerSpacetime < PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, FadType>;
+template class EulerSpacetime < PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, RadType>;
+template class EulerSpacetime < PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, FadFadType>;
+template class EulerSpacetime < PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, RadFadType>;
 #endif
 } // Physics namespace
 } // PHiLiP namespace

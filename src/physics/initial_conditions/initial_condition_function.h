@@ -727,6 +727,25 @@ protected:
     real primitive_value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const;
 };
 
+/// Initial condition for Euler spacetime manufactured solution
+/** Apply initial condition across the entire domain. 
+ *  Not deriving from EulerBase because there are no primitive-conservative conversions.
+ */
+template <int dim, int nspecies, int nstate, typename real>
+class InitialConditionFunction_EulerSpacetimeManufactured : public InitialConditionFunction<dim,nspecies,nstate,real>
+{
+protected:
+    using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
+    
+public:
+    /// Constructor
+    InitialConditionFunction_EulerSpacetimeManufactured();
+
+    /// Returns zero.
+    real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
+};
+
+
 /// Initial condition 0.
 template <int dim, int nspecies, int nstate, typename real>
 class InitialConditionFunction_Zero : public InitialConditionFunction<dim,nspecies,nstate,real>
