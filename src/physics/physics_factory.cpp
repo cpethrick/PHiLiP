@@ -12,6 +12,7 @@
 #include "physics.h"
 #include "convection_diffusion.h"
 #include "spacetime/advection_spacetime.h"
+#include "spacetime/euler_spacetime.h"
 #include "burgers.h"
 #include "burgers_rewienski.h"
 #include "euler.h"
@@ -116,6 +117,18 @@ PhysicsFactory<dim,nspecies,nstate,real>
         } else if (pde_type == PDE_enum::euler) {
             if constexpr (nstate==dim+2) {
                 return std::make_shared < Euler<dim,nspecies,nstate,real> > (
+                    parameters_input,
+                    parameters_input->euler_param.ref_length,
+                    parameters_input->euler_param.gamma_gas,
+                    parameters_input->euler_param.mach_inf,
+                    parameters_input->euler_param.angle_of_attack,
+                    parameters_input->euler_param.side_slip_angle,
+                    manufactured_solution_function,
+                    parameters_input->two_point_num_flux_type);
+            }
+        } else if (pde_type == PDE_enum::euler && spacetime) {
+            if constexpr (nstate==dim+2 && dim>1) {
+                return std::make_shared < EulerSpacetime<dim,nspecies,nstate,real> > (
                     parameters_input,
                     parameters_input->euler_param.ref_length,
                     parameters_input->euler_param.gamma_gas,
