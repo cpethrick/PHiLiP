@@ -8,7 +8,8 @@ namespace PHiLiP {
 
 namespace FlowSolver {
 //=========================================================
-// FLOW IN PERIODIC CUBE DOMAIN
+// Flow in a spatially periodic cartesian grid.
+// The grid is generated for dim = spatial_dim + temporal_dim
 //=========================================================
 template <int dim, int nspecies, int nstate>
 SpacetimeCartesianProblem<dim,nspecies,nstate>::SpacetimeCartesianProblem(const PHiLiP::Parameters::AllParameters *const parameters_input)
@@ -50,6 +51,7 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::display_additional_flow_cas
 
 #if PHILIP_DIM>1
 template class SpacetimeCartesianProblem <PHILIP_DIM,PHILIP_SPECIES,1>;
+template class SpacetimeCartesianProblem <PHILIP_DIM,PHILIP_SPECIES,PHILIP_DIM+2>;
 #endif
 
 } // FlowSolver namespace
