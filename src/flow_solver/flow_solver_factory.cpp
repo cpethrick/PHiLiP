@@ -131,6 +131,7 @@ FlowSolverFactory<dim,nstate>
             return std::make_unique<FlowSolver<dim, nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
         }
     } else if (flow_type == FlowCaseEnum::spacetime_cartesian) {
+        std::cout << "space time cartesian" << dim << nstate << std::endl;
         if constexpr ((dim>=2 && nstate==1) // Linear advection
                 || (dim>=2 && nstate == dim+2)) //Euler
                 {

@@ -644,7 +644,7 @@ const std::string test_string = prm.get("test_type");
         nstate = dimension;
     } else if (pde_string == "euler") {
         pde_type = euler;
-        nstate = dimension+2;
+        nstate = dimension+temporal_dimension+2;
     }
     else if (pde_string == "navier_stokes") {
         pde_type = navier_stokes;
