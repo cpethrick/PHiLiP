@@ -3707,7 +3707,6 @@ void DGBase<dim,nspecies,real,MeshType>::evaluate_mass_matrices (bool do_inverse
     const FR_enum FR_Type = this->all_parameters->flux_reconstruction_type;
 
     const double FR_user_specified_correction_parameter_value = this->all_parameters->FR_user_specified_correction_parameter_value;
-    //std::cout << FR_user_specified_correction_parameter_value << std::endl;
     
     using FR_Aux_enum = Parameters::AllParameters::Flux_Reconstruction_Aux;
     const FR_Aux_enum FR_Type_Aux = this->all_parameters->flux_reconstruction_aux_type;
