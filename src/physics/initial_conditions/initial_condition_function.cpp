@@ -942,6 +942,41 @@ real InitialConditionFunction_SVSW<dim, nstate, real>
 }
 
 // ========================================================
+// Initial condition for Euler spacetime manufactured solution
+// From Friedrich et al 2019 Eq. 4.4
+// ========================================================
+template <int dim, int nstate, typename real>
+InitialConditionFunction_EulerSpacetimeManufactured<dim,nstate,real>
+::InitialConditionFunction_EulerSpacetimeManufactured()
+    : InitialConditionFunction<dim,nstate,real>()
+{
+    // Nothing to do here yet
+}
+
+template <int dim, int nstate, typename real>
+real InitialConditionFunction_EulerSpacetimeManufactured<dim, nstate, real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    const double pi = atan(1.0)*4;
+    std::array<real,nstate> soln;
+    soln[0] = 2 + sin(2 * pi  * (point[0]));
+    std::array<real,dim> soln_momentums;
+    soln_momentums[0] = 2 + sin(2 * pi * (point[0] ));
+    if constexpr(dim==3) {
+        soln_momentums [1] = 0.0;
+    }
+    // last dim: always zero because we store an additional unused state
+    soln_momentums[dim-1] = 0.0;
+
+    for (int idim=0; idim < dim; ++idim){
+        soln[idim+1] = soln_momentums[idim];
+    }
+    
+    soln[dim-1] = pow(2 + sin(2 * pi * point[0]),2);
+
+    return soln[istate];
+}
+// ========================================================
 // ZERO INITIAL CONDITION
 // ========================================================
 template <int dim, int nstate, typename real>
@@ -1040,6 +1075,7 @@ InitialConditionFactory<dim,nstate, real>::create_InitialConditionFunction(
         if constexpr (nstate==dim && dim<3) return std::make_shared<InitialConditionFunction_BurgersInviscid<dim, nstate, real> >();
     } else if (flow_type == FlowCaseEnum::spacetime_cartesian) {
         if constexpr (dim>=2 && nstate==1) return std::make_shared<InitialConditionFunction_Zero<dim,nstate,real> > ();
+        else if constexpr (dim>=2 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerSpacetimeManufactured<dim,nstate,real> > ();
     }else {
         std::cout << "Invalid Flow Case Type. You probably forgot to add it to the list of flow cases in initial_condition_function.cpp" << std::endl;
         std::abort();

@@ -28,7 +28,7 @@ void ConvectionDiffusion<dim,nstate,real>
     std::array<real,nstate> boundary_values;
     std::array<dealii::Tensor<1,dim,real>,nstate> boundary_gradients;
     for (int i=0; i<nstate; i++) {
-        if(boundary_type == 1009){
+        if(boundary_type == 1010){
             // Corresponds to custom function
             if constexpr(dim>1&&nstate==1){
                 ///////

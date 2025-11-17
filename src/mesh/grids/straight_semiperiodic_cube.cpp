@@ -47,7 +47,7 @@ void straight_semiperiodic_cube(std::shared_ptr<TriangulationType> &grid,
         grid->add_periodicity(matched_pairs);
 
 
-        const int time_zero_boundary_ID = 1009; // for custom function
+        const int time_zero_boundary_ID = 1010; // for custom function
 
         for (auto cell = grid->begin_active(); cell != grid->end(); ++cell) {
             // Set a dummy material ID
