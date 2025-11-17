@@ -97,21 +97,54 @@ void EulerSpacetime<dim,nstate,real>
 template <int dim, int nstate, typename real>
 void EulerSpacetime<dim,nstate,real>::
 boundary_purely_upwind(
-    const dealii::Point<dim, real> &/*pos*/,
-    const dealii::Tensor<1,dim,real> &/*normal_int*/,
+    const dealii::Point<dim, real> &pos,
+    const dealii::Tensor<1,dim,real> &normal_int,
     const std::array<real,nstate> &soln_int,
-    const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
+    const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
     std::array<real,nstate> &soln_bc,
-    std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const
+    std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
 
-    soln_bc = soln_int;
+    if (abs(normal_int[dim]-1) < 1E-14) {
+        // normal in temporal dimension = 1: this boundary will be pure convective outflow
+        soln_bc = soln_int;
+        soln_grad_bc = soln_grad_int;
+    } else if (abs(normal_int[dim]+1) < 1E-14){
+        // normal in temporal dimension = -1: this boundary will be pure upwinding
+        // of a Dirichlet boundary
+
+        /// Manufactured solution from Friedrich et al 2019 eqn 4.4
+        /// Extended to 2D+1 w uniform 0 vel in y.
+        const double pi = atan(1.0)*4;
+        soln_bc[0] = 2 + sin(2 * pi  * (pos[0]));
+        std::array<real,dim> soln_momentums;
+        soln_momentums[0] = 2 + sin(2 * pi * (pos[0] ));
+        if constexpr(dim==3) {
+            soln_momentums [1] = 0.0;
+        }
+        // last dim: always zero because we store an additional unused state
+        soln_momentums[dim-1] = 0.0;
+
+        for (int idim=0; idim < dim; ++idim){
+            soln_bc[idim+1] = soln_momentums[idim];
+        }
+        
+        soln_bc[dim-1] = pow(2 + sin(2 * pi * pos[0]),2);
+        for (int istate = 0; istate < nstate;  ++istate){
+            soln_grad_bc[istate] = soln_grad_int[istate];
+        }
+
+    } else {
+        this->pcout << "Warning: attempting to use purely upwind boundary on a non-temporal boundary!" << std::endl;
+        //Return internal state.
+        soln_bc = soln_int;
+        soln_grad_bc = soln_grad_int;
+    }
+
     // TO DO:
     // add check that normal is purely temporal
     // add 
     this->pcout << "Warning: haven't yet implemented boundary_purely_upwind! " << std::endl;
-
-    // soln_grad_bc = 0
 }
 
 template <int dim, int nstate, typename real>
