@@ -1,4 +1,3 @@
-
 #include "ADTypes.hpp"
 
 #include "euler_spacetime.h"
@@ -54,7 +53,7 @@ std::array<real,nstate> EulerSpacetime<dim,nstate,real>
 }
 
 template <int dim, int nstate, typename real>
-std::array<dealii::Tensor<1,dim,real>,nstate> Euler<dim,nstate,real>
+std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
 ::get_manufactured_solution_gradient (
     const dealii::Point<dim,real> &pos) const
 {
@@ -113,6 +112,19 @@ boundary_purely_upwind(
     this->pcout << "Warning: haven't yet implemented boundary_purely_upwind! " << std::endl;
 
     // soln_grad_bc = 0
+}
+
+template <int dim, int nstate, typename real>
+std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>::
+convective_numerical_split_flux (
+        const std::array<real,nstate> &/*conservative_soln1*/,
+        const std::array<real,nstate> &/*conservative_soln2*/) const
+{
+
+    this->pcout << "ERROR: not yet implemented!!" << std::endl;
+    std::abort();
+    std::array<dealii::Tensor<1,dim,real>,nstate> nothing_tensor;
+    return nothing_tensor;
 }
 #if PHILIP_DIM>1
 template class EulerSpacetime < PHILIP_DIM, PHILIP_DIM+2, double >;
