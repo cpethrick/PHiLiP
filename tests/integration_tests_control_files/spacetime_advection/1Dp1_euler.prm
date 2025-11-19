@@ -46,8 +46,8 @@ subsection ODE solver
   set runge_kutta_method = euler_ex
 end
 
-subsection manufactured solution
-  set use_manufactured_source_term = true
+subsection manufactured solution convergence study
+  #set use_manufactured_source_term = true
   set manufactured_solution_type = euler_spacetime
 end
 
