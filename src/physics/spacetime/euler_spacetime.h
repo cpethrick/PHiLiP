@@ -123,8 +123,8 @@ public:
         const std::array<real,nstate> &conservative_soln) const override;
 
     /// Convective flux contribution to the source term
-    std::array<real,nstate> convective_source_term (
-        const dealii::Point<dim,real> &pos) const override;
+    //std::array<real,nstate> convective_source_term (
+    //    const dealii::Point<dim,real> &pos) const override;
 
     ///  Evaluates convective flux based on the chosen split form.
     /// Currently, none of these are implemented, so this function returns zero.
@@ -155,8 +155,8 @@ public:
         std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
 
     /// Get manufactured solution gradient
-    std::array<dealii::Tensor<1,dim,real>,nstate> get_manufactured_solution_gradient(
-        const dealii::Point<dim,real> &pos) const override;
+    //std::array<dealii::Tensor<1,dim,real>,nstate> get_manufactured_solution_gradient(
+    //    const dealii::Point<dim,real> &pos) const override;
     /////// Numerical fluxes here....:
     // Add all and describe that they aren't implemented.
 };
