@@ -105,18 +105,19 @@ boundary_purely_upwind(
     std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
 
-    if (abs(normal_int[dim]-1) < 1E-14) {
+    if (abs(normal_int[dim-1]-1) < 1E-14) {
         // normal in temporal dimension = 1: this boundary will be pure convective outflow
         soln_bc = soln_int;
         soln_grad_bc = soln_grad_int;
-    } else if (abs(normal_int[dim]+1) < 1E-14){
+    } else if (abs(normal_int[dim-1]+1) < 1E-14){
         // normal in temporal dimension = -1: this boundary will be pure upwinding
         // of a Dirichlet boundary
 
         /// Manufactured solution from Friedrich et al 2019 eqn 4.4
-        /// Extended to 2D+1 w uniform 0 vel in y.
+        /// Extended to 2D+1 with uniform 0 vel in y.
         const double pi = atan(1.0)*4;
         soln_bc[0] = 2 + sin(2 * pi  * (pos[0]));
+
         std::array<real,dim> soln_momentums;
         soln_momentums[0] = 2 + sin(2 * pi * (pos[0] ));
         if constexpr(dim==3) {
@@ -129,9 +130,9 @@ boundary_purely_upwind(
             soln_bc[idim+1] = soln_momentums[idim];
         }
         
-        soln_bc[dim-1] = pow(2 + sin(2 * pi * pos[0]),2);
+        soln_bc[nstate-1] = pow(2 + sin(2 * pi * pos[0]),2);
         for (int istate = 0; istate < nstate;  ++istate){
-            soln_grad_bc[istate] = soln_grad_int[istate];
+            soln_grad_bc[istate] = 0;
         }
 
     } else {
@@ -141,10 +142,6 @@ boundary_purely_upwind(
         soln_grad_bc = soln_grad_int;
     }
 
-    // TO DO:
-    // add check that normal is purely temporal
-    // add 
-    this->pcout << "Warning: haven't yet implemented boundary_purely_upwind! " << std::endl;
 }
 
 template <int dim, int nstate, typename real>
