@@ -31,32 +31,39 @@ void ConvectionDiffusion<dim,nstate,real>
         if(boundary_type == 1010){
             // Corresponds to custom function
             if constexpr(dim>1&&nstate==1){
-                ///////
-                // Ideally, this would redirect to the exact_solutions class.
-                // However, templating nightmares within... hard-coding 
-                // is approriate for the linear advection case.
-                const real adv_speed0 = 0.3;
-                const real adv_speed1 = 0.4;
+                if (abs(normal_int[dim-1] +1) > 1E-14){
+                    // t=0 face
+                    ///////
+                    // Ideally, this would redirect to the exact_solutions class.
+                    // However, templating nightmares within... hard-coding 
+                    // is approriate for the linear advection case.
+                    const real adv_speed0 = 0.3;
+                    const real adv_speed1 = 0.4;
 
-                const real pi = atan(1.0) * 4.0;
+                    const real pi = atan(1.0) * 4.0;
 
-                const real x = pos[0];
+                    const real x = pos[0];
 #if PHILIP_DIM==2
-                const real t = pos[1];
-                const real y = 0;
+                    const real t = pos[1];
+                    const real y = 0;
 #elif PHILIP_DIM==3
-                const real y = pos[1];
-                const real t = pos[2];
+                    const real y = pos[1];
+                    const real t = pos[2];
 #else
-                // to avoid compile error. this will never be reached.
-                const real y = 0;
-                const real t = 0;
+                    // to avoid compile error. this will never be reached.
+                    const real y = 0;
+                    const real t = 0;
 #endif
 
-                const real value = sin(pi * (x - adv_speed0 * t) + 2*pi* (y - adv_speed1*t)) + 0.01;
-                std::cout << value << " ";
-                ///////
-                boundary_values[i] = value;
+                    const real value = sin(pi * (x - adv_speed0 * t) + 2*pi* (y - adv_speed1*t)) + 0.01;
+                    std::cout << value << " ";
+                    ///////
+                    boundary_values[i] = value;
+                }
+                else if (abs(normal_int[dim-1] -1) > 1E-14) {
+                    // t = t_f face
+                    boundary_values[i] = soln_int[i];
+                }
             }else{
                 this->pcout << "Warning:No Dirichlet boundary function is defined for this PDE." << std::endl;
                 boundary_values[i] = 0;
