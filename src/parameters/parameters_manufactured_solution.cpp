@@ -30,7 +30,8 @@ void ManufacturedSolutionParam::declare_parameters(dealii::ParameterHandler &prm
                       " navah_solution_2 | "
                       " navah_solution_3 | "
                       " navah_solution_4 | "
-                      " navah_solution_5"
+                      " navah_solution_5 | "
+                      " euler_spacetime" 
                       ),
                       "The manufactured solution we want to use (if use_manufactured_source_term==true). "
                       "Choices are "
@@ -49,7 +50,8 @@ void ManufacturedSolutionParam::declare_parameters(dealii::ParameterHandler &prm
                       "  navah_solution_2 | "
                       "  navah_solution_3 | "
                       "  navah_solution_4 | "
-                      "  navah_solution_5>.");
+                      "  navah_solution_5 | "
+                      "  euler_spacetime>.");
 
     // diffusion tensor, get default from function and convert entries to string
     const dealii::Tensor<2,3,double> default_diffusion_tensor = get_default_diffusion_tensor();
@@ -112,6 +114,7 @@ void ManufacturedSolutionParam::parse_parameters(dealii::ParameterHandler &prm)
     else if(manufactured_solution_string == "navah_solution_3")        {manufactured_solution_type = navah_solution_3;}
     else if(manufactured_solution_string == "navah_solution_4")        {manufactured_solution_type = navah_solution_4;}
     else if(manufactured_solution_string == "navah_solution_5")        {manufactured_solution_type = navah_solution_5;}
+    else if(manufactured_solution_string == "euler_spacetime")         {manufactured_solution_type = euler_spacetime;}
  
     diffusion_tensor[0][0] = prm.get_double("diffusion_00");
     diffusion_tensor[0][1] = prm.get_double("diffusion_01");

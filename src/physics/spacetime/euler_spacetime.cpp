@@ -38,39 +38,39 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
     return conv_flux;
 }
 
-template <int dim, int nstate, typename real>
-std::array<real,nstate> EulerSpacetime<dim,nstate,real>
-::convective_source_term (
-    const dealii::Point<dim,real> &/*pos*/) const
-{
-    this->pcout << "ERROR: convective_source_term not implemented! Aborting..." << std::endl;
-    std::abort();
-    //Note, I don't think this would be different than Euler base, but
-    //that assumption hasn't been validated so best to abort.
-    std::array<real,nstate> convective_source_term;
+// template <int dim, int nstate, typename real>
+// std::array<real,nstate> EulerSpacetime<dim,nstate,real>
+// ::convective_source_term (
+//     const dealii::Point<dim,real> &/*pos*/) const
+// {
+//     this->pcout << "ERROR: convective_source_term not implemented! Aborting..." << std::endl;
+//     std::abort();
+//     //Note, I don't think this would be different than Euler base, but
+//     //that assumption hasn't been validated so best to abort.
+//     std::array<real,nstate> convective_source_term;
+// 
+//     return convective_source_term;
+// }
 
-    return convective_source_term;
-}
-
-template <int dim, int nstate, typename real>
-std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
-::get_manufactured_solution_gradient (
-    const dealii::Point<dim,real> &pos) const
-{
-    this->pcout << "ERROR: get_manufactured_solution_gradient not implemented! Aborting..." << std::endl;
-    std::abort();
-    //Note, I don't think this would be different than Euler base, but
-    //that assumption hasn't been validated so best to abort.
-    std::vector<dealii::Tensor<1,dim,real>> manufactured_solution_gradient_dealii(nstate);
-    this->manufactured_solution_function->vector_gradient(pos,manufactured_solution_gradient_dealii);
-    std::array<dealii::Tensor<1,dim,real>,nstate> manufactured_solution_gradient;
-    for (int d=0;d<dim;d++) { // Not sure whether this should loop over dim or dim-1
-        for (int s=0; s<nstate; s++) {
-            manufactured_solution_gradient[s][d] = manufactured_solution_gradient_dealii[s][d];
-        }
-    }
-    return manufactured_solution_gradient;
-}
+// template <int dim, int nstate, typename real>
+// std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
+// ::get_manufactured_solution_gradient (
+//     const dealii::Point<dim,real> &pos) const
+// {
+//     this->pcout << "ERROR: get_manufactured_solution_gradient not implemented! Aborting..." << std::endl;
+//     std::abort();
+//     //Note, I don't think this would be different than Euler base, but
+//     //that assumption hasn't been validated so best to abort.
+//     std::vector<dealii::Tensor<1,dim,real>> manufactured_solution_gradient_dealii(nstate);
+//     this->manufactured_solution_function->vector_gradient(pos,manufactured_solution_gradient_dealii);
+//     std::array<dealii::Tensor<1,dim,real>,nstate> manufactured_solution_gradient;
+//     for (int d=0;d<dim;d++) { // Not sure whether this should loop over dim or dim-1
+//         for (int s=0; s<nstate; s++) {
+//             manufactured_solution_gradient[s][d] = manufactured_solution_gradient_dealii[s][d];
+//         }
+//     }
+//     return manufactured_solution_gradient;
+// }
 
 template <int dim, int nstate, typename real>
 void EulerSpacetime<dim,nstate,real>
