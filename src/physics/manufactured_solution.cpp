@@ -252,6 +252,28 @@ inline real ManufacturedSolutionNavahBase<dim,real>
 }
 
 template <int dim, typename real>
+inline real ManufacturedSolutionEulerSpacetime<dim,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    real value = 0.0;
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    const real y = point[1];
+
+    //density
+    if (istate==0) value = 2 + sin(2 * pi * (x-y));
+    //momentum
+    if (istate==1) value = 2 + sin(2 * pi * (x-y));
+    //second unused momentum
+    if (istate==2) value = 0; 
+    //energy
+    if (istate==3) value = pow(2 + sin(2 * pi * (x-y)),2);
+   
+    return value;
+}
+
+
+template <int dim, typename real>
 inline dealii::Tensor<1,dim,real> ManufacturedSolutionZero<dim,real>
 ::gradient (const dealii::Point<dim,real> &/*point*/, const unsigned int /*istate*/) const
 {
@@ -610,6 +632,38 @@ inline dealii::Tensor<1,dim,real> ManufacturedSolutionNavahBase<dim,real>
                 gradient[d] = twv*rho_grad[d] + rho*twv_grad[d];
             }
         }
+    }
+    return gradient;
+}
+
+template <int dim, typename real>
+inline dealii::Tensor<1,dim,real> ManufacturedSolutionEulerSpacetime<dim,real>
+::gradient (const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    dealii::Tensor<1,dim,real> gradient;
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    const real y = point[1];
+
+    //density
+    if (istate==0){
+        gradient[0] = 2*pi*cos(2*pi*(x-y));
+        gradient[1] = -2*pi*cos(2*pi*(x-y));
+    }
+    //momentum
+    if (istate==1){
+        gradient[0] = 2*pi*cos(2*pi*(x-y));
+        gradient[1] = -2*pi*cos(2*pi*(x-y));
+    }
+    //second unused momentum
+    if (istate==2){
+        gradient[0]=0.0;
+        gradient[1]=0.0;
+    }
+    //energy
+    if (istate==3){
+        gradient[0] =  4*pi*(2+sin(2*pi*(x-y)))*cos(2*pi*(x-y));
+        gradient[1] = -4*pi*(2-sin(2*pi*(x-y)))*cos(2*pi*(x-y));
     }
     return gradient;
 }
@@ -1104,6 +1158,57 @@ inline dealii::SymmetricTensor<2,dim,real> ManufacturedSolutionNavahBase<dim,rea
 }
 
 template <int dim, typename real>
+inline dealii::SymmetricTensor<2,dim,real> ManufacturedSolutionEulerSpacetime<dim,real>
+::hessian (const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    dealii::SymmetricTensor<2,dim,real> hessian;
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    const real y = point[1];
+
+    // density or momentum
+    if (istate == 0 || istate == 1){
+        for(unsigned int i = 0; i < dim; ++i){
+            for(unsigned int j = 0; j < dim; ++j){
+                if(i == j){
+                    hessian[i][i] = -4 * pi * pi *sin(2 * pi * (x-y));
+                }else{
+                    hessian[i][j] = 4 * pi * pi *sin(2 * pi * (x-y));
+                }
+            }
+        }
+    }
+    //second unused momentum
+    if (istate == 2){
+        for(unsigned int i = 0; i < dim; ++i){
+            for(unsigned int j = 0; j < dim; ++j){
+                if(i == j){
+                    hessian[i][i] = 0;
+                }else{
+                    hessian[i][j] = 0;
+                }
+            }
+        }
+    }
+    //energy
+    if (istate == 3){
+        for(unsigned int i = 0; i < dim; ++i){
+            for(unsigned int j = 0; j < dim; ++j){
+                if(i == j){
+                    hessian[i][i] = 8 * pi*pi* pow(cos(2 *pi*(x - y)),2) 
+                        - 8*pi*pi* sin(2 *pi* (x - y))*(sin(2 *pi* (x - y)) + 2);
+                }else{
+                    hessian[i][j] = -8 * pi*pi* pow(cos(2 *pi*(x - y)),2) 
+                        + 8*pi*pi* sin(2 *pi* (x - y))*(sin(2 *pi* (x - y)) + 2);
+                }
+            }
+        }
+    }
+    return hessian;
+
+}
+
+template <int dim, typename real>
 ManufacturedSolutionFunction<dim,real>
 ::ManufacturedSolutionFunction (const unsigned int nstate)
     :
@@ -1247,6 +1352,8 @@ ManufacturedSolutionFactory<dim,real>::create_ManufacturedSolution(
         return std::make_shared<ManufacturedSolutionNavah_MS4<dim,real>>(nstate);
     }else if((solution_type == ManufacturedSolutionEnum::navah_solution_5) && (dim==2) && (nstate==dim+2 || nstate==dim+3)){
         return std::make_shared<ManufacturedSolutionNavah_MS5<dim,real>>(nstate);
+    }else if((solution_type == ManufacturedSolutionEnum::euler_spacetime) && (dim==2) && (nstate==dim+2)){
+        return std::make_shared<ManufacturedSolutionEulerSpacetime<dim,real>>(nstate);
     }else{
         std::cout << "Invalid combination of Manufactured Solution, dimension, and PDE Type." << std::endl;
     }
@@ -1362,6 +1469,13 @@ template class ManufacturedSolutionNavah_MS5<PHILIP_DIM,FadType>;
 template class ManufacturedSolutionNavah_MS5<PHILIP_DIM,RadType>;
 template class ManufacturedSolutionNavah_MS5<PHILIP_DIM,FadFadType>;
 template class ManufacturedSolutionNavah_MS5<PHILIP_DIM,RadFadType>;
+#if PHILIP_DIM==2
+template class ManufacturedSolutionEulerSpacetime<PHILIP_DIM,double>;
+template class ManufacturedSolutionEulerSpacetime<PHILIP_DIM,FadType>;
+template class ManufacturedSolutionEulerSpacetime<PHILIP_DIM,RadType>;
+template class ManufacturedSolutionEulerSpacetime<PHILIP_DIM,FadFadType>;
+template class ManufacturedSolutionEulerSpacetime<PHILIP_DIM,RadFadType>;
+#endif
 
 template class ManufacturedSolutionFactory<PHILIP_DIM,double>;
 template class ManufacturedSolutionFactory<PHILIP_DIM,FadType>;

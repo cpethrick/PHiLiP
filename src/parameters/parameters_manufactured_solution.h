@@ -35,7 +35,8 @@ public:
         navah_solution_2,
         navah_solution_3,
         navah_solution_4,
-        navah_solution_5
+        navah_solution_5,
+        euler_spacetime
         };
     ManufacturedSolutionType manufactured_solution_type; ///< Selected ManufacturedSolutionType from the input file
 
