@@ -39,6 +39,7 @@ void straight_semiperiodic_cube(std::shared_ptr<TriangulationType> &grid,
     // Definition for each type of grid
     std::string grid_type_string;
     const bool colorize = true;
+    const int time_boundary_ID = 1010; // for custom function
     dealii::GridGenerator::hyper_cube(*grid, domain_left, domain_right, colorize);
     if constexpr(dim==2) {
         grid_type_string = "Square, periodic on faces 0 and 1.";
@@ -47,13 +48,12 @@ void straight_semiperiodic_cube(std::shared_ptr<TriangulationType> &grid,
         grid->add_periodicity(matched_pairs);
 
 
-        const int time_zero_boundary_ID = 1010; // for custom function
 
         for (auto cell = grid->begin_active(); cell != grid->end(); ++cell) {
             // Set a dummy material ID
             cell->set_material_id(9002);
-            if (cell->face(2)->at_boundary()) cell->face(2)->set_boundary_id(time_zero_boundary_ID);
-            if (cell->face(3)->at_boundary()) cell->face(3)->set_boundary_id(1005); // Simple farfield type; corresponding to outflow
+            if (cell->face(2)->at_boundary()) cell->face(2)->set_boundary_id(time_boundary_ID);
+            if (cell->face(3)->at_boundary()) cell->face(3)->set_boundary_id(time_boundary_ID);
         }
 
     }else if constexpr(dim==3) {
@@ -62,13 +62,12 @@ void straight_semiperiodic_cube(std::shared_ptr<TriangulationType> &grid,
         dealii::GridTools::collect_periodic_faces(*grid,0,1,0,matched_pairs);
         dealii::GridTools::collect_periodic_faces(*grid,2,3,1,matched_pairs);
         grid->add_periodicity(matched_pairs);
-        const int time_zero_boundary_ID = 1009; // for custom function
 
         for (auto cell = grid->begin_active(); cell != grid->end(); ++cell) {
             // Set a dummy material ID
             cell->set_material_id(9002);
-            if (cell->face(4)->at_boundary()) cell->face(4)->set_boundary_id(time_zero_boundary_ID);
-            if (cell->face(5)->at_boundary()) cell->face(5)->set_boundary_id(1005); // Simple farfield type; corresponding to outflow
+            if (cell->face(4)->at_boundary()) cell->face(4)->set_boundary_id(time_boundary_ID);
+            if (cell->face(5)->at_boundary()) cell->face(5)->set_boundary_id(time_boundary_ID);
         }
     }
     grid->refine_global(number_of_refinements);
