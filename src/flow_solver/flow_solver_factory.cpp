@@ -176,6 +176,7 @@ std::unique_ptr< FlowSolverBase > FlowSolverFactory<dim,nstate>
 }
 
 template class FlowSolverFactory <PHILIP_DIM,5>;
+template class FlowSolverFactory <PHILIP_DIM,1>;
 
 } // FlowSolver namespace
 } // PHiLiP namespace
