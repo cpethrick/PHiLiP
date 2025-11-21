@@ -531,7 +531,6 @@ int FlowSolver<dim,nstate>::run() const
              
 
             ode_solver->step_in_time(time_step,false);
-            dg->right_hand_side.print(std::cout);
 
             // Compute the unsteady quantities, write to the dealii table, and output to file
             flow_solver_case->compute_unsteady_data_and_write_to_table(ode_solver, dg, unsteady_data_table);
