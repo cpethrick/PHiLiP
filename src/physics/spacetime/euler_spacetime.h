@@ -121,6 +121,11 @@ public:
     /// Convective flux: \f$ \mathbf{F}_{conv} \f$
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (
         const std::array<real,nstate> &conservative_soln) const override;
+    
+    /// Convective flux Jacobian: \f$ \frac{\partial \mathbf{F}_{conv}}{\partial w} \cdot \mathbf{n} \f$
+    dealii::Tensor<2,nstate,real> convective_flux_directional_jacobian (
+        const std::array<real,nstate> &conservative_soln,
+        const dealii::Tensor<1,dim,real> &normal) const override;
 
     /// Convective flux contribution to the source term
     //std::array<real,nstate> convective_source_term (
