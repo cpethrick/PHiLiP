@@ -38,6 +38,64 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
     return conv_flux;
 }
 
+template <int dim, int nstate, typename real>
+dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nstate,real>
+::convective_flux_directional_jacobian (
+    const std::array<real,nstate> &conservative_soln,
+    const dealii::Tensor<1,dim,real> &normal) const
+{
+    // See Blazek (year?) Appendix A.9 p. 429-430
+    // For Blazek (2001), see Appendix A.7 p. 419-420
+    // Alternatively, see Masatsuka 2018 "I do like CFD", p.77, eq.(3.6.8)
+    const dealii::Tensor<1,dim,real> vel = this-> template compute_velocities<real>(conservative_soln);
+    real vel_normal = 0.0;
+    for (int d=0;d<dim;d++) { vel_normal += vel[d] * normal[d]; }
+
+    const real vel2 = this->template compute_velocity_squared<real>(vel);
+    const real phi = 0.5*this->gamm1 * vel2;
+
+    const real density = conservative_soln[0];
+    const real tot_energy = conservative_soln[nstate-1];
+    const real E = tot_energy / density;
+    const real a1 = this->gam*E-phi;
+    const real a2 = this->gam-1.0;
+    const real a3 = this->gam-2.0;
+
+    dealii::Tensor<2,nstate,real> jacobian;
+    if (abs(normal[dim-1])- 1 < 1E-13) {
+        // Last flux is solution, so directional Jacobian is identity
+        for (int istate = 0; istate < nstate; ++istate){
+            jacobian[istate][istate]=1.0;
+        }
+    }
+    else{
+        // Density
+        for (int d=0; d<dim-1; ++d) {
+            jacobian[0][1+d] = normal[d];
+        }
+        // Momentum equations
+        for (int row_dim=0; row_dim<dim-1; ++row_dim) {
+            jacobian[1+row_dim][0] = normal[row_dim]*phi - vel[row_dim] * vel_normal;
+            for (int col_dim=0; col_dim<dim-1; ++col_dim){
+                if (row_dim == col_dim) {
+                    jacobian[1+row_dim][1+col_dim] = vel_normal - a3*normal[row_dim]*vel[row_dim];
+                } else {
+                    jacobian[1+row_dim][1+col_dim] = normal[col_dim]*vel[row_dim] - a2*normal[row_dim]*vel[col_dim];
+                }
+            }
+            jacobian[1+row_dim][nstate-1] = normal[row_dim]*a2;
+        }
+
+        //Energy
+        jacobian[nstate-1][0] = vel_normal*(phi-a1);
+        for (int d=0; d<dim; ++d){
+            jacobian[nstate-1][1+d] = normal[d]*a1 - a2*vel[d]*vel_normal;
+        }
+        jacobian[nstate-1][nstate-1] = this->gam*vel_normal;
+    }
+    return jacobian;
+}
+
 // template <int dim, int nstate, typename real>
 // std::array<real,nstate> EulerSpacetime<dim,nstate,real>
 // ::convective_source_term (

@@ -959,9 +959,9 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim, nstate, real>
 {
     const double pi = atan(1.0)*4;
     std::array<real,nstate> soln;
-    soln[0] = 2 + sin(2 * pi  * (point[0]));
+    soln[0] = 2 + sin(2 * pi  * (point[0]-point[1]*.95));
     std::array<real,dim> soln_momentums;
-    soln_momentums[0] = 2 + sin(2 * pi * (point[0] ));
+    soln_momentums[0] = 2 + sin(2 * pi * (point[0]-point[1]*.95));
     if constexpr(dim==3) {
         soln_momentums [1] = 0.0;
     }
@@ -972,7 +972,7 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim, nstate, real>
         soln[idim+1] = soln_momentums[idim];
     }
     
-    soln[nstate-1] = pow(2 + sin(2 * pi * point[0]),2);
+    soln[nstate-1] = pow(2 + sin(2 * pi * (point[0]-point[1]*.95)),2);
 
     return soln[istate];
 }
