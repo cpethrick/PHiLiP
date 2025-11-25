@@ -972,7 +972,7 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim, nstate, real>
         soln[idim+1] = soln_momentums[idim];
     }
     
-    soln[nstate-1] = pow(2 + sin(2 * pi * (point[0]-point[1]*.95)),2);
+    soln[nstate-1] = pow(2 + sin(2 * pi * (point[0]-point[1]*.95)),3);
 
     return soln[istate];
 }

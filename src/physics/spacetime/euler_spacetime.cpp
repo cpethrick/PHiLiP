@@ -101,11 +101,14 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nstate,real>
 // ::convective_source_term (
 //     const dealii::Point<dim,real> &/*pos*/) const
 // {
-//     this->pcout << "ERROR: convective_source_term not implemented! Aborting..." << std::endl;
-//     std::abort();
+// 
+//     const real pi = atan(1) * 4;
 //     //Note, I don't think this would be different than Euler base, but
 //     //that assumption hasn't been validated so best to abort.
 //     std::array<real,nstate> convective_source_term;
+// 
+//     convective_source_term[1] = pi * this->gamm1 * ( 7 + 4 * sin(2 * pi * ( pos[0]-pos[1])))*cos(2 * pi * ( pos[0]-pos[1]));
+//     convective_source_term[nstate-1] = pi * this->gamm1 * ( 7 + 4 * sin(2 * pi * ( pos[0]-pos[1])))*cos(2 * pi * ( pos[0]-pos[1]));
 // 
 //     return convective_source_term;
 // }
@@ -188,7 +191,7 @@ boundary_purely_upwind(
             soln_bc[idim+1] = soln_momentums[idim];
         }
         
-        soln_bc[nstate-1] = pow(2 + sin(2 * pi * pos[0]),2);
+        soln_bc[nstate-1] = pow(2 + sin(2 * pi * pos[0]),3);
         for (int istate = 0; istate < nstate;  ++istate){
             soln_grad_bc[istate] = 0;
         }
