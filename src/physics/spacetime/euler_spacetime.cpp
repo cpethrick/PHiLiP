@@ -110,7 +110,6 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nspecies,nstate,real>
     return jacobian;
 }
 
-
 template <int dim, int nspecies, int nstate, typename real>
 std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate,real>
 ::get_manufactured_solution_gradient (
@@ -189,7 +188,7 @@ boundary_purely_upwind(
             soln_bc[idim+1] = soln_momentums[idim];
         }
         
-        soln_bc[nstate-1] = pow(2 + sin(2 * pi * pos[0]),2);
+        soln_bc[nstate-1] = pow(2 + sin(2 * pi * pos[0]),3);
         for (int istate = 0; istate < nstate;  ++istate){
             soln_grad_bc[istate] = 0;
         }

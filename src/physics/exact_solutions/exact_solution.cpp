@@ -169,6 +169,42 @@ inline real ExactSolutionFunction_SpacetimeCartesian<dim,nspecies,nstate,real>
     const real value = sin(pi * (x - adv_speed0 * t) + pi* (y - adv_speed1*t)) + 0.01;
     return value;
 }
+
+// ========================================================
+// SPACETIME EULER -- Solution for spacetime Euler by Friedrich et al 2019 eq'n 4.4
+// Valid for 1D+1
+// ========================================================
+template <int dim, int nspecies, int nstate, typename real>
+ExactSolutionFunction_SpacetimeEuler<dim,nspecies,nstate,real>
+::ExactSolutionFunction_SpacetimeEuler()
+        : ExactSolutionFunction<dim,nspecies,nstate,real>()
+{
+}
+
+template <int dim, int nspecies, int nstate, typename real>
+inline real ExactSolutionFunction_SpacetimeEuler<dim,nspecies,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    const double pi = atan(1.0)*4;
+    std::array<real,nstate> soln;
+    soln[0] = 2 + sin(2 * pi  * (point[0]-point[1]));
+    std::array<real,dim> soln_momentums;
+    soln_momentums[0] = 2 + sin(2 * pi * (point[0]-point[1]));
+    if constexpr(dim==3) {
+        soln_momentums [1] = 0.0;
+    }
+    // last dim: always zero because we store an additional unused state
+    soln_momentums[dim-1] = 0.0;
+
+    for (int idim=0; idim < dim; ++idim){
+        soln[idim+1] = soln_momentums[idim];
+    }
+
+    soln[nstate-1] = pow(2 + sin(2 * pi * (point[0]-point[1])),3);
+
+    return soln[istate];
+}
+
 //=========================================================
 // FLOW SOLVER -- Exact Solution Base Class + Factory
 //=========================================================
@@ -196,6 +232,7 @@ ExactSolutionFactory<dim,nspecies,nstate, real>::create_ExactSolutionFunction(
         if constexpr (dim==1 && nstate==dim)  return std::make_shared<ExactSolutionFunction_BurgersInviscidManufactured<dim,nspecies,nstate,real> > (time_compare);
     }else if (flow_type == FlowCaseEnum::spacetime_cartesian){
         if constexpr(dim>1 && nstate==1) return std::make_shared<ExactSolutionFunction_SpacetimeCartesian<dim,nspecies,nstate,real> > ();
+        if constexpr(dim>1 && nstate==dim+2) return std::make_shared<ExactSolutionFunction_SpacetimeEuler<dim,nspecies,nstate,real> > ();
     } else {
         // Select zero function if there is no exact solution defined
         dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
@@ -223,6 +260,7 @@ ExactSolutionFactory<dim,nspecies,nstate, real>::create_ExactSolutionFunction(
     #if PHILIP_DIM>1
         template class ExactSolutionFunction_IsentropicVortex <PHILIP_DIM, PHILIP_SPECIES,PHILIP_DIM+2, double>;
         template class ExactSolutionFunction_SpacetimeCartesian<PHILIP_DIM,PHILIP_SPECIES,1, double>;
+        template class ExactSolutionFunction_SpacetimeCartesian<PHILIP_DIM,PHILIP_SPECIES,PHILIP_DIM+2, double>;
     #endif
 #endif
 } // PHiLiP namespace
