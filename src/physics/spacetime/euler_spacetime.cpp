@@ -191,7 +191,7 @@ boundary_purely_upwind(
             soln_bc[idim+1] = soln_momentums[idim];
         }
         
-        soln_bc[nstate-1] = pow(2 + sin(2 * pi * pos[0]),3);
+        soln_bc[nstate-1] = pow(2 + sin(2 * pi * pos[0]),2);
         for (int istate = 0; istate < nstate;  ++istate){
             soln_grad_bc[istate] = 0;
         }
@@ -208,14 +208,23 @@ boundary_purely_upwind(
 template <int dim, int nstate, typename real>
 std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>::
 convective_numerical_split_flux (
-        const std::array<real,nstate> &/*conservative_soln1*/,
-        const std::array<real,nstate> &/*conservative_soln2*/) const
+        const std::array<real,nstate> &conservative_soln1,
+        const std::array<real,nstate> &conservative_soln2) const
 {
 
-    this->pcout << "ERROR: not yet implemented!!" << std::endl;
-    std::abort();
-    std::array<dealii::Tensor<1,dim,real>,nstate> nothing_tensor;
-    return nothing_tensor;
+    std::array<dealii::Tensor<1,dim,real>,nstate> conv_num_split_flux;
+    if(this->two_point_num_flux_type == two_point_num_flux_enum::Ra) {
+        conv_num_split_flux = convective_numerical_split_flux_ranocha(conservative_soln1, conservative_soln2);
+    }
+    else {
+        this->pcout << "ERROR: not yet implemented!!" << std::endl;
+        std::abort();
+        std::array<dealii::Tensor<1,dim,real>,nstate> nothing_tensor;
+        conv_num_split_flux = nothing_tensor;
+    }
+
+
+    return conv_num_split_flux;
 }
 
 template <int dim, int nstate, typename real>
