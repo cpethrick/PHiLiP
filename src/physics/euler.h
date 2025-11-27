@@ -469,9 +469,8 @@ protected:
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux_chandrashekar (
         const std::array<real,nstate> &conservative_soln1,
         const std::array<real,nstate> &conservative_soln2) const;
-
     /// Ranocha pressure equilibrium preserving, entropy and energy conserving flux.
-    std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux_ranocha (
+    virtual std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux_ranocha (
         const std::array<real,nstate> &conservative_soln1,
         const std::array<real,nstate> &conservative_soln2) const;
 };

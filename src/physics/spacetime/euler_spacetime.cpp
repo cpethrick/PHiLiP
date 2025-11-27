@@ -22,7 +22,7 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
         // Density equation
         conv_flux[0][flux_dim] = conservative_soln[1+flux_dim];
         // Momentum equation
-        for (int velocity_dim=0; velocity_dim<dim; ++velocity_dim){
+        for (int velocity_dim=0; velocity_dim<dim-1; ++velocity_dim){
             conv_flux[1+velocity_dim][flux_dim] = density*vel[flux_dim]*vel[velocity_dim];
         }
         conv_flux[1+flux_dim][flux_dim] += pressure; // Add diagonal of pressure
@@ -216,6 +216,71 @@ convective_numerical_split_flux (
     std::abort();
     std::array<dealii::Tensor<1,dim,real>,nstate> nothing_tensor;
     return nothing_tensor;
+}
+
+template <int dim, int nstate, typename real>
+std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim, nstate, real>
+::convective_numerical_split_flux_ranocha(const std::array<real,nstate> &conservative_soln1,
+                                                const std::array<real,nstate> &conservative_soln2) const
+{
+
+    std::array<dealii::Tensor<1,dim,real>,nstate> conv_num_split_flux;
+    const real rho_log = this->compute_ismail_roe_logarithmic_mean(conservative_soln1[0], conservative_soln2[0]);
+    const real pressure1 = this->template compute_pressure<real>(conservative_soln1);
+    const real pressure2 = this->template compute_pressure<real>(conservative_soln2);
+
+    const real beta1 = conservative_soln1[0]/(pressure1);
+    const real beta2 = conservative_soln2[0]/(pressure2);
+
+    const real beta_log = this->compute_ismail_roe_logarithmic_mean(beta1, beta2);
+    const dealii::Tensor<1,dim,real> vel1 = this->template compute_velocities<real>(conservative_soln1);
+    const dealii::Tensor<1,dim,real> vel2 = this->template compute_velocities<real>(conservative_soln2);
+
+    const real pressure_hat = 0.5*(pressure1+pressure2);
+
+    dealii::Tensor<1,dim,real> vel_avg;
+    real vel_square_avg = 0.0;;
+    for(int idim=0; idim<dim; idim++){
+        vel_avg[idim] = 0.5*(vel1[idim]+vel2[idim]);
+        vel_square_avg += (0.5 *(vel1[idim]+vel2[idim])) * (0.5 *(vel1[idim]+vel2[idim]));
+    }
+
+    real enthalpy_hat = 1.0/(beta_log*this->gamm1) + vel_square_avg + 2.0*pressure_hat/rho_log;
+
+    real vel_square_avg_1122=0;
+    for(int idim=0; idim<dim; idim++){
+        vel_square_avg_1122 += (0.5*(vel1[idim]*vel1[idim] + vel2[idim]*vel2[idim]));
+    }
+    enthalpy_hat -= 0.5*(vel_square_avg_1122);
+
+    /// Spatial part
+    for(int flux_dim=0; flux_dim<dim - 1; flux_dim++){
+        // Density equation
+        conv_num_split_flux[0][flux_dim] = rho_log * vel_avg[flux_dim];
+        // Momentum equation
+        for (int velocity_dim=0; velocity_dim<dim; ++velocity_dim){
+            conv_num_split_flux[1+velocity_dim][flux_dim] = rho_log*vel_avg[flux_dim]*vel_avg[velocity_dim];
+        }
+        conv_num_split_flux[1+flux_dim][flux_dim] += pressure_hat; // Add diagonal of pressure
+
+        // Energy equation
+        conv_num_split_flux[nstate-1][flux_dim] = rho_log * vel_avg[flux_dim] * enthalpy_hat;
+        conv_num_split_flux[nstate-1][flux_dim] -= ( 0.5 *(pressure1*vel1[flux_dim] + pressure2*vel2[flux_dim]));
+    }
+
+    if (dim == 3) this->pcout << "WARNING: Not checked for 2D+1...." << std::endl;
+
+    /// Temporal part
+    // Density equation
+    conv_num_split_flux[0][dim-1] = rho_log;
+    for (int velocity_dim=0; velocity_dim<dim-1; ++velocity_dim) {
+        conv_num_split_flux[1+velocity_dim][dim-1] = rho_log * vel_avg[0];
+        //Unsure what velocity this would be in 2D+1
+    }
+    conv_num_split_flux[nstate-1][dim-1] = 0.5 * rho_log / (beta_log * this->gamm1) + rho_log * (vel_avg[0]*vel_avg[0] - 0.5 * vel_square_avg_1122);
+    
+   return conv_num_split_flux; 
+
 }
 #if PHILIP_DIM>1
 template class EulerSpacetime < PHILIP_DIM, PHILIP_DIM+2, double >;

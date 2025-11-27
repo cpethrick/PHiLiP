@@ -121,7 +121,8 @@ EntropyConservingWithLaxFriedrichsDissipation<dim, nstate, real>::EntropyConserv
     std::shared_ptr<Physics::PhysicsBase<dim, nstate, real>> physics_input)
     : NumericalFluxConvective<dim,nstate,real>(
         std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim, nstate, real> > (physics_input), 
-        std::make_unique< LaxFriedrichsRiemannSolverDissipation<dim, nstate, real> > (physics_input))
+        std::make_unique< LaxFriedrichsRiemannSolverDissipation<dim, nstate, real> > (physics_input),
+        physics_input->all_parameters->is_spacetime)
 {}
 
 template <int dim, int nstate, typename real>
