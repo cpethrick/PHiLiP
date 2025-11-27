@@ -175,7 +175,7 @@ inline real ExactSolutionFunction_SpacetimeEuler<dim,nstate,real>
         soln[idim+1] = soln_momentums[idim];
     }
 
-    soln[nstate-1] = pow(2 + sin(2 * pi * (point[0]-point[1])),3);
+    soln[nstate-1] = pow(2 + sin(2 * pi * (point[0]-point[1])),2);
 
     return soln[istate];
 }
