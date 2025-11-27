@@ -119,11 +119,12 @@ EntropyConserving<dim, nspecies, nstate, real>::EntropyConserving(
 {}
 
 template <int dim, int nspecies, int nstate, typename real>
-EntropyConservingWithLaxFriedrichsDissipation<dim, nspecies, nstate, real>::EntropyConservingWithLaxFriedrichsDissipation(
-    std::shared_ptr<Physics::PhysicsBase<dim, nspecies, nstate, real>> physics_input)
+EntropyConservingWithLaxFriedrichsDissipation<dim,nspecies,nstate, real>::EntropyConservingWithLaxFriedrichsDissipation(
+    std::shared_ptr<Physics::PhysicsBase<dim,nspecies,nstate, real>> physics_input)
     : NumericalFluxConvective<dim,nspecies,nstate,real>(
-        std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim, nspecies, nstate, real> > (physics_input), 
-        std::make_unique< LaxFriedrichsRiemannSolverDissipation<dim, nspecies, nstate, real> > (physics_input))
+        std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim,nspecies,nstate, real> > (physics_input), 
+        std::make_unique< LaxFriedrichsRiemannSolverDissipation<dim,nspecies,nstate, real> > (physics_input),
+        physics_input->all_parameters->is_spacetime)
 {}
 
 template <int dim, int nspecies, int nstate, typename real>
