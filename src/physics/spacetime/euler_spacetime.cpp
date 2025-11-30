@@ -248,7 +248,7 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim, nstate, real>
     const real pressure_hat = 0.5*(pressure1+pressure2);
 
     dealii::Tensor<1,dim,real> vel_avg;
-    real vel_square_avg = 0.0;;
+    real vel_square_avg = 0.0;
     for(int idim=0; idim<dim; idim++){
         vel_avg[idim] = 0.5*(vel1[idim]+vel2[idim]);
         vel_square_avg += (0.5 *(vel1[idim]+vel2[idim])) * (0.5 *(vel1[idim]+vel2[idim]));
@@ -279,6 +279,7 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim, nstate, real>
 
     if (dim == 3) this->pcout << "WARNING: Not checked for 2D+1...." << std::endl;
 
+    ///////// TO DO before merging, move this into another function and add other spatial fluxes.
     /// Temporal part
     // Density equation
     conv_num_split_flux[0][dim-1] = rho_log;
@@ -286,10 +287,108 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim, nstate, real>
         conv_num_split_flux[1+velocity_dim][dim-1] = rho_log * vel_avg[0];
         //Unsure what velocity this would be in 2D+1
     }
-    conv_num_split_flux[nstate-1][dim-1] = 0.5 * rho_log / (beta_log * this->gamm1) + rho_log * (vel_avg[0]*vel_avg[0] - 0.5 * vel_square_avg_1122);
+    conv_num_split_flux[nstate-1][dim-1] = 0.5 * rho_log / (0.5*beta_log * this->gamm1) + rho_log * (vel_avg[0]*vel_avg[0] - 0.5 * vel_square_avg_1122);
     
    return conv_num_split_flux; 
 
+}
+
+template <int dim, int nstate, typename real>
+std::array<real, nstate> EulerSpacetime<dim, nstate, real>
+::dissipation_for_entropy_stable_numerical_flux(const std::array<real,nstate> &conservative_soln1,
+                                                const std::array<real,nstate> &conservative_soln2) const
+{
+    //std::array<dealii::Tensor<1,dim,real>,nstate> dissipation;
+
+    if (dim == 3) this->pcout << "WARNING: Not valid for 2D+1...." << std::endl;
+    const dealii::Tensor<1,dim,real> vel1 = this->template compute_velocities<real>(conservative_soln1);
+    const dealii::Tensor<1,dim,real> vel2 = this->template compute_velocities<real>(conservative_soln2);
+
+    dealii::Tensor<1,dim,real> vel_avg;
+    for(int idim=0; idim<dim; idim++){
+        vel_avg[idim] = 0.5*(vel1[idim]+vel2[idim]);
+    }
+    const real rho_log = this->compute_ismail_roe_logarithmic_mean(conservative_soln1[0], conservative_soln2[0]);
+    const real rho_avg = 0.5 *(conservative_soln1[0] + conservative_soln2[0]);
+
+    const real vel_sq_bar = 2.0*vel_avg[0]*vel_avg[0] - 0.5 * (vel1[0]*vel1[0] + vel2[0]*vel2[0]);
+
+    const real pressure1 = this->template compute_pressure<real>(conservative_soln1);
+    const real pressure2 = this->template compute_pressure<real>(conservative_soln2);
+
+    const real beta1 = 0.5*conservative_soln1[0]/(pressure1);
+    const real beta2 = 0.5*conservative_soln2[0]/(pressure2);
+    const real beta_log = this->compute_ismail_roe_logarithmic_mean(beta1, beta2);
+    const real p_hat = 0.5 * rho_avg /( 0.5 * (beta1 + beta2));
+
+    const real h_bar = this->gam/(2.0 * beta_log * this->gamm1) + 0.5 * vel_sq_bar;
+    const real a_bar = sqrt(this->gam * p_hat / rho_log);
+
+    dealii::Tensor<2,nstate,real> R_hat;
+    for (int istate = 0; istate < nstate; ++istate){
+        if (istate != nstate-2)  {
+            R_hat[0][istate] = 1.0;
+        }
+    }
+    const real v_avg = vel_avg[0]; //NOT VALID FOR 2D+1
+    R_hat[1][0] = (v_avg - a_bar);
+    R_hat[1][1] = v_avg;
+    R_hat[1][3] = (v_avg + a_bar);
+
+    R_hat[3][0] = (h_bar - v_avg*a_bar);
+    R_hat[3][1] = 0.5*vel_sq_bar;
+    R_hat[3][3] = (h_bar + v_avg * a_bar);
+
+    //R_hat, lambda_hat, T_hat  verified against  julia code
+/*
+    std::cout << "R_hat " << std::endl;
+    for (int istate = 0; istate < nstate; ++istate){
+        for (int jstate = 0; jstate < nstate; ++jstate){
+            std::cout << R_hat[istate][jstate] << " ";
+        }
+        std::cout << std::endl;
+    }
+*/
+    std::array<real,nstate> Lambda_hat = {{  abs(v_avg - a_bar), abs(v_avg),0, abs(v_avg+a_bar) }};
+
+    std::array<real,nstate> T_hat = {{rho_log/2.0/this->gam, rho_log * (this->gamm1)/this->gam, 0, rho_log/2.0/this->gam }};
+
+    dealii::Tensor<2,nstate,real> temp1;
+    for (int istate = 0; istate < nstate; ++istate) {
+        for (int jstate = 0; jstate < nstate; ++jstate) {
+            temp1[istate][jstate] = R_hat[jstate][istate];
+        }
+    }
+    for (int istate = 0; istate < nstate; ++istate) {
+        for (int jstate = 0; jstate < nstate; ++jstate) {
+            temp1[istate][jstate] *= -0.5 * Lambda_hat[istate]*T_hat[istate];
+        }
+    }
+    
+
+    dealii::Tensor<2,nstate,real> dissipation_scaling_matrix;
+    // matrix multiplication
+    for (int istate = 0; istate < nstate; ++istate) {
+        for (int jstate = 0; jstate < nstate; ++jstate) {
+            for (int kstate = 0; kstate < nstate; ++kstate) {
+                dissipation_scaling_matrix[istate][jstate] += R_hat[istate][kstate] * temp1[kstate][jstate];
+            }
+        }
+    }
+
+    std::array<real,nstate> entropy_var_2 = this->compute_entropy_variables(conservative_soln2); //ext
+    std::array<real,nstate> entropy_var_1 =  this->compute_entropy_variables(conservative_soln1); // int
+    std::array<real,nstate> dissipation_vector = {};
+    //// NOTE: Justification for dividing by gamma -1? 
+    for (int istate = 0; istate < nstate; ++istate) {
+        for (int jstate = 0; jstate < nstate; ++jstate) {
+            dissipation_vector[istate] += dissipation_scaling_matrix[istate][jstate] * (entropy_var_2[jstate] / this->gamm1-entropy_var_1[jstate]/this->gamm1);
+        }
+    }
+
+    // verified against julia to here
+    return dissipation_vector;
+    
 }
 #if PHILIP_DIM>1
 template class EulerSpacetime < PHILIP_DIM, PHILIP_DIM+2, double >;

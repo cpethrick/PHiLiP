@@ -165,12 +165,17 @@ public:
     /////// Numerical fluxes here....:
     // Add all and describe that they aren't implemented.
     
-protected:
     /// Ranocha pressure equilibrium preserving, entropy and energy conserving flux.
     /// Temporal dim uses the two-point flux described in Friedrich et al. 2019.
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux_ranocha (
         const std::array<real,nstate> &conservative_soln1,
         const std::array<real,nstate> &conservative_soln2) const override;
+
+    /// Entropy-stable matrix dissipation per Gassner, Winters, Hindenlang, Kopriva 2018 Appendix A
+    /// Jump is calculated in entropy variables.
+     std::array<real, nstate> dissipation_for_entropy_stable_numerical_flux(
+        const std::array<real,nstate> &conservative_soln1,
+        const std::array<real,nstate> &conservative_soln2) const;
 };
 
 
