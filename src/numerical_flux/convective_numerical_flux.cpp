@@ -115,7 +115,8 @@ EntropyConserving<dim, nspecies, nstate, real>::EntropyConserving(
     std::shared_ptr<Physics::PhysicsBase<dim, nspecies, nstate, real>> physics_input)
     : NumericalFluxConvective<dim,nspecies,nstate,real>(
         std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim, nspecies, nstate, real> > (physics_input), 
-        std::make_unique< ZeroRiemannSolverDissipation<dim, nspecies, nstate, real> > ())
+        std::make_unique< ZeroRiemannSolverDissipation<dim, nspecies, nstate, real> > (),
+        physics_input->all_parameters->is_spacetime)
 {}
 
 template <int dim, int nspecies, int nstate, typename real>
