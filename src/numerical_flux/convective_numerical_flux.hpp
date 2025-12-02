@@ -4,6 +4,7 @@
 #include <deal.II/base/tensor.h>
 #include "physics/physics.h"
 #include "physics/euler.h"
+#include "physics/spacetime/euler_spacetime.h"
 
 namespace PHiLiP {
 namespace NumericalFlux {
@@ -117,6 +118,26 @@ protected:
     const std::shared_ptr < Physics::PhysicsBase<dim, nstate, real> > pde_physics;
 };
 
+/// Martix-based entropy stable dissipation.
+/// INCOMPLETE: SHOULD BE MOVED FROM PHYSICS
+template<int dim, int nstate, typename real>
+class EntropyStableMatrixDissipation: public RiemannSolverDissipation<dim, nstate, real>
+{
+protected:
+    /// Numerical flux requires physics to evaluate convective eigenvalues.
+    const std::shared_ptr < Physics::EulerSpacetime<dim, nstate, real> > euler_st_physics;
+
+public:
+    /// Constructor
+    explicit EntropyStableMatrixDissipation(std::shared_ptr <Physics::PhysicsBase<dim, nstate, real>> physics_input)
+    : euler_st_physics(std::dynamic_pointer_cast<Physics::EulerSpacetime<dim,nstate,real>>(physics_input)) {};
+
+    /// Returns the convective flux at an interface
+    std::array<real, nstate> evaluate_riemann_solver_dissipation (
+        const std::array<real, nstate> &soln_int,
+        const std::array<real, nstate> &soln_ext,
+        const dealii::Tensor<1,dim,real> &normal1) const;
+};
 /// Base class of Roe (Roe-Pike) flux with entropy fix. Derived from RiemannSolverDissipation.
 template<int dim, int nstate, typename real>
 class RoeBaseRiemannSolverDissipation : public RiemannSolverDissipation<dim, nstate, real>
@@ -326,6 +347,16 @@ class EntropyConservingWithL2RoeDissipation : public NumericalFluxConvective<dim
 public:
     /// Constructor
     explicit EntropyConservingWithL2RoeDissipation(std::shared_ptr<Physics::PhysicsBase<dim, nstate, real>> physics_input);
+};
+
+/// Entropy conserving numerical flux with entropy-stable matrix dissipation.
+/// Derived from NumericalFluxConvective.
+template<int dim, int nstate, typename real>
+class EntropyConservingWithMatrixDissipation : public NumericalFluxConvective<dim, nstate, real>
+{
+public:
+    /// Constructor
+    explicit EntropyConservingWithMatrixDissipation(std::shared_ptr<Physics::PhysicsBase<dim, nstate, real>> physics_input);
 };
 
 } /// NumericalFlux namespace

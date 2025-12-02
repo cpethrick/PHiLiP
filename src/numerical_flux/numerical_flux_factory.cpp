@@ -41,6 +41,19 @@ NumericalFluxFactory<dim, nstate, real>
     else if(conv_num_flux_type == AllParam::ConvectiveNumericalFlux::lax_friedrichs) {
         return std::make_unique< LaxFriedrichs<dim, nstate, real> > (physics_input);
     } 
+    else if(conv_num_flux_type == AllParam::ConvectiveNumericalFlux::two_point_flux_with_entropy_stable_matrix_dissipation) {
+        if constexpr (dim+2==nstate && dim==2) {
+            if (pde_type == AllParam::PartialDifferentialEquation::euler && 
+                    physics_input->all_parameters->temporal_dimension==1) {
+                //std::shared_ptr<Physics::EulerSpacetime<dim,dim+2,real>> physics_spacetime = std::dynamic_pointer_cast<Physics::EulerSpacetime<dim,dim+2,real>>(physics_input);
+                return std::make_unique< EntropyConservingWithMatrixDissipation<dim, nstate, real> > (physics_input);
+            } else
+                std::cout << "Matrix dissipation is only implemented for space-time 1D+1." << std::endl;
+            // Note to reader: it is probably quite easy to generalize this flux, but
+            // it was implemented in the context of space-time methods and has not been 
+            // tested elsewhere.
+        }
+    } 
     else if(is_euler_based) {
         if constexpr (dim+2==nstate) {
             return create_euler_based_convective_numerical_flux(conv_num_flux_type, pde_type, model_type, physics_input);

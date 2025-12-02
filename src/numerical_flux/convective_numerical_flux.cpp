@@ -40,12 +40,12 @@ std::array<real, nstate> NumericalFluxConvective<dim,nstate,real>
     std::array<real, nstate> numerical_flux_dot_n;
     if (is_spacetime && (abs(normal_int[dim-1])>1E-14)) {
         // If abs(normal_int[dim])==1, we are on a temporal face
-        if (normal_int[dim-1] == -1) {
+        if (normal_int[dim-1] + 1 < 1E-14) { //normal_int == -1
             // on a t^n face. Return external solution.
             for (int s=0; s<nstate; s++) {
                 numerical_flux_dot_n[s] = -1.0 * soln_ext[s];
             }
-        } else if (normal_int[dim-1] == 1){
+        } else if (normal_int[dim-1] - 1<1E-14){ //normal_int == 1
             // on a t^{n+1} face. Return internal solution.
             for (int s=0; s<nstate; s++) {
                 numerical_flux_dot_n[s] = soln_int[s];
@@ -125,7 +125,7 @@ EntropyConservingWithLaxFriedrichsDissipation<dim, nstate, real>::EntropyConserv
         std::make_unique< LaxFriedrichsRiemannSolverDissipation<dim, nstate, real> > (physics_input),
         physics_input->all_parameters->is_spacetime)
 {}
-
+ 
 template <int dim, int nstate, typename real>
 EntropyConservingWithRoeDissipation<dim, nstate, real>::EntropyConservingWithRoeDissipation(
     std::shared_ptr<Physics::PhysicsBase<dim, nstate, real>> physics_input)
@@ -140,6 +140,14 @@ EntropyConservingWithL2RoeDissipation<dim, nstate, real>::EntropyConservingWithL
     : NumericalFluxConvective<dim,nstate,real>(
         std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim, nstate, real> > (physics_input), 
         std::make_unique< L2RoeRiemannSolverDissipation<dim, nstate, real> > (physics_input))
+{}
+
+template <int dim, int nstate, typename real>
+EntropyConservingWithMatrixDissipation<dim, nstate, real>::EntropyConservingWithMatrixDissipation(
+    std::shared_ptr<Physics::PhysicsBase<dim, nstate, real>> physics_input)
+    : NumericalFluxConvective<dim,nstate,real>(
+        std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim, nstate, real> > (physics_input), 
+        std::make_unique< EntropyStableMatrixDissipation<dim, nstate, real> > (physics_input))
 {}
 
 template <int dim, int nstate, typename real>
@@ -352,7 +360,28 @@ void L2RoeRiemannSolverDissipation<dim,nstate,real>
         }
     }
 }
+template <int dim, int nstate, typename real>
+std::array<real, nstate> EntropyStableMatrixDissipation<dim,nstate,real>
+::evaluate_riemann_solver_dissipation (
+    const std::array<real, nstate> &soln_int,
+    const std::array<real, nstate> &soln_ext,
+    const dealii::Tensor<1,dim,real> &normal_int) const
+{
+    (void) soln_int;
+    (void) soln_ext;
+    (void) normal_int;
+    
+    //physics calculates matrix * jump[entropy variables]
+    std::array<real, nstate> flux_dot_n = euler_st_physics->dissipation_for_entropy_stable_numerical_flux(soln_int, soln_ext);
+    /*
+    for (int istate=0; istate<nstate; ++istate){
+        //already aligned with spatial dimension, so only need to multiply by normal.
+        //flux_dot_n[istate] *= normal_int[0];
+        flux_dot_n[istate] *= -1.0;
+    } */
 
+    return flux_dot_n;
+}
 template <int dim, int nstate, typename real>
 std::array<real, nstate> RoeBaseRiemannSolverDissipation<dim,nstate,real>
 ::evaluate_riemann_solver_dissipation (
@@ -684,6 +713,14 @@ template class EntropyConservingWithL2RoeDissipation<PHILIP_DIM, PHILIP_DIM+2, R
 template class EntropyConservingWithL2RoeDissipation<PHILIP_DIM, PHILIP_DIM+2, FadFadType >;
 template class EntropyConservingWithL2RoeDissipation<PHILIP_DIM, PHILIP_DIM+2, RadFadType >;
 
+#if PHILIP_DIM==2
+template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, double>;
+template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, FadType >;
+template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, RadType >;
+template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, FadFadType >;
+template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, RadFadType >;
+#endif
+
 //template class EntropyConservingWithRoeDissipation<PHILIP_DIM, PHILIP_DIM+3, double>;
 //template class EntropyConservingWithRoeDissipation<PHILIP_DIM, PHILIP_DIM+3, FadType >;
 //template class EntropyConservingWithRoeDissipation<PHILIP_DIM, PHILIP_DIM+3, RadType >;
@@ -899,6 +936,14 @@ template class L2RoeRiemannSolverDissipation<PHILIP_DIM, PHILIP_DIM+2, FadType >
 template class L2RoeRiemannSolverDissipation<PHILIP_DIM, PHILIP_DIM+2, RadType >;
 template class L2RoeRiemannSolverDissipation<PHILIP_DIM, PHILIP_DIM+2, FadFadType >;
 template class L2RoeRiemannSolverDissipation<PHILIP_DIM, PHILIP_DIM+2, RadFadType >;
+
+#if PHILIP_DIM==2
+template class EntropyStableMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, double>;
+template class EntropyStableMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, FadType >;
+template class EntropyStableMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, RadType >;
+template class EntropyStableMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, FadFadType >;
+template class EntropyStableMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, RadFadType >;
+#endif
 
 } // NumericalFlux namespace
 } // PHiLiP namespace

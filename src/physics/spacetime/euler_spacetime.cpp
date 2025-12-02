@@ -62,10 +62,12 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nstate,real>
     const real a3 = this->gam-2.0;
 
     dealii::Tensor<2,nstate,real> jacobian;
-    if (abs(normal[dim-1])- 1 < 1E-13) {
+    if (abs(abs(normal[dim-1])- 1) < 1E-13) {
         // Last flux is solution, so directional Jacobian is identity
         for (int istate = 0; istate < nstate; ++istate){
-            jacobian[istate][istate]=1.0;
+            if (istate != nstate-2){
+                jacobian[istate][istate]=1.0;
+            }
         }
     }
     else{
