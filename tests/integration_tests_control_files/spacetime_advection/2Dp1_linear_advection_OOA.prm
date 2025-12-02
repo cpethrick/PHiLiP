@@ -37,7 +37,7 @@ subsection ODE solver
   
   #set nonlinear_max_iterations = 500
   set nonlinear_max_iterations = 50000
-  set nonlinear_max_iterations = 100
+  set nonlinear_max_iterations = 1000
   set nonlinear_steady_residual_tolerance = 1e-8
 
   set print_iteration_modulo = 100
@@ -45,7 +45,7 @@ subsection ODE solver
 
   set ode_solver_type = implicit
 
-  set output_solution_every_x_steps = 1
+  #set output_solution_every_x_steps = 1
 
   set initial_time_step = 1
 
@@ -55,7 +55,7 @@ end
 
 subsection manufactured solution convergence study
   set advection_0 = 0.3
-  set advection_1 = 1 #For now, unit advection in temporal direction
+  set advection_1 = 0.4 #For now, unit advection in temporal direction
 end
 
 subsection time_refinement_study
@@ -65,7 +65,7 @@ end
 subsection flow_solver
     set flow_case_type = spacetime_cartesian
     set steady_state = true
-    set poly_degree = 2
+    set poly_degree = 3
     subsection grid
       set grid_left_bound = 0.0
       set grid_right_bound = 2.0

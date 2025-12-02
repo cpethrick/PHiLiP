@@ -1,0 +1,87 @@
+# -------------------
+# This param file is consistent with 1Dp1_linear_advection_c_ramp.prm
+# It is commented from ctest because the advection speed and 
+# +0.01 offset need to be manually changed in physics.
+# -------------------
+
+#set run_type = flow_simulation
+#set test_type = general_h_refinement_study
+set test_type = stability_fr_parameter_range
+
+# Number of SPATIAL dimensions
+set dimension = 1
+# Number of TEMPORAL dimensions
+#set temporal_dimension = 1
+
+set use_weak_form = false
+
+set overintegration = 0
+
+#set flux_nodes_type = GL
+
+set use_split_form = false
+
+# TO DO think about how this should be set
+#set use_periodic_bc = true
+
+set use_inverse_mass_on_the_fly = false
+
+# The PDE we want to solve
+set pde_type = advection
+
+set conv_num_flux = lax_friedrichs
+#set conv_num_flux = upwind
+
+set flux_reconstruction = user_specified_value
+#set flux_reconstruction = c10Thousand
+set FR_user_specified_correction_parameter_value = 3.67E-3
+
+subsection ODE solver
+
+  set ode_output = verbose
+  
+  #set nonlinear_max_iterations = 500
+  set nonlinear_max_iterations = 50000
+  set nonlinear_max_iterations = 10000
+  #set nonlinear_steady_residual_tolerance = 1e-8
+
+  set print_iteration_modulo = 1
+ # set print_iteration_modulo = 1
+
+  set ode_solver_type = runge_kutta
+
+  set output_solution_every_x_steps = 1
+
+  set initial_time_step = 0.001
+
+  set runge_kutta_method = rk4_ex
+
+end
+
+subsection manufactured solution convergence study
+  set advection_0 = 0.3
+  set advection_1 = 1 #For now, unit advection in temporal direction
+end
+
+subsection time_refinement_study
+  set number_of_times_to_solve = 7
+end
+
+subsection flow_solver
+    #set flow_case_type = spacetime_cartesian
+    set flow_case_type = periodic_1D_unsteady
+    set steady_state = false
+    set poly_degree = 3
+    subsection grid
+      set grid_left_bound = 0.0
+      set grid_right_bound = 2.0
+      set number_of_grid_elements_per_dimension = 1
+    end
+  subsection ESFR_parameter_tests
+    set number_ESFR_parameter_values = 20
+    set ESFR_parameter_values_start = 1.0e-6
+    set ESFR_parameter_values_end = 1.0e4
+  end
+    set final_time = 2.0 
+end
+
