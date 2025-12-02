@@ -76,10 +76,12 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nspecies,nstate,real>
     const real a3 = this->gam-2.0;
 
     dealii::Tensor<2,nstate,real> jacobian;
-    if (abs(normal[dim-1])- 1 < 1E-13) {
+    if (abs(abs(normal[dim-1])- 1) < 1E-13) {
         // Last flux is solution, so directional Jacobian is identity
         for (int istate = 0; istate < nstate; ++istate){
-            jacobian[istate][istate]=1.0;
+            if (istate != nstate-2){
+                jacobian[istate][istate]=1.0;
+            }
         }
     }
     else{
@@ -290,8 +292,8 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate
 
 }
 
-template <int dim, int nstate, typename real>
-std::array<real, nstate> EulerSpacetime<dim, nstate, real>
+template <int dim, int nspecies, int nstate, typename real>
+std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
 ::dissipation_for_entropy_stable_numerical_flux(const std::array<real,nstate> &conservative_soln1,
                                                 const std::array<real,nstate> &conservative_soln2) const
 {
@@ -310,8 +312,8 @@ std::array<real, nstate> EulerSpacetime<dim, nstate, real>
 
     const real vel_sq_bar = 2.0*vel_avg[0]*vel_avg[0] - 0.5 * (vel1[0]*vel1[0] + vel2[0]*vel2[0]);
 
-    const real pressure1 = this->template compute_pressure<real>(conservative_soln1);
-    const real pressure2 = this->template compute_pressure<real>(conservative_soln2);
+    const real pressure1 = this->compute_pressure(conservative_soln1);
+    const real pressure2 = this->compute_pressure(conservative_soln2);
 
     const real beta1 = 0.5*conservative_soln1[0]/(pressure1);
     const real beta2 = 0.5*conservative_soln2[0]/(pressure2);

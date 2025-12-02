@@ -42,12 +42,12 @@ std::array<real, nstate> NumericalFluxConvective<dim,nspecies,nstate,real>
     std::array<real, nstate> numerical_flux_dot_n;
     if (is_spacetime && (abs(normal_int[dim-1])>1E-14)) {
         // If abs(normal_int[dim])==1, we are on a temporal face
-        if (normal_int[dim-1] == -1) {
+        if (normal_int[dim-1] + 1 < 1E-14) { //normal_int == -1
             // on a t^n face. Return external solution.
             for (int s=0; s<nstate; s++) {
                 numerical_flux_dot_n[s] = -1.0 * soln_ext[s];
             }
-        } else if (normal_int[dim-1] == 1){
+        } else if (normal_int[dim-1] - 1<1E-14){ //normal_int == 1
             // on a t^{n+1} face. Return internal solution.
             for (int s=0; s<nstate; s++) {
                 numerical_flux_dot_n[s] = soln_int[s];
@@ -142,6 +142,14 @@ EntropyConservingWithL2RoeDissipation<dim, nspecies, nstate, real>::EntropyConse
     : NumericalFluxConvective<dim,nspecies,nstate,real>(
         std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim, nspecies, nstate, real> > (physics_input), 
         std::make_unique< L2RoeRiemannSolverDissipation<dim, nspecies, nstate, real> > (physics_input))
+{}
+
+template <int dim, int nspecies, int nstate, typename real>
+EntropyConservingWithMatrixDissipation<dim,nspecies,nstate, real>::EntropyConservingWithMatrixDissipation(
+    std::shared_ptr<Physics::PhysicsBase<dim,nspecies,nstate, real>> physics_input)
+    : NumericalFluxConvective<dim,nspecies,nstate,real>(
+        std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim,nspecies,nstate, real> > (physics_input), 
+        std::make_unique< EntropyStableMatrixDissipation<dim,nspecies,nstate, real> > (physics_input))
 {}
 
 template <int dim, int nspecies, int nstate, typename real>
@@ -353,6 +361,27 @@ void L2RoeRiemannSolverDissipation<dim,nspecies,nstate,real>
             dV_tangent[d] *= blending_factor;
         }
     }
+}
+template <int dim, int nspecies, int nstate, typename real>
+std::array<real, nstate> EntropyStableMatrixDissipation<dim,nspecies,nstate,real>
+::evaluate_riemann_solver_dissipation (
+    const std::array<real, nstate> &soln_int,
+    const std::array<real, nstate> &soln_ext,
+    const dealii::Tensor<1,dim,real> &normal_int) const
+{
+    (void) soln_int;
+    (void) soln_ext;
+    (void) normal_int;
+    
+    //physics calculates matrix * jump[entropy variables]
+    std::array<real, nstate> flux_dot_n = euler_st_physics->dissipation_for_entropy_stable_numerical_flux(soln_int, soln_ext);
+    /*
+    for (int istate=0; istate<nstate; ++istate){
+        //already aligned with spatial dimension, so only need to multiply by normal.
+        //flux_dot_n[istate] *= normal_int[0];
+        flux_dot_n[istate] *= -1.0;
+    } */
+    return flux_dot_n;
 }
 
 template <int dim, int nspecies, int nstate, typename real>
@@ -597,6 +626,12 @@ std::array<real, nstate> RoeBaseRiemannSolverDissipation<dim,nspecies,nstate,rea
         template class RoePikeRiemannSolverDissipation<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, type>; \
         template class L2RoeRiemannSolverDissipation<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, type>;
     BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_TYPES, _, POSSIBLE_TYPE)
+
+#if PHILIP_DIM==2
+    #define INSTANTIATE_TYPES(r, data, type) \
+        template class EntropyStableMatrixDissipation<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, type>;
+    BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_TYPES, _, POSSIBLE_TYPE)
+#endif
 #else
     #define POSSIBLE_TYPE (double)(FadType)(RadType)(FadFadType)(RadFadType)
     #define INSTANTIATE_TYPES(r, data, type) \

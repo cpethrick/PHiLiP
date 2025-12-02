@@ -664,7 +664,7 @@ inline dealii::Tensor<1,dim,real> ManufacturedSolutionEulerSpacetime<dim,nspecie
     //energy
     if (istate==3){
         gradient[0] =  4*pi*(2+sin(2*pi*(x-y)))*cos(2*pi*(x-y));
-        gradient[1] = -4*pi*(2-sin(2*pi*(x-y)))*cos(2*pi*(x-y));
+        gradient[1] = -4*pi*(2+sin(2*pi*(x-y)))*cos(2*pi*(x-y));
     }
     return gradient;
 }

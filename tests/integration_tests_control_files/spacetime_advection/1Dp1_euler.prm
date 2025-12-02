@@ -8,13 +8,13 @@ set dimension = 1
 # Number of TEMPORAL dimensions
 set temporal_dimension = 1
 
-set use_weak_form = true
+set use_weak_form = false
 
 set overintegration = 0
 
 #set flux_nodes_type = GL
 
-set use_split_form = false
+set use_split_form = true
 
 # TO DO think about how this should be set
 set use_periodic_bc = true
@@ -24,7 +24,8 @@ set use_inverse_mass_on_the_fly = false
 # The PDE we want to solve
 set pde_type = euler
 
-set conv_num_flux = lax_friedrichs
+set two_point_num_flux_type = Ra
+set conv_num_flux = two_point_flux_with_entropy_stable_matrix_dissipation
 #set conv_num_flux = upwind
 
 subsection ODE solver
@@ -33,8 +34,8 @@ subsection ODE solver
   
   #set nonlinear_max_iterations = 500
   set nonlinear_max_iterations = 50000
-  set nonlinear_max_iterations = 100
-  set nonlinear_steady_residual_tolerance = 1e-8
+  set nonlinear_max_iterations = 1000
+  #set nonlinear_steady_residual_tolerance = 1e-8
 
   set print_iteration_modulo = 100
  # set print_iteration_modulo = 1
@@ -53,7 +54,7 @@ subsection manufactured solution convergence study
 end
 
 subsection time_refinement_study
-  set number_of_times_to_solve = 2
+  set number_of_times_to_solve = 3
   set refinement_ratio = 0.5
 end
 subsection flow_solver
@@ -63,7 +64,7 @@ subsection flow_solver
     subsection grid
       set grid_left_bound = 0.0
       set grid_right_bound = 1.0
-      set number_of_grid_elements_per_dimension = 4
+      set number_of_grid_elements_per_dimension = 8
     end
     set final_time = 0.004 #small such that we don't actually take a step
 end
