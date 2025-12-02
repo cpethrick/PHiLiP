@@ -40,12 +40,12 @@ template <int dim, int nstate, typename real>
 inline real ExactSolutionFunction_1DSine<dim,nstate,real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
 {
-    double x_adv_speed = 1.0;
+    double x_adv_speed = 0.3;
 
     real value = 0;
     real pi = dealii::numbers::PI;
     if(point[0] >= 0.0 && point[0] <= 2.0){
-        value = sin(2*pi*(point[0] - x_adv_speed * t)/2.0);
+        value = sin(2*pi*(point[0] - x_adv_speed * t)/2.0) + 0.01;
     }
     return value;
 }
@@ -143,7 +143,7 @@ inline real ExactSolutionFunction_SpacetimeCartesian<dim,nstate,real>
     const real adv_speed1 = 0.0;
 #endif
 
-    const real value = sin(pi * (x - adv_speed0 * t) + 2*pi* (y - adv_speed1*t)) + 0.01;
+    const real value = sin(pi * (x - adv_speed0 * t) + pi* (y - adv_speed1*t)) + 0.01;
     return value;
 }
 //=========================================================

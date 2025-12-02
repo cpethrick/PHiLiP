@@ -53,9 +53,7 @@ void ConvectionDiffusion<dim,nstate,real>
                 const real t = 0;
 #endif
 
-                const real value = sin(pi * (x - adv_speed0 * t) + 2*pi* (y - adv_speed1*t)) + 0.01;
-                std::cout << value << " ";
-                ///////
+                const real value = sin(pi * (x - adv_speed0 * t) + pi* (y - adv_speed1*t)) + 0.01;
                 boundary_values[i] = value;
             }else{
                 this->pcout << "Warning:No Dirichlet boundary function is defined for this PDE." << std::endl;
