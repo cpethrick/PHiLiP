@@ -40,12 +40,12 @@ template <int dim, int nstate, typename real>
 inline real ExactSolutionFunction_1DSine<dim,nstate,real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int /*istate*/) const
 {
-    double x_adv_speed = 0.3;
+    double x_adv_speed = 1.0;
 
     real value = 0;
     real pi = dealii::numbers::PI;
     if(point[0] >= 0.0 && point[0] <= 2.0){
-        value = sin(2*pi*(point[0] - x_adv_speed * t)/2.0) + 0.01;
+        value = sin(2*pi*(point[0] - x_adv_speed * t)/2.0);
     }
     return value;
 }

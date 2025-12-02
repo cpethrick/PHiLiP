@@ -315,7 +315,6 @@ inline real InitialConditionFunction_1DSine<dim,nstate,real>
     if(point[0] >= 0.0 && point[0] <= 2.0){
         value = sin(2*pi*point[0]/2.0);
     }
-    value += 0.01;
     return value;
 }
 
