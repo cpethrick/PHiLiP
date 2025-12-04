@@ -3626,7 +3626,6 @@ void DGBase<dim,real,MeshType>::reinit_operators_for_mass_matrix(
 template <int dim, typename real, typename MeshType>
 void DGBase<dim,real,MeshType>::evaluate_mass_matrices (bool do_inverse_mass_matrix)
 {   
-    std::cout << "Eval mass matrix" << std::endl;
     using FR_enum = Parameters::AllParameters::Flux_Reconstruction;
     const FR_enum FR_Type = this->all_parameters->flux_reconstruction_type;
 
@@ -3989,18 +3988,6 @@ void DGBase<dim,real,MeshType>::evaluate_local_metric_dependent_mass_matrix_and_
                 }
             }
         }
-    }
-
-
-    // Display local mass matrix
-    //
-    for(unsigned int test_shape=0; test_shape<n_dofs_cell; test_shape++){
-    
-        for(unsigned int trial_shape=test_shape; trial_shape<n_dofs_cell; trial_shape++){
-            this->pcout << local_mass_matrix[test_shape][trial_shape] << " " ;
-
-        }
-        this->pcout << std::endl;
     }
 
     //set in global matrices
