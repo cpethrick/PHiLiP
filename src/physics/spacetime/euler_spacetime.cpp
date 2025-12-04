@@ -175,16 +175,14 @@ boundary_purely_upwind(
     } else if (abs(normal_int[dim-1]+1) < 1E-14){
         // normal in temporal dimension = -1: this boundary will be pure upwinding
         // of a Dirichlet boundary
-
-        /// Manufactured solution from Friedrich et al 2019 eqn 4.4
-        /// Extended to 2D+1 with uniform 0 vel in y.
-        const double pi = atan(1.0)*4;
-        soln_bc[0] = 2 + sin(2 * pi  * (pos[0]));
-
+        const real pi = atan(1.0)*4;
+        const real x = pos[0];
+        const real y = 0.0; //time zero
+        soln_bc[0] = 2 + 0.1 * sin(pi * (x-2*y));
         std::array<real,dim> soln_momentums;
-        soln_momentums[0] = 2 + sin(2 * pi * (pos[0] ));
+        soln_momentums[0] = 2 + 0.1 * sin(pi * (x-2*y));
         if constexpr(dim==3) {
-            soln_momentums [1] = 0.0;
+            soln_momentums [1] = 2 + 0.1 * sin(pi * (x-2*y)); // WARNING : manuf solution may not work in 3D...
         }
         // last dim: always zero because we store an additional unused state
         soln_momentums[dim-1] = 0.0;
@@ -193,7 +191,9 @@ boundary_purely_upwind(
             soln_bc[idim+1] = soln_momentums[idim];
         }
         
-        soln_bc[nstate-1] = pow(2 + sin(2 * pi * pos[0]),2);
+        soln_bc[nstate-1] =  pow(2 + 0.1*sin(pi * (x-2*y)),2);
+    
+
         for (int istate = 0; istate < nstate;  ++istate){
             soln_grad_bc[istate] = 0;
         }

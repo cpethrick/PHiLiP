@@ -957,13 +957,15 @@ template <int dim, int nstate, typename real>
 real InitialConditionFunction_EulerSpacetimeManufactured<dim, nstate, real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
 {
-    const double pi = atan(1.0)*4;
+    const real pi = atan(1.0)*4;
+    const real x = point[0];
+    const real y = 0.95 * point[1]; // Pertubation from exact solution.
     std::array<real,nstate> soln;
-    soln[0] = 2 + sin(2 * pi  * (point[0]-point[1]*.95));
+    soln[0] = 2 + 0.1 * sin(pi * (x-2*y));
     std::array<real,dim> soln_momentums;
-    soln_momentums[0] = 2 + sin(2 * pi * (point[0]-point[1]*.95));
+    soln_momentums[0] = 2 + 0.1 * sin(pi * (x-2*y));
     if constexpr(dim==3) {
-        soln_momentums [1] = 0.0;
+        soln_momentums [1] = 2 + 0.1 * sin(pi * (x-2*y)); // WARNING : manuf solution may not work in 3D...
     }
     // last dim: always zero because we store an additional unused state
     soln_momentums[dim-1] = 0.0;
@@ -972,7 +974,7 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim, nstate, real>
         soln[idim+1] = soln_momentums[idim];
     }
     
-    soln[nstate-1] = pow(2 + sin(2 * pi * (point[0]-point[1]*.95)),2);
+    soln[nstate-1] =  pow(2 + 0.1*sin(pi * (x-2*y)),2);
 
     return soln[istate];
 }

@@ -261,13 +261,13 @@ inline real ManufacturedSolutionEulerSpacetime<dim,real>
     const real y = point[1];
 
     //density
-    if (istate==0) value = 2 + sin(2 * pi * (x-y));
+    if (istate==0) value = 2 + 0.1 * sin(pi * (x-2*y));
     //momentum
-    if (istate==1) value = 2 + sin(2 * pi * (x-y));
+    if (istate==1) value = 2 + 0.1 * sin(pi * (x-2*y));
     //second unused momentum
     if (istate==2) value = 0; 
     //energy
-    if (istate==3) value = pow(2 + sin(2 * pi * (x-y)),2);
+    if (istate==3) value = pow(2 + 0.1*sin(pi * (x-2*y)),2);
    
     return value;
 }
@@ -647,13 +647,13 @@ inline dealii::Tensor<1,dim,real> ManufacturedSolutionEulerSpacetime<dim,real>
 
     //density
     if (istate==0){
-        gradient[0] = 2*pi*cos(2*pi*(x-y));
-        gradient[1] = -2*pi*cos(2*pi*(x-y));
+        gradient[0] = 0.1*pi*cos(pi*(x-2*y));
+        gradient[1] = -0.2*pi*cos(pi*(x-2*y));
     }
     //momentum
     if (istate==1){
-        gradient[0] = 2*pi*cos(2*pi*(x-y));
-        gradient[1] = -2*pi*cos(2*pi*(x-y));
+        gradient[0] = 0.1*pi*cos(pi*(x-2*y));
+        gradient[1] = -0.2*pi*cos(pi*(x-2*y));
     }
     //second unused momentum
     if (istate==2){
@@ -662,8 +662,8 @@ inline dealii::Tensor<1,dim,real> ManufacturedSolutionEulerSpacetime<dim,real>
     }
     //energy
     if (istate==3){
-        gradient[0] =  4*pi*(2+sin(2*pi*(x-y)))*cos(2*pi*(x-y));
-        gradient[1] = -4*pi*(2+sin(2*pi*(x-y)))*cos(2*pi*(x-y));
+        gradient[0] =  0.02 *pi* cos(pi* (x - 2* y)) *(20 + sin(pi* (x - 2 *y)));
+        gradient[1] = -0.04*pi*cos(pi* (x - 2 *y))* (20 + sin(pi* (x - 2 *y)));
     }
     return gradient;
 }
@@ -1168,15 +1168,10 @@ inline dealii::SymmetricTensor<2,dim,real> ManufacturedSolutionEulerSpacetime<di
 
     // density or momentum
     if (istate == 0 || istate == 1){
-        for(unsigned int i = 0; i < dim; ++i){
-            for(unsigned int j = 0; j < dim; ++j){
-                if(i == j){
-                    hessian[i][i] = -4 * pi * pi *sin(2 * pi * (x-y));
-                }else{
-                    hessian[i][j] = 4 * pi * pi *sin(2 * pi * (x-y));
-                }
-            }
-        }
+        hessian[0][0] = -0.1 * pi * pi * sin(pi*(x-2*y));
+        hessian[1][0] = 0.2 * pi * pi * sin(pi*(x-2*y));
+        hessian[0][1] = hessian[1][0];
+        hessian[0][0] = -0.4 * pi * pi * sin(pi*(x-2*y));
     }
     //second unused momentum
     if (istate == 2){
@@ -1192,17 +1187,10 @@ inline dealii::SymmetricTensor<2,dim,real> ManufacturedSolutionEulerSpacetime<di
     }
     //energy
     if (istate == 3){
-        for(unsigned int i = 0; i < dim; ++i){
-            for(unsigned int j = 0; j < dim; ++j){
-                if(i == j){
-                    hessian[i][i] = 8 * pi*pi* pow(cos(2 *pi*(x - y)),2) 
-                        - 8*pi*pi* sin(2 *pi* (x - y))*(sin(2 *pi* (x - y)) + 2);
-                }else{
-                    hessian[i][j] = -8 * pi*pi* pow(cos(2 *pi*(x - y)),2) 
-                        + 8*pi*pi* sin(2 *pi* (x - y))*(sin(2 *pi* (x - y)) + 2);
-                }
-            }
-        }
+        hessian[0][0] = 0.02 * pi * pi *  cos(pi* (x - 2* y))*cos(pi* (x - 2* y)) - 0.2* pi*pi* (0.1* sin(pi* (x - 2* y)) + 2) *sin(pi* (x - 2* y)) ;
+        hessian[1][0] = -0.04 * pi * pi *  cos(pi* (x - 2* y))*cos(pi* (x - 2* y)) + 0.4* pi*pi* (0.1* sin(pi* (x - 2* y)) + 2) *sin(pi* (x - 2* y)) ;
+        hessian[0][1] = hessian[1][0];
+        hessian[0][0] =  0.08 * pi * pi * cos(pi* (x - 2* y))*cos(pi* (x - 2* y)) - 0.8 * pi * pi * (0.1 * sin(pi* (x - 2* y)) + 2) *sin(pi* (x - 2* y)) ; 
     }
     return hessian;
 

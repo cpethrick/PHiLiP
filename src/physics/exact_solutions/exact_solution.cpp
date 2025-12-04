@@ -162,24 +162,21 @@ template <int dim, int nstate, typename real>
 inline real ExactSolutionFunction_SpacetimeEuler<dim,nstate,real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
 {
-    const double pi = atan(1.0)*4;
-    std::array<real,nstate> soln;
-    soln[0] = 2 + sin(2 * pi  * (point[0]-point[1]));
-    std::array<real,dim> soln_momentums;
-    soln_momentums[0] = 2 + sin(2 * pi * (point[0]-point[1]));
-    if constexpr(dim==3) {
-        soln_momentums [1] = 0.0;
-    }
-    // last dim: always zero because we store an additional unused state
-    soln_momentums[dim-1] = 0.0;
+    real value = 0.0;
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    const real y = point[1];
 
-    for (int idim=0; idim < dim; ++idim){
-        soln[idim+1] = soln_momentums[idim];
-    }
-
-    soln[nstate-1] = pow(2 + sin(2 * pi * (point[0]-point[1])),2);
-
-    return soln[istate];
+    //density
+    if (istate==0) value = 2 + 0.1 * sin(pi * (x-2*y));
+    //momentum
+    if (istate==1) value = 2 + 0.1 * sin(pi * (x-2*y));
+    //second unused momentum
+    if (istate==2) value = 0; 
+    //energy
+    if (istate==3) value = pow(2 + 0.1*sin(pi * (x-2*y)),2);
+   
+    return value;
 }
 
 //=========================================================
