@@ -204,7 +204,9 @@ int ODESolverBase<dim,real,MeshType>::steady_state ()
         }
 
         const bool pseudotime = true;
-        step_in_time(ramped_CFL, pseudotime);
+        //step_in_time(ramped_CFL, pseudotime);
+        // HARD CODED FIX, SHOULD BE CHANGED BEFORE MERGING
+        step_in_time(initial_CFL,pseudotime); 
 
         this->dg->assemble_residual ();
 
