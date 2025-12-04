@@ -1546,6 +1546,7 @@ void local_Flux_Reconstruction_operator<dim,n_faces>::get_FR_correction_paramete
         c/=2.0;//since orthonormal
         c/=pow(pow(2.0,curr_cell_degree),2);//since ref elem [0,1]
     }
+    this->pcout << "Set c value = " << c << std::endl;
 }
 template <int dim, int n_faces>  
 void local_Flux_Reconstruction_operator<dim,n_faces>::build_local_Flux_Reconstruction_operator(
@@ -1574,6 +1575,8 @@ void local_Flux_Reconstruction_operator<dim,n_faces>::build_1D_volume_operator(
     //build the FR correction operator
     derivative_p<dim,n_faces> pth_derivative(this->nstate, this->max_degree, this->max_grid_degree);
     pth_derivative.build_1D_volume_operator(finite_element, quadrature);
+    this->pcout << "P-th derivatve 1D" << std::endl;
+    pth_derivative.oneD_vol_operator.print_formatted(std::cout);
 
     local_mass<dim,n_faces> local_Mass_Matrix(this->nstate, this->max_degree, this->max_grid_degree);
     local_Mass_Matrix.build_1D_volume_operator(finite_element, quadrature);
@@ -1648,38 +1651,39 @@ dealii::FullMatrix<double> local_Flux_Reconstruction_operator<dim,n_faces>::buil
     const int nstate,
     const unsigned int n_dofs)
 {
-    std::cout << "here" << std::endl;
     dealii::FullMatrix<double> dim_FR_operator(n_dofs);
     if constexpr (dim == 1){
         dim_FR_operator = this->oneD_vol_operator;
     }
     if (dim >= 2){
         dealii::FullMatrix<double> FR1(n_dofs);
-        const dealii::FullMatrix<double> identity = dealii::IdentityMatrix(n_dofs);
-        FR1 = this->tensor_product_state(nstate, this->oneD_vol_operator, identity, local_Mass_Matrix);
-        //FR1 = this->tensor_product_state(nstate, this->oneD_vol_operator, local_Mass_Matrix, local_Mass_Matrix);
+        FR1 = this->tensor_product_state(nstate, this->oneD_vol_operator, local_Mass_Matrix, local_Mass_Matrix);
         //dealii::FullMatrix<double> FR2(n_dofs);
         //FR2 = this->tensor_product_state(nstate, local_Mass_Matrix, this->oneD_vol_operator, local_Mass_Matrix);
         //FR2 = this->tensor_product_state(nstate, local_Mass_Matrix, this->oneD_vol_operator, local_Mass_Matrix);
         //dealii::FullMatrix<double> FR_cross1(n_dofs);
         //FR_cross1 = this->tensor_product_state(nstate, this->oneD_vol_operator, this->oneD_vol_operator, local_Mass_Matrix);
         dim_FR_operator.add(1.0, FR1);//, 1.0, FR2, 1.0, FR_cross1);
-        std::cout <<"Made FR operator 1d+1" << std::endl;
     }
     if constexpr (dim == 3){
-        dealii::FullMatrix<double> FR3(n_dofs);
-        FR3 = this->tensor_product_state(nstate, local_Mass_Matrix, local_Mass_Matrix, this->oneD_vol_operator);
-        dealii::FullMatrix<double> FR_cross2(n_dofs);
-        FR_cross2 = this->tensor_product_state(nstate, this->oneD_vol_operator, local_Mass_Matrix, this->oneD_vol_operator);
-        dealii::FullMatrix<double> FR_cross3(n_dofs);
-        FR_cross3 = this->tensor_product_state(nstate, local_Mass_Matrix, this->oneD_vol_operator, this->oneD_vol_operator);
-        dealii::FullMatrix<double> FR_triple(n_dofs);
-        FR_triple = this->tensor_product_state(nstate, this->oneD_vol_operator, this->oneD_vol_operator, this->oneD_vol_operator);
-        dim_FR_operator.add(1.0, FR3, 1.0, FR_cross2, 1.0, FR_cross3); 
-        dim_FR_operator.add(1.0, FR_triple); 
+        dealii::FullMatrix<double> FR2(n_dofs);
+        FR2 = this->tensor_product_state(nstate, local_Mass_Matrix, this->oneD_vol_operator, local_Mass_Matrix);
+        FR2 = this->tensor_product_state(nstate, local_Mass_Matrix, this->oneD_vol_operator, local_Mass_Matrix);
+        dealii::FullMatrix<double> FR_cross1(n_dofs);
+        FR_cross1 = this->tensor_product_state(nstate, this->oneD_vol_operator, this->oneD_vol_operator, local_Mass_Matrix);
+        dim_FR_operator.add(1.0, FR2, 1.0, FR_cross1);
+        // dealii::FullMatrix<double> FR3(n_dofs);
+        // FR3 = this->tensor_product_state(nstate, local_Mass_Matrix, local_Mass_Matrix, this->oneD_vol_operator);
+        // dealii::FullMatrix<double> FR_cross2(n_dofs);
+        // FR_cross2 = this->tensor_product_state(nstate, this->oneD_vol_operator, local_Mass_Matrix, this->oneD_vol_operator);
+        // dealii::FullMatrix<double> FR_cross3(n_dofs);
+        // FR_cross3 = this->tensor_product_state(nstate, local_Mass_Matrix, this->oneD_vol_operator, this->oneD_vol_operator);
+        // dealii::FullMatrix<double> FR_triple(n_dofs);
+        // FR_triple = this->tensor_product_state(nstate, this->oneD_vol_operator, this->oneD_vol_operator, this->oneD_vol_operator);
+        // dim_FR_operator.add(1.0, FR3, 1.0, FR_cross2, 1.0, FR_cross3); 
+        // dim_FR_operator.add(1.0, FR_triple); 
     }
 
-    dim_FR_operator.print_formatted(std::cout);
     return dim_FR_operator;
     
 }

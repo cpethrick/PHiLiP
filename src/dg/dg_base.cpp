@@ -3989,7 +3989,6 @@ void DGBase<dim,real,MeshType>::evaluate_local_metric_dependent_mass_matrix_and_
         }
     }
 
-
     //set in global matrices
     if (do_inverse_mass_matrix) {
         //set the global inverse mass matrix

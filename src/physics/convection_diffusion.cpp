@@ -55,9 +55,7 @@ void ConvectionDiffusion<dim,nstate,real>
                     const real t = 0;
 #endif
 
-                    const real value = sin(pi * (x - adv_speed0 * t) + 2*pi* (y - adv_speed1*t)) + 0.01;
-                    std::cout << value << " ";
-                    ///////
+                    const real value = sin(pi * (x - adv_speed0 * t) + pi* (y - adv_speed1*t)) + 0.01;
                     boundary_values[i] = value;
                 }
                 else if (abs(normal_int[dim-1] -1) > 1E-14) {

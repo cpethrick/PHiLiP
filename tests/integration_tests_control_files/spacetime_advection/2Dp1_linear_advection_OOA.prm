@@ -2,13 +2,14 @@
 
 #set run_type = flow_simulation
 set test_type = general_h_refinement_study
+#set test_type = stability_fr_parameter_range
 
 # Number of SPATIAL dimensions
 set dimension = 2
 # Number of TEMPORAL dimensions
 set temporal_dimension = 1
 
-set use_weak_form = true
+set use_weak_form = false
 
 set overintegration = 0
 
@@ -28,8 +29,8 @@ set conv_num_flux = lax_friedrichs
 #set conv_num_flux = upwind
 
 #set flux_reconstruction = user_specified_value
-set flux_reconstruction = cDG
-set FR_user_specified_correction_parameter_value = 0.001
+set flux_reconstruction = cHU
+set FR_user_specified_correction_parameter_value = 0
 
 subsection ODE solver
 
@@ -37,7 +38,7 @@ subsection ODE solver
   
   #set nonlinear_max_iterations = 500
   set nonlinear_max_iterations = 50000
-  set nonlinear_max_iterations = 100
+  set nonlinear_max_iterations = 1000
   set nonlinear_steady_residual_tolerance = 1e-8
 
   set print_iteration_modulo = 100
@@ -45,33 +46,38 @@ subsection ODE solver
 
   set ode_solver_type = implicit
 
-  set output_solution_every_x_steps = 1
+  #set output_solution_every_x_steps = 1
 
-  set initial_time_step = 1
+  set initial_time_step = 100
 
   set runge_kutta_method = rk4_ex
 
 end
 
+subsection linear solver
+subsection gmres options
+  set linear_residual_tolerance = 1E-4
+end
+end
+
 subsection manufactured solution convergence study
   set advection_0 = 0.3
-  set advection_1 = 1 #For now, unit advection in temporal direction
+  set advection_1 = 0.4
 end
 
 subsection time_refinement_study
-  set number_of_times_to_solve = 3
+  set number_of_times_to_solve = 5
 end
 
 subsection flow_solver
     set flow_case_type = spacetime_cartesian
     set steady_state = true
-    set poly_degree = 2
+    set poly_degree = 3
     subsection grid
       set grid_left_bound = 0.0
       set grid_right_bound = 2.0
       set number_of_grid_elements_per_dimension = 2
     end
-    set final_time = 0.004 #small such that we don't actually take a step
 end
 
 
