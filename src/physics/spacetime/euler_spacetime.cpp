@@ -63,7 +63,7 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nstate,real>
 
     dealii::Tensor<2,nstate,real> jacobian;
     if (abs(abs(normal[dim-1])- 1) < 1E-13) {
-        // Last flux is solution, so directional Jacobian is identity
+        // Temporal flux is solution, so directional Jacobian is identity
         for (int istate = 0; istate < nstate; ++istate){
             if (istate != nstate-2){
                 jacobian[istate][istate]=1.0;
@@ -97,43 +97,6 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nstate,real>
     }
     return jacobian;
 }
-
-// template <int dim, int nstate, typename real>
-// std::array<real,nstate> EulerSpacetime<dim,nstate,real>
-// ::convective_source_term (
-//     const dealii::Point<dim,real> &/*pos*/) const
-// {
-// 
-//     const real pi = atan(1) * 4;
-//     //Note, I don't think this would be different than Euler base, but
-//     //that assumption hasn't been validated so best to abort.
-//     std::array<real,nstate> convective_source_term;
-// 
-//     convective_source_term[1] = pi * this->gamm1 * ( 7 + 4 * sin(2 * pi * ( pos[0]-pos[1])))*cos(2 * pi * ( pos[0]-pos[1]));
-//     convective_source_term[nstate-1] = pi * this->gamm1 * ( 7 + 4 * sin(2 * pi * ( pos[0]-pos[1])))*cos(2 * pi * ( pos[0]-pos[1]));
-// 
-//     return convective_source_term;
-// }
-
-// template <int dim, int nstate, typename real>
-// std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nstate,real>
-// ::get_manufactured_solution_gradient (
-//     const dealii::Point<dim,real> &pos) const
-// {
-//     this->pcout << "ERROR: get_manufactured_solution_gradient not implemented! Aborting..." << std::endl;
-//     std::abort();
-//     //Note, I don't think this would be different than Euler base, but
-//     //that assumption hasn't been validated so best to abort.
-//     std::vector<dealii::Tensor<1,dim,real>> manufactured_solution_gradient_dealii(nstate);
-//     this->manufactured_solution_function->vector_gradient(pos,manufactured_solution_gradient_dealii);
-//     std::array<dealii::Tensor<1,dim,real>,nstate> manufactured_solution_gradient;
-//     for (int d=0;d<dim;d++) { // Not sure whether this should loop over dim or dim-1
-//         for (int s=0; s<nstate; s++) {
-//             manufactured_solution_gradient[s][d] = manufactured_solution_gradient_dealii[s][d];
-//         }
-//     }
-//     return manufactured_solution_gradient;
-// }
 
 template <int dim, int nstate, typename real>
 void EulerSpacetime<dim,nstate,real>
@@ -176,13 +139,20 @@ boundary_purely_upwind(
         // normal in temporal dimension = -1: this boundary will be pure upwinding
         // of a Dirichlet boundary
         const real pi = atan(1.0)*4;
+        
         const real x = pos[0];
-        const real y = 0.0; //time zero
-        soln_bc[0] = 2 + 0.1 * sin(pi * (x-2*y));
+        const real y = (dim == 2) ? 0 : pos[1];
+        const real t = 0.0; //time zero
+
+        // Density
+        soln_bc[0] = 2 + 0.1 * sin(pi * (x + y - 2*t));
+
+        // Momentums
         std::array<real,dim> soln_momentums;
-        soln_momentums[0] = 2 + 0.1 * sin(pi * (x-2*y));
+        soln_momentums[0] = 2 + 0.1 * sin(pi * (x + y - 2*t));
         if constexpr(dim==3) {
-            soln_momentums [1] = 2 + 0.1 * sin(pi * (x-2*y)); // WARNING : manuf solution may not work in 3D...
+            // 2D+1
+            soln_momentums [1] = 2 + 0.1 * sin(pi * (x + y - 2*t)); // WARNING : manuf solution may not work in 3D...
         }
         // last dim: always zero because we store an additional unused state
         soln_momentums[dim-1] = 0.0;
@@ -191,7 +161,7 @@ boundary_purely_upwind(
             soln_bc[idim+1] = soln_momentums[idim];
         }
         
-        soln_bc[nstate-1] =  pow(2 + 0.1*sin(pi * (x-2*y)),2);
+        soln_bc[nstate-1] =  pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
     
 
         for (int istate = 0; istate < nstate;  ++istate){
@@ -269,7 +239,7 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim, nstate, real>
         // Density equation
         conv_num_split_flux[0][flux_dim] = rho_log * vel_avg[flux_dim];
         // Momentum equation
-        for (int velocity_dim=0; velocity_dim<dim; ++velocity_dim){
+        for (int velocity_dim=0; velocity_dim<dim-1; ++velocity_dim){
             conv_num_split_flux[1+velocity_dim][flux_dim] = rho_log*vel_avg[flux_dim]*vel_avg[velocity_dim];
         }
         conv_num_split_flux[1+flux_dim][flux_dim] += pressure_hat; // Add diagonal of pressure
@@ -302,7 +272,6 @@ std::array<real, nstate> EulerSpacetime<dim, nstate, real>
 {
     //std::array<dealii::Tensor<1,dim,real>,nstate> dissipation;
 
-    if (dim == 3) this->pcout << "WARNING: Not valid for 2D+1...." << std::endl;
     const dealii::Tensor<1,dim,real> vel1 = this->template compute_velocities<real>(conservative_soln1);
     const dealii::Tensor<1,dim,real> vel2 = this->template compute_velocities<real>(conservative_soln2);
 
@@ -313,7 +282,10 @@ std::array<real, nstate> EulerSpacetime<dim, nstate, real>
     const real rho_log = this->compute_ismail_roe_logarithmic_mean(conservative_soln1[0], conservative_soln2[0]);
     const real rho_avg = 0.5 *(conservative_soln1[0] + conservative_soln2[0]);
 
-    const real vel_sq_bar = 2.0*vel_avg[0]*vel_avg[0] - 0.5 * (vel1[0]*vel1[0] + vel2[0]*vel2[0]);
+    const real vel_sq_bar = 2.0*(vel_avg[0]*vel_avg[0]
+                                + vel_avg[1]*vel_avg[1] )
+                                - 0.5 * (vel1[0]*vel1[0] + vel2[0]*vel2[0])
+                                - 0.5 * (vel1[1]*vel1[1] + vel2[1]*vel2[1]);
 
     const real pressure1 = this->template compute_pressure<real>(conservative_soln1);
     const real pressure2 = this->template compute_pressure<real>(conservative_soln2);
@@ -326,69 +298,175 @@ std::array<real, nstate> EulerSpacetime<dim, nstate, real>
     const real h_bar = this->gam/(2.0 * beta_log * this->gamm1) + 0.5 * vel_sq_bar;
     const real a_bar = sqrt(this->gam * p_hat / rho_log);
 
-    dealii::Tensor<2,nstate,real> R_hat;
-    for (int istate = 0; istate < nstate; ++istate){
-        if (istate != nstate-2)  {
-            R_hat[0][istate] = 1.0;
-        }
-    }
-    const real v_avg = vel_avg[0]; //NOT VALID FOR 2D+1
-    R_hat[1][0] = (v_avg - a_bar);
-    R_hat[1][1] = v_avg;
-    R_hat[1][3] = (v_avg + a_bar);
-
-    R_hat[3][0] = (h_bar - v_avg*a_bar);
-    R_hat[3][1] = 0.5*vel_sq_bar;
-    R_hat[3][3] = (h_bar + v_avg * a_bar);
-
-    //R_hat, lambda_hat, T_hat  verified against  julia code
-/*
-    std::cout << "R_hat " << std::endl;
-    for (int istate = 0; istate < nstate; ++istate){
-        for (int jstate = 0; jstate < nstate; ++jstate){
-            std::cout << R_hat[istate][jstate] << " ";
-        }
-        std::cout << std::endl;
-    }
-*/
-    std::array<real,nstate> Lambda_hat = {{  abs(v_avg - a_bar), abs(v_avg),0, abs(v_avg+a_bar) }};
-
-    std::array<real,nstate> T_hat = {{rho_log/2.0/this->gam, rho_log * (this->gamm1)/this->gam, 0, rho_log/2.0/this->gam }};
-
-    dealii::Tensor<2,nstate,real> temp1;
-    for (int istate = 0; istate < nstate; ++istate) {
-        for (int jstate = 0; jstate < nstate; ++jstate) {
-            temp1[istate][jstate] = R_hat[jstate][istate];
-        }
-    }
-    for (int istate = 0; istate < nstate; ++istate) {
-        for (int jstate = 0; jstate < nstate; ++jstate) {
-            temp1[istate][jstate] *= -0.5 * Lambda_hat[istate]*T_hat[istate];
-        }
-    }
-    
-
-    dealii::Tensor<2,nstate,real> dissipation_scaling_matrix;
-    // matrix multiplication
-    for (int istate = 0; istate < nstate; ++istate) {
-        for (int jstate = 0; jstate < nstate; ++jstate) {
-            for (int kstate = 0; kstate < nstate; ++kstate) {
-                dissipation_scaling_matrix[istate][jstate] += R_hat[istate][kstate] * temp1[kstate][jstate];
+    std::array<real,nstate> dissipation_vector = {};
+    if constexpr(dim==2) {
+        dealii::Tensor<2,nstate,real> R_hat;
+        for (int istate = 0; istate < nstate; ++istate){
+            if (istate != nstate-2)  {
+                R_hat[0][istate] = 1.0;
             }
         }
-    }
+        const real v_avg = vel_avg[0]; //NOT VALID FOR 2D+1
+        R_hat[1][0] = (v_avg - a_bar);
+        R_hat[1][1] = v_avg;
+        R_hat[1][3] = (v_avg + a_bar);
 
-    std::array<real,nstate> entropy_var_2 = this->compute_entropy_variables(conservative_soln2); //ext
-    std::array<real,nstate> entropy_var_1 =  this->compute_entropy_variables(conservative_soln1); // int
-    std::array<real,nstate> dissipation_vector = {};
-    //// NOTE: Justification for dividing by gamma -1? 
-    for (int istate = 0; istate < nstate; ++istate) {
-        for (int jstate = 0; jstate < nstate; ++jstate) {
-            dissipation_vector[istate] += dissipation_scaling_matrix[istate][jstate] * (entropy_var_2[jstate] / this->gamm1-entropy_var_1[jstate]/this->gamm1);
+        R_hat[3][0] = (h_bar - v_avg*a_bar);
+        R_hat[3][1] = 0.5*vel_sq_bar;
+        R_hat[3][3] = (h_bar + v_avg * a_bar);
+
+        //R_hat, lambda_hat, T_hat  verified against  julia code
+    /*
+        std::cout << "R_hat " << std::endl;
+        for (int istate = 0; istate < nstate; ++istate){
+            for (int jstate = 0; jstate < nstate; ++jstate){
+                std::cout << R_hat[istate][jstate] << " ";
+            }
+            std::cout << std::endl;
         }
-    }
+    */
+        std::array<real,nstate> Lambda_hat = {{  abs(v_avg - a_bar), abs(v_avg),0, abs(v_avg+a_bar) }};
 
-    // verified against julia to here
+        std::array<real,nstate> T_hat = {{rho_log/2.0/this->gam, rho_log * (this->gamm1)/this->gam, 0, rho_log/2.0/this->gam }};
+
+        dealii::Tensor<2,nstate,real> temp1;
+        for (int istate = 0; istate < nstate; ++istate) {
+            for (int jstate = 0; jstate < nstate; ++jstate) {
+                temp1[istate][jstate] = R_hat[jstate][istate];
+            }
+        }
+        for (int istate = 0; istate < nstate; ++istate) {
+            for (int jstate = 0; jstate < nstate; ++jstate) {
+                temp1[istate][jstate] *= -0.5 * Lambda_hat[istate]*T_hat[istate];
+            }
+        }
+        
+
+        dealii::Tensor<2,nstate,real> dissipation_scaling_matrix;
+        // matrix multiplication
+        for (int istate = 0; istate < nstate; ++istate) {
+            for (int jstate = 0; jstate < nstate; ++jstate) {
+                for (int kstate = 0; kstate < nstate; ++kstate) {
+                    dissipation_scaling_matrix[istate][jstate] += R_hat[istate][kstate] * temp1[kstate][jstate];
+                }
+            }
+        }
+         
+        std::cout << "dissipation_scaling_matrix " << std::endl;
+        for (int istate = 0; istate < nstate; ++istate){
+            for (int jstate = 0; jstate < nstate; ++jstate){
+                std::cout << dissipation_scaling_matrix[istate][jstate] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+
+        std::array<real,nstate> entropy_var_2 = this->compute_entropy_variables(conservative_soln2); //ext
+        std::array<real,nstate> entropy_var_1 =  this->compute_entropy_variables(conservative_soln1); // int
+        //// NOTE: Justification for dividing by gamma -1? 
+        for (int istate = 0; istate < nstate; ++istate) {
+            for (int jstate = 0; jstate < nstate; ++jstate) {
+                dissipation_vector[istate] += dissipation_scaling_matrix[istate][jstate] * (entropy_var_2[jstate] / this->gamm1-entropy_var_1[jstate]/this->gamm1);
+            }
+        }
+
+        // verified against julia to here
+        // return dissipation_vector;
+    }
+    else if constexpr(dim==3) {
+        const bool x_direction = true;
+
+        dealii::Tensor<2,nstate,real> R_hat;
+        std::array<real,nstate> Lambda_hat;
+        std::array<real,nstate> T_hat;
+        if (x_direction) {
+            R_hat[0][0] = 1;
+            R_hat[0][2] = 1;
+            R_hat[0][4] = 1;
+
+            R_hat[1][0] = (vel_avg[0] - a_bar);
+            R_hat[1][1] = vel_avg[0];
+            R_hat[1][4] = (vel_avg[0] + a_bar);
+
+            R_hat[2][0] = vel_avg[1];
+            R_hat[2][1] = vel_avg[1];
+            R_hat[2][2] = 1;
+            R_hat[2][4] = vel_avg[1];
+
+            R_hat[4][0] = (h_bar - vel_avg[0]*a_bar);
+            R_hat[4][1] = 0.5*vel_sq_bar;
+            R_hat[4][2] = vel_avg[1];
+            R_hat[4][3] = (h_bar + vel_avg[0] * a_bar);
+            
+            Lambda_hat = {{  abs(vel_avg[0] - a_bar), abs(vel_avg[0]),abs(vel_avg[0]),0, abs(vel_avg[0]+a_bar) }};
+            T_hat = {{rho_log/2.0/this->gam, rho_log * (this->gamm1)/this->gam, p_hat, 0, rho_log/2.0/this->gam }};
+        }
+        else { // y direction
+
+            R_hat[0][0] = 1;
+            R_hat[0][1] = 1;
+            R_hat[0][4] = 1;
+
+            R_hat[1][0] = vel_avg[0];
+            R_hat[1][1] = 1;
+            R_hat[1][2] = vel_avg[0];
+            R_hat[1][4] = vel_avg[0];
+
+            R_hat[2][0] = (vel_avg[1] - a_bar);
+            R_hat[2][2] = vel_avg[1];
+            R_hat[2][4] = (vel_avg[1] + a_bar);
+
+            R_hat[4][0] = (h_bar - vel_avg[1]*a_bar);
+            R_hat[4][1] = vel_avg[0];
+            R_hat[4][2] = 0.5*vel_sq_bar;
+            R_hat[4][3] = (h_bar + vel_avg[1] * a_bar);
+            Lambda_hat = {{  abs(vel_avg[1] - a_bar), abs(vel_avg[1]),abs(vel_avg[1]),0, abs(vel_avg[1]+a_bar) }};
+            T_hat = {{rho_log/2.0/this->gam, p_hat, rho_log * (this->gamm1)/this->gam, 0, rho_log/2.0/this->gam }};
+        }
+
+        
+
+
+        dealii::Tensor<2,nstate,real> temp1;
+        for (int istate = 0; istate < nstate; ++istate) {
+            for (int jstate = 0; jstate < nstate; ++jstate) {
+                temp1[istate][jstate] = R_hat[jstate][istate];
+            }
+        }
+        for (int istate = 0; istate < nstate; ++istate) {
+            for (int jstate = 0; jstate < nstate; ++jstate) {
+                temp1[istate][jstate] *= -0.5 * Lambda_hat[istate]*T_hat[istate];
+            }
+        }
+        dealii::Tensor<2,nstate,real> dissipation_scaling_matrix;
+        // matrix multiplication
+        for (int istate = 0; istate < nstate; ++istate) {
+            for (int jstate = 0; jstate < nstate; ++jstate) {
+                for (int kstate = 0; kstate < nstate; ++kstate) {
+                    dissipation_scaling_matrix[istate][jstate] += R_hat[istate][kstate] * temp1[kstate][jstate];
+                }
+            }
+        }
+         
+        std::cout << "dissipation_scaling_matrix " << std::endl;
+        for (int istate = 0; istate < nstate; ++istate){
+            for (int jstate = 0; jstate < nstate; ++jstate){
+                std::cout << dissipation_scaling_matrix[istate][jstate] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+
+        std::array<real,nstate> entropy_var_2 = this->compute_entropy_variables(conservative_soln2); //ext
+        std::array<real,nstate> entropy_var_1 =  this->compute_entropy_variables(conservative_soln1); // int
+        //// NOTE: Justification for dividing by gamma -1? 
+        for (int istate = 0; istate < nstate; ++istate) {
+            for (int jstate = 0; jstate < nstate; ++jstate) {
+                dissipation_vector[istate] += dissipation_scaling_matrix[istate][jstate] * (entropy_var_2[jstate] / this->gamm1-entropy_var_1[jstate]/this->gamm1);
+            }
+        }
+
+    }
     return dissipation_vector;
     
 }

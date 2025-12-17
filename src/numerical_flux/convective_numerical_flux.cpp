@@ -372,7 +372,7 @@ std::array<real, nstate> EntropyStableMatrixDissipation<dim,nstate,real>
     (void) normal_int;
     
     //physics calculates matrix * jump[entropy variables]
-    std::array<real, nstate> flux_dot_n = euler_st_physics->dissipation_for_entropy_stable_numerical_flux(soln_int, soln_ext);
+    std::array<real, nstate> flux_dot_n = euler_st_physics->dissipation_for_entropy_stable_numerical_flux(soln_int, soln_ext, normal_int);
     /*
     for (int istate=0; istate<nstate; ++istate){
         //already aligned with spatial dimension, so only need to multiply by normal.

@@ -175,7 +175,8 @@ public:
     /// Jump is calculated in entropy variables.
      std::array<real, nstate> dissipation_for_entropy_stable_numerical_flux(
         const std::array<real,nstate> &conservative_soln1,
-        const std::array<real,nstate> &conservative_soln2) const;
+        const std::array<real,nstate> &conservative_soln2,
+        const dealii::Tensor<1,dim,real> &normal_int) const;
 };
 
 

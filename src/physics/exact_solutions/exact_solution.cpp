@@ -148,7 +148,7 @@ inline real ExactSolutionFunction_SpacetimeCartesian<dim,nstate,real>
 }
 
 // ========================================================
-// SPACETIME EULER -- Solution for spacetime Euler by Friedrich et al 2019 eq'n 4.4
+// SPACETIME EULER -- Solution for spacetime Euler 
 // Valid for 1D+1
 // ========================================================
 template <int dim, int nstate, typename real>
@@ -165,16 +165,27 @@ inline real ExactSolutionFunction_SpacetimeEuler<dim,nstate,real>
     real value = 0.0;
     const real pi = atan(1)*4;
     const real x = point[0];
-    const real y = point[1];
+    real y = point[1];
+    
+    real t;
+    if constexpr(dim==2){
+        t = y;
+        y = 0;
+    }
+    else if constexpr (dim==3) {
+        const real z = point[2];
+        t = z;
+    }
 
     //density
-    if (istate==0) value = 2 + 0.1 * sin(pi * (x-2*y));
+    if (istate==0) value = 2 + 0.1 * sin(pi * (x + y - 2*t));
     //momentum
-    if (istate==1) value = 2 + 0.1 * sin(pi * (x-2*y));
+    if (istate==1) value = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    if (istate==2 && dim==3) value = 2 + 0.1 * sin(pi * (x + y - 2*t));
     //second unused momentum
-    if (istate==2) value = 0; 
+    if (istate==dim) value = 0; 
     //energy
-    if (istate==3) value = pow(2 + 0.1*sin(pi * (x-2*y)),2);
+    if (istate==dim+1) value = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
    
     return value;
 }

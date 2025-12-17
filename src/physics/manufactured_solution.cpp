@@ -255,21 +255,32 @@ template <int dim, typename real>
 inline real ManufacturedSolutionEulerSpacetime<dim,real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
 {
-    real value = 0.0;
     const real pi = atan(1)*4;
     const real x = point[0];
-    const real y = point[1];
-
-    //density
-    if (istate==0) value = 2 + 0.1 * sin(pi * (x-2*y));
-    //momentum
-    if (istate==1) value = 2 + 0.1 * sin(pi * (x-2*y));
-    //second unused momentum
-    if (istate==2) value = 0; 
-    //energy
-    if (istate==3) value = pow(2 + 0.1*sin(pi * (x-2*y)),2);
+    real y = point[1];
+    
+    real t;
+    if constexpr(dim==2){
+        t = y;
+        y = 0;
+    }
+    else if constexpr (dim==3) {
+        const real z = point[2];
+        t = z;
+    }
    
-    return value;
+    real val = 0;
+    //density
+    if (istate==0) val = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    //momentum
+    if (istate==1) val = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    if (istate==2 && dim==3) val = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    //second unused momentum
+    if (istate==dim) val = 0; 
+    //energy
+    if (istate==dim+1) val = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
+
+    return val;
 }
 
 
@@ -643,27 +654,41 @@ inline dealii::Tensor<1,dim,real> ManufacturedSolutionEulerSpacetime<dim,real>
     dealii::Tensor<1,dim,real> gradient;
     const real pi = atan(1)*4;
     const real x = point[0];
-    const real y = point[1];
+    real y = point[1];
+    
+    real t;
+    if constexpr(dim==2){
+        t = y;
+        y = 0;
+    }
+    else if constexpr (dim==3) {
+        const real z = point[2];
+        t = z;
+    }
 
     //density
     if (istate==0){
-        gradient[0] = 0.1*pi*cos(pi*(x-2*y));
-        gradient[1] = -0.2*pi*cos(pi*(x-2*y));
+        gradient[0] = 0.1*pi*cos(pi*(x+y-2*t));
+        gradient[1] = -0.2*pi*cos(pi*(x+y-2*t));
     }
     //momentum
     if (istate==1){
-        gradient[0] = 0.1*pi*cos(pi*(x-2*y));
-        gradient[1] = -0.2*pi*cos(pi*(x-2*y));
+        gradient[0] = 0.1*pi*cos(pi*(x+y-2*t));
+        gradient[1] = -0.2*pi*cos(pi*(x+y-2*t));
+    }
+    if (istate==2 && dim==3) {
+        gradient[0] = 0.1*pi*cos(pi*(x+y-2*t));
+        gradient[1] = -0.2*pi*cos(pi*(x+y-2*t));
     }
     //second unused momentum
-    if (istate==2){
+    if (istate==dim){
         gradient[0]=0.0;
         gradient[1]=0.0;
     }
     //energy
-    if (istate==3){
-        gradient[0] =  0.02 *pi* cos(pi* (x - 2* y)) *(20 + sin(pi* (x - 2 *y)));
-        gradient[1] = -0.04*pi*cos(pi* (x - 2 *y))* (20 + sin(pi* (x - 2 *y)));
+    if (istate==dim+1){
+        gradient[0] =  0.02 *pi* cos(pi* (x - 2* y)) *(20 + sin(pi* (x+y - 2 *t)));
+        gradient[1] = -0.04*pi*cos(pi* (x - 2 *y))* (20 + sin(pi* (x+y - 2 *t)));
     }
     return gradient;
 }
@@ -1164,17 +1189,27 @@ inline dealii::SymmetricTensor<2,dim,real> ManufacturedSolutionEulerSpacetime<di
     dealii::SymmetricTensor<2,dim,real> hessian;
     const real pi = atan(1)*4;
     const real x = point[0];
-    const real y = point[1];
+    real y = point[1];
+    
+    real t;
+    if constexpr(dim==2){
+        t = y;
+        y = 0;
+    }
+    else if constexpr (dim==3) {
+        const real z = point[2];
+        t = z;
+    }
 
     // density or momentum
-    if (istate == 0 || istate == 1){
-        hessian[0][0] = -0.1 * pi * pi * sin(pi*(x-2*y));
-        hessian[1][0] = 0.2 * pi * pi * sin(pi*(x-2*y));
+    if (istate == 0 || istate == 1 || (istate==2 && dim==3)){
+        hessian[0][0] = -0.1 * pi * pi * sin(pi*(x+y-2*t));
+        hessian[1][0] = 0.2 * pi * pi * sin(pi*(x+y-2*t));
         hessian[0][1] = hessian[1][0];
-        hessian[0][0] = -0.4 * pi * pi * sin(pi*(x-2*y));
+        hessian[0][0] = -0.4 * pi * pi * sin(pi*(x+y-2*t));
     }
     //second unused momentum
-    if (istate == 2){
+    if (istate == dim){
         for(unsigned int i = 0; i < dim; ++i){
             for(unsigned int j = 0; j < dim; ++j){
                 if(i == j){
@@ -1186,11 +1221,11 @@ inline dealii::SymmetricTensor<2,dim,real> ManufacturedSolutionEulerSpacetime<di
         }
     }
     //energy
-    if (istate == 3){
-        hessian[0][0] = 0.02 * pi * pi *  cos(pi* (x - 2* y))*cos(pi* (x - 2* y)) - 0.2* pi*pi* (0.1* sin(pi* (x - 2* y)) + 2) *sin(pi* (x - 2* y)) ;
-        hessian[1][0] = -0.04 * pi * pi *  cos(pi* (x - 2* y))*cos(pi* (x - 2* y)) + 0.4* pi*pi* (0.1* sin(pi* (x - 2* y)) + 2) *sin(pi* (x - 2* y)) ;
+    if (istate == dim+1){
+        hessian[0][0] = 0.02 * pi * pi *  cos(pi* (x+y - 2* t))*cos(pi* (x+y - 2* t)) - 0.2* pi*pi* (0.1* sin(pi* (x+y - 2* t)) + 2) *sin(pi* (x+y - 2* t)) ;
+        hessian[1][0] = -0.04 * pi * pi *  cos(pi* (x+y - 2* t))*cos(pi* (x+y - 2* t)) + 0.4* pi*pi* (0.1* sin(pi* (x+y - 2* t)) + 2) *sin(pi* (x+y - 2* t)) ;
         hessian[0][1] = hessian[1][0];
-        hessian[0][0] =  0.08 * pi * pi * cos(pi* (x - 2* y))*cos(pi* (x - 2* y)) - 0.8 * pi * pi * (0.1 * sin(pi* (x - 2* y)) + 2) *sin(pi* (x - 2* y)) ; 
+        hessian[0][0] =  0.08 * pi * pi * cos(pi* (x+y - 2* t))*cos(pi* (x+y - 2* t)) - 0.8 * pi * pi * (0.1 * sin(pi* (x+y - 2* t)) + 2) *sin(pi* (x+y - 2* t)) ; 
     }
     return hessian;
 
@@ -1457,7 +1492,7 @@ template class ManufacturedSolutionNavah_MS5<PHILIP_DIM,FadType>;
 template class ManufacturedSolutionNavah_MS5<PHILIP_DIM,RadType>;
 template class ManufacturedSolutionNavah_MS5<PHILIP_DIM,FadFadType>;
 template class ManufacturedSolutionNavah_MS5<PHILIP_DIM,RadFadType>;
-#if PHILIP_DIM==2
+#if PHILIP_DIM>=2
 template class ManufacturedSolutionEulerSpacetime<PHILIP_DIM,double>;
 template class ManufacturedSolutionEulerSpacetime<PHILIP_DIM,FadType>;
 template class ManufacturedSolutionEulerSpacetime<PHILIP_DIM,RadType>;
