@@ -329,16 +329,25 @@ protected:
         const std::array<real2,nstate> &conservative_soln,
         const std::array<dealii::Tensor<1,dim,real2>,nstate> &solution_gradient) const;
 
-    /** No-slip wall boundary conditions
-     *  * Given by equations 460-461 of the following paper:
-     *  * * Hartmann, Ralf. "Numerical analysis of higher order discontinuous Galerkin finite element methods." (2008): 1-107.
-     */
-    void boundary_wall (
-        const dealii::Tensor<1,dim,real> &normal_int,
+    /// Boundary face values for viscous fluxes
+    void boundary_face_values_viscous_flux (
+        const int boundary_type,
+        const dealii::Point<dim, real> &pos,
+        const dealii::Tensor<1,dim,real> &normal,
         const std::array<real,nstate> &soln_int,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
         std::array<real,nstate> &soln_bc,
         std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const override;
+    /** No-slip wall boundary conditions
+     *  * Given by equations 460-461 of the following paper:
+     *  * * Hartmann, Ralf. "Numerical analysis of higher order discontinuous Galerkin finite element methods." (2008): 1-107.
+     */
+    void boundary_wall_viscous_flux (
+        const dealii::Tensor<1,dim,real> &normal_int,
+        const std::array<real,nstate> &soln_int,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
+        std::array<real,nstate> &soln_bc,
+        std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
 
     /// Evaluate the manufactured solution boundary conditions.
     void boundary_manufactured_solution (
