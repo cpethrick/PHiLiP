@@ -1,4 +1,6 @@
 #include <CoDiPack/include/codi.hpp>
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/mpi.h>
 #include <Sacado.hpp>
 #include <deal.II/base/function.h>
 #include <deal.II/base/function.templates.h> // Needed to instantiate dealii::Function<PHILIP_DIM, Sacado::Fad::DFad<double>>
@@ -670,27 +672,37 @@ inline dealii::Tensor<1,dim,real> ManufacturedSolutionEulerSpacetime<dim,nspecie
     //density
     if (istate==0){
         gradient[0] = 0.1*pi*cos(pi*(x+y-2*t));
-        gradient[1] = -0.2*pi*cos(pi*(x+y-2*t));
+        gradient[1] = 0.1*pi*cos(pi*(x+y-2*t));
+        gradient[dim-1] = -0.2*pi*cos(pi*(x+y-2*t));
     }
     //momentum
     if (istate==1){
         gradient[0] = 0.1*pi*cos(pi*(x+y-2*t));
-        gradient[1] = -0.2*pi*cos(pi*(x+y-2*t));
+        gradient[1] = 0.1*pi*cos(pi*(x+y-2*t));
+        gradient[dim-1] = -0.2*pi*cos(pi*(x+y-2*t));
     }
     if (istate==2 && dim==3) {
         gradient[0] = 0.1*pi*cos(pi*(x+y-2*t));
-        gradient[1] = -0.2*pi*cos(pi*(x+y-2*t));
+        gradient[1] = 0.1*pi*cos(pi*(x+y-2*t));
+        gradient[2] = -0.2*pi*cos(pi*(x+y-2*t));
     }
     //second unused momentum
     if (istate==dim){
         gradient[0]=0.0;
         gradient[1]=0.0;
+        gradient[dim-1]=0.0;
     }
     //energy
     if (istate==dim+1){
-        gradient[0] =  0.02 *pi* cos(pi* (x - 2* y)) *(20 + sin(pi* (x+y - 2 *t)));
-        gradient[1] = -0.04*pi*cos(pi* (x - 2 *y))* (20 + sin(pi* (x+y - 2 *t)));
+        gradient[0] =  0.02 *pi* cos(pi* (x +y- 2* t)) *(20 + sin(pi* (x+y - 2 *t)));
+        gradient[1] =  0.02 *pi* cos(pi* (x +y- 2* t)) *(20 + sin(pi* (x+y - 2 *t)));
+        gradient[dim-1] = -0.04*pi*cos(pi* (x +y- 2 *t))* (20 + sin(pi* (x+y - 2 *t)));
     }
+    dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
+    //pcout << "Gradient: " << istate << std::endl;
+    //pcout << gradient;
+    //pcout << std::endl;
+
     return gradient;
 }
 
@@ -1202,14 +1214,23 @@ inline dealii::SymmetricTensor<2,dim,real> ManufacturedSolutionEulerSpacetime<di
         t = z;
     }
 
-    // density or momentum
-    if (istate == 0 || istate == 1 || (istate==2 && dim==3)){
+    // density or momentum 1D+1
+    if (istate < dim && dim==2){
         hessian[0][0] = -0.1 * pi * pi * sin(pi*(x+y-2*t));
         hessian[1][0] = 0.2 * pi * pi * sin(pi*(x+y-2*t));
-        hessian[0][1] = hessian[1][0];
-        hessian[0][0] = -0.4 * pi * pi * sin(pi*(x+y-2*t));
+        // hessian[0][1] = hessian[1][0]; // Taken care of by SymmetricTensor
+        hessian[1][1] = -0.4 * pi * pi * sin(pi*(x+y-2*t));
     }
-    //second unused momentum
+    // density or momentum 2D+1
+    if (istate < dim && dim==3){
+        hessian[0][0] = -0.1 * pi * pi * sin(pi*(x+y-2*t));
+        hessian[0][1] = -0.1 * pi * pi * sin(pi*(x+y-2*t));
+        hessian[0][2] = 0.2 * pi * pi * sin(pi*(x+y-2*t));
+        hessian[1][2] = (pi*pi*sin(pi*(x + y - 2*t)))/5.;
+        hessian[2][2] = (-2*pi*pi*sin(pi*(x + y - 2*t)))/5.;
+
+    }
+    //unused momentum
     if (istate == dim){
         for(unsigned int i = 0; i < dim; ++i){
             for(unsigned int j = 0; j < dim; ++j){
@@ -1222,12 +1243,27 @@ inline dealii::SymmetricTensor<2,dim,real> ManufacturedSolutionEulerSpacetime<di
         }
     }
     //energy
-    if (istate == dim+1){
+    if (istate == dim+1 && dim==2){
         hessian[0][0] = 0.02 * pi * pi *  cos(pi* (x+y - 2* t))*cos(pi* (x+y - 2* t)) - 0.2* pi*pi* (0.1* sin(pi* (x+y - 2* t)) + 2) *sin(pi* (x+y - 2* t)) ;
         hessian[1][0] = -0.04 * pi * pi *  cos(pi* (x+y - 2* t))*cos(pi* (x+y - 2* t)) + 0.4* pi*pi* (0.1* sin(pi* (x+y - 2* t)) + 2) *sin(pi* (x+y - 2* t)) ;
-        hessian[0][1] = hessian[1][0];
-        hessian[0][0] =  0.08 * pi * pi * cos(pi* (x+y - 2* t))*cos(pi* (x+y - 2* t)) - 0.8 * pi * pi * (0.1 * sin(pi* (x+y - 2* t)) + 2) *sin(pi* (x+y - 2* t)) ; 
+        //hessian[0][1] = hessian[1][0];
+        hessian[1][1] =  0.08 * pi * pi * cos(pi* (x+y - 2* t))*cos(pi* (x+y - 2* t)) - 0.8 * pi * pi * (0.1 * sin(pi* (x+y - 2* t)) + 2) *sin(pi* (x+y - 2* t)) ; 
     }
+    if (istate == dim+1 && dim==3){
+        hessian[0][0] = (pi*pi*pow(cos(pi*(x + y - 2*t)),2))/50. - (pi*pi*(2 + sin(pi*(x + y - 2*t))/10.)*sin(pi*(x + y - 2*t)))/5.;
+        hessian[0][1] = (pi*pi*pow(cos(pi*(x + y - 2*t)),2))/50. - (pi*pi*(2 + sin(pi*(x + y - 2*t))/10.)*sin(pi*(x + y - 2*t)))/5.;
+        hessian[0][2] = -0.04*(pi*pi*pow(cos(pi*(x + y - 2*t)),2)) + (2*pi*pi*(2 + sin(pi*(x + y - 2*t))/10.)*sin(pi*(x + y - 2*t)))/5.;
+
+        hessian[1][1] = (pi*pi*pow(cos(pi*(x + y - 2*t)),2))/50. - (pi*pi*(2 + sin(pi*(x + y - 2*t))/10.)*sin(pi*(x + y - 2*t)))/5.;
+        hessian[1][2] = -0.04*(pi*pi*pow(cos(pi*(x + y - 2*t)),2)) + (2*pi*pi*(2 + sin(pi*(x + y - 2*t))/10.)*sin(pi*(x + y - 2*t)))/5.;
+
+        hessian[2][2] = (2*pi*pi*pow(cos(pi*(x + y - 2*t)),2))/25. - (4*pi*pi*(2 + sin(pi*(x + y - 2*t))/10.)*sin(pi*(x + y - 2*t)))/5.;
+    }
+
+    dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
+    pcout << "Hessian: " << istate << std::endl;
+    pcout << hessian;
+    pcout << std::endl;
     return hessian;
 
 }
@@ -1390,7 +1426,7 @@ ManufacturedSolutionFactory<dim,nspecies,real>::create_ManufacturedSolution(
         return std::make_shared<ManufacturedSolutionNavah_MS4<dim,nspecies,real>>(nstate);
     }else if((solution_type == ManufacturedSolutionEnum::navah_solution_5) && (dim==2) && (nstate==dim+2 || nstate==dim+3)){
         return std::make_shared<ManufacturedSolutionNavah_MS5<dim,nspecies,real>>(nstate);
-    }else if((solution_type == ManufacturedSolutionEnum::euler_spacetime) && (dim==2) && (nstate==dim+2)){
+    }else if((solution_type == ManufacturedSolutionEnum::euler_spacetime) && (dim==2||dim==3) && (nstate==dim+2)){
         return std::make_shared<ManufacturedSolutionEulerSpacetime<dim,nspecies,real>>(nstate);
     }else{
         std::cout << "Invalid combination of Manufactured Solution, dimension, and PDE Type." << std::endl;

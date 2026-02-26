@@ -160,9 +160,6 @@ public:
         std::array<real,nstate> &soln_bc,
         std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
 
-    /// Get manufactured solution gradient
-    std::array<dealii::Tensor<1,dim,real>,nstate> get_manufactured_solution_gradient(
-        const dealii::Point<dim,real> &pos) const override;
     /////// Numerical fluxes here....:
     // Add all and describe that they aren't implemented.
     
@@ -176,7 +173,8 @@ public:
     /// Jump is calculated in entropy variables.
      std::array<real, nstate> dissipation_for_entropy_stable_numerical_flux(
         const std::array<real,nstate> &conservative_soln1,
-        const std::array<real,nstate> &conservative_soln2) const;
+        const std::array<real,nstate> &conservative_soln2,
+        const dealii::Tensor<1,dim,real> &normal_int) const;
 };
 
 

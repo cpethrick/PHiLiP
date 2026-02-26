@@ -44,7 +44,7 @@ NumericalFluxFactory<dim, nspecies, nstate, real>
         return std::make_unique< LaxFriedrichs<dim, nspecies, nstate, real> > (physics_input);
     } 
     else if(conv_num_flux_type == AllParam::ConvectiveNumericalFlux::two_point_flux_with_entropy_stable_matrix_dissipation) {
-        if constexpr (dim+2==nstate && dim==2) {
+        if constexpr (dim+2==nstate && (dim==2||dim==3)) {
             if (pde_type == AllParam::PartialDifferentialEquation::euler && 
                     physics_input->all_parameters->temporal_dimension==1) {
                 //std::shared_ptr<Physics::EulerSpacetime<dim,dim+2,real>> physics_spacetime = std::dynamic_pointer_cast<Physics::EulerSpacetime<dim,dim+2,real>>(physics_input);

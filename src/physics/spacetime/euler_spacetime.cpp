@@ -79,7 +79,7 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nspecies,nstate,real>
     if (abs(abs(normal[dim-1])- 1) < 1E-13) {
         // Temporal flux is solution, so directional Jacobian is identity
         for (int istate = 0; istate < nstate; ++istate){
-            if (istate != nstate-2){
+            if (istate != nstate-2){ // skip unused velocity
                 jacobian[istate][istate]=1.0;
             }
         }
@@ -109,6 +109,9 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nspecies,nstate,real>
         }
         jacobian[nstate-1][nstate-1] = this->gam*vel_normal;
     }
+    //this->pcout << "Jacobian " << normal << std::endl;
+    //this->pcout << jacobian;
+    //this->pcout << std::endl;;
     return jacobian;
 }
 
@@ -263,17 +266,24 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate
         conv_num_split_flux[nstate-1][flux_dim] -= ( 0.5 *(pressure1*vel1[flux_dim] + pressure2*vel2[flux_dim]));
     }
 
-    if (dim == 3) this->pcout << "WARNING: Not checked for 2D+1...." << std::endl;
+    //if (dim == 3) this->pcout << "WARNING: Not checked for 2D+1...." << std::endl;
 
     ///////// TO DO before merging, move this into another function and add other spatial fluxes.
     /// Temporal part
     // Density equation
     conv_num_split_flux[0][dim-1] = rho_log;
+    // Velocities
     for (int velocity_dim=0; velocity_dim<dim-1; ++velocity_dim) {
-        conv_num_split_flux[1+velocity_dim][dim-1] = rho_log * vel_avg[0];
+        conv_num_split_flux[1+velocity_dim][dim-1] = rho_log * vel_avg[velocity_dim];
         //Unsure what velocity this would be in 2D+1
     }
-    conv_num_split_flux[nstate-1][dim-1] = 0.5 * rho_log / (0.5*beta_log * this->gamm1) + rho_log * (vel_avg[0]*vel_avg[0] - 0.5 * vel_square_avg_1122);
+    // Momentum
+    conv_num_split_flux[nstate-1][dim-1] = 0.5 * rho_log / (0.5*beta_log * this->gamm1) 
+        + rho_log * (vel_avg[0]*vel_avg[0] - 0.25 * (vel1[0]+vel2[0]));
+    if (dim==3)
+        conv_num_split_flux[nstate-1][dim-1] += rho_log * (vel_avg[1]*vel_avg[1] - 0.25 * (vel1[1]+vel2[1]));
+
+
     
    return conv_num_split_flux; 
 
@@ -282,7 +292,8 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate
 template <int dim, int nspecies, int nstate, typename real>
 std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
 ::dissipation_for_entropy_stable_numerical_flux(const std::array<real,nstate> &conservative_soln1,
-                                                const std::array<real,nstate> &conservative_soln2) const
+                                                const std::array<real,nstate> &conservative_soln2,
+                                                const dealii::Tensor<1,dim,real> &normal_int) const
 {
     //std::array<dealii::Tensor<1,dim,real>,nstate> dissipation;
 
@@ -314,6 +325,7 @@ std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
 
     std::array<real,nstate> dissipation_vector = {};
     if constexpr(dim==2) {
+        (void) normal_int;
         dealii::Tensor<2,nstate,real> R_hat;
         for (int istate = 0; istate < nstate; ++istate){
             if (istate != nstate-2)  {
@@ -365,7 +377,7 @@ std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
                 }
             }
         }
-         
+        /* 
         std::cout << "dissipation_scaling_matrix " << std::endl;
         for (int istate = 0; istate < nstate; ++istate){
             for (int jstate = 0; jstate < nstate; ++jstate){
@@ -373,7 +385,7 @@ std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
             }
             std::cout << std::endl;
         }
-
+*/
 
         std::array<real,nstate> entropy_var_2 = this->compute_entropy_variables(conservative_soln2); //ext
         std::array<real,nstate> entropy_var_1 =  this->compute_entropy_variables(conservative_soln1); // int
@@ -461,7 +473,7 @@ std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
                 }
             }
         }
-         
+        /* 
         std::cout << "dissipation_scaling_matrix " << std::endl;
         for (int istate = 0; istate < nstate; ++istate){
             for (int jstate = 0; jstate < nstate; ++jstate){
@@ -469,6 +481,7 @@ std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
             }
             std::cout << std::endl;
         }
+*/
 
 
         std::array<real,nstate> entropy_var_2 = this->compute_entropy_variables(conservative_soln2); //ext

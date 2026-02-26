@@ -12,7 +12,7 @@
 
 const double TOLERANCE = 1E-5;
 
-template <int dim, int nstate>
+template <int dim, int nspecies, int nstate>
 void print_flux(std::array<dealii::Tensor<1,dim,double>,nstate> flux) {
     for (int idim = 0; idim < dim; ++idim){
         std::cout << "idim = " << idim << std::endl;
@@ -30,6 +30,7 @@ int main (int argc, char * argv[])
     const int dim = PHILIP_DIM;
     //const int spatial_dim = PHILIP_DIM-1;
     const int nstate = dim+2;
+    const int nspecies = 1;
 
     //const double ref_length = 1.0, mach_inf=1.0, angle_of_attack = 0.0, side_slip_angle = 0.0, gamma_gas = 1.4;
     const double a = 1.0 , b = 0.0, c = 1.4;
@@ -40,8 +41,8 @@ int main (int argc, char * argv[])
     all_parameters.parse_parameters (parameter_handler);
     all_parameters.two_point_num_flux_type  = PHiLiP::Parameters::AllParameters::TwoPointNumericalFlux::Ra;
     //all_parameters.manufactured_convergence_study_param.manufactured_solution_param.manufactured_solution_type = PHiLiP::Parameters::ManufacturedSolutionParam::ManufacturedSolutionType::euler_spacetime;
-    std::shared_ptr< PHiLiP::ManufacturedSolutionFunction<dim,double> > spacetime_manuf_soln =     std::make_shared<PHiLiP::ManufacturedSolutionEulerSpacetime<dim,double>>(nstate);
-    PHiLiP::Physics::EulerSpacetime<dim, nstate, double> euler_physics = PHiLiP::Physics::EulerSpacetime<dim, nstate, double>(&all_parameters,a,c,a,b,b, spacetime_manuf_soln);
+    std::shared_ptr< PHiLiP::ManufacturedSolutionFunction<dim,nspecies,double> > spacetime_manuf_soln =     std::make_shared<PHiLiP::ManufacturedSolutionEulerSpacetime<dim,1,double>>(nstate);
+    PHiLiP::Physics::EulerSpacetime<dim, nspecies, nstate, double> euler_physics = PHiLiP::Physics::EulerSpacetime<dim, nspecies, nstate, double>(&all_parameters,a,c,a,b,b, spacetime_manuf_soln);
 
     std::array<double, nstate> soln_plus={{2.9510565162951536, 2.9510565162951536,0.0, 8.708734562368088}};
     std::array<double, nstate> soln_mins={{2.8090169943749475, 2.8090169943749475, 0.0, 7.890576474687264}};
@@ -53,15 +54,17 @@ int main (int argc, char * argv[])
     }
     conv_flux_plus = euler_physics.convective_flux(soln_plus);
     std::cout << "Conv flux" << std::endl;
-    print_flux<dim,nstate>(conv_flux_plus); // matches personal code
+    print_flux<dim,nspecies,nstate>(conv_flux_plus); // matches personal code
 
     std::array<dealii::Tensor<1,dim,double>,nstate> two_point_flux;
+    dealii::Tensor<1, dim, double> normal_space;
+    normal_space[0]=1;
     two_point_flux = euler_physics.convective_numerical_split_flux_ranocha(soln_plus, soln_mins);
     std::cout << "Ra split flux" << std::endl;
-    print_flux<dim,nstate>(two_point_flux); // matches julia.
+    print_flux<dim,nspecies,nstate>(two_point_flux); // matches julia.
 
     std::array<double, nstate> dissipation;
-    dissipation = euler_physics.dissipation_for_entropy_stable_numerical_flux(soln_plus,soln_mins);
+    dissipation = euler_physics.dissipation_for_entropy_stable_numerical_flux(soln_plus,soln_mins, normal_space);
     for (int i = 0; i < nstate; ++i){
         std::cout << dissipation[i] << std::endl;
     }

@@ -1499,6 +1499,36 @@ template <int dim, int nspecies, int nstate, typename real>
 real InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate, real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
 {
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    real y = point[1];
+    
+    real t;
+    if constexpr(dim==2){
+        t = y;
+        y = 0;
+    }
+    else if constexpr (dim==3) {
+        const real z = point[2];
+        t = z;
+    }
+
+    // apply a perturbation
+    t *= 0.95;
+
+    real val = 0;
+    //density
+    if (istate==0) val = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    //momentum
+    if (istate==1) val = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    if (istate==2 && dim==3) val = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    //second unused momentum
+    if (istate==dim) val = 0; 
+    //energy
+    if (istate==dim+1) val = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
+
+    return val;
+    /*
     const real pi = atan(1.0)*4;
     const real x = point[0];
     const real y = 0.95 * point[1]; // Pertubation from exact solution.
@@ -1519,6 +1549,7 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate, re
     soln[nstate-1] =  pow(2 + 0.1*sin(pi * (x-2*y)),2);
 
     return soln[istate];
+    */
 }
 // ========================================================
 // ZERO INITIAL CONDITION

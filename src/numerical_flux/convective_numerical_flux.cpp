@@ -374,6 +374,7 @@ std::array<real, nstate> EntropyStableMatrixDissipation<dim,nspecies,nstate,real
     (void) normal_int;
     
     //physics calculates matrix * jump[entropy variables]
+    //Done  in physics for easier access to the entropy variables.
     std::array<real, nstate> flux_dot_n = euler_st_physics->dissipation_for_entropy_stable_numerical_flux(soln_int, soln_ext, normal_int);
     /*
     for (int istate=0; istate<nstate; ++istate){
@@ -627,10 +628,11 @@ std::array<real, nstate> RoeBaseRiemannSolverDissipation<dim,nspecies,nstate,rea
         template class L2RoeRiemannSolverDissipation<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, type>;
     BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_TYPES, _, POSSIBLE_TYPE)
 
-#if PHILIP_DIM==2
-    #define INSTANTIATE_TYPES(r, data, type) \
-        template class EntropyStableMatrixDissipation<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, type>;
-    BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_TYPES, _, POSSIBLE_TYPE)
+#if PHILIP_DIM>=2
+    #define INSTANTIATE_TYPES_MATDISS(r, data, type) \
+        template class EntropyStableMatrixDissipation<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, type>; \
+        template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, type>;
+    BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_TYPES_MATDISS, _, POSSIBLE_TYPE)
 #endif
 #else
     #define POSSIBLE_TYPE (double)(FadType)(RadType)(FadFadType)(RadFadType)
