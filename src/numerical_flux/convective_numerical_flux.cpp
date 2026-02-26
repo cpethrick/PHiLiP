@@ -372,6 +372,7 @@ std::array<real, nstate> EntropyStableMatrixDissipation<dim,nstate,real>
     (void) normal_int;
     
     //physics calculates matrix * jump[entropy variables]
+    //Done  in physics for easier access to the entropy variables.
     std::array<real, nstate> flux_dot_n = euler_st_physics->dissipation_for_entropy_stable_numerical_flux(soln_int, soln_ext, normal_int);
     /*
     for (int istate=0; istate<nstate; ++istate){
@@ -713,7 +714,7 @@ template class EntropyConservingWithL2RoeDissipation<PHILIP_DIM, PHILIP_DIM+2, R
 template class EntropyConservingWithL2RoeDissipation<PHILIP_DIM, PHILIP_DIM+2, FadFadType >;
 template class EntropyConservingWithL2RoeDissipation<PHILIP_DIM, PHILIP_DIM+2, RadFadType >;
 
-#if PHILIP_DIM==2
+#if PHILIP_DIM>1
 template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, double>;
 template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, FadType >;
 template class EntropyConservingWithMatrixDissipation<PHILIP_DIM, PHILIP_DIM+2, RadType >;

@@ -56,12 +56,14 @@ int main (int argc, char * argv[])
     print_flux<dim,nstate>(conv_flux_plus); // matches personal code
 
     std::array<dealii::Tensor<1,dim,double>,nstate> two_point_flux;
+    dealii::Tensor<1, dim, double> normal_space;
+    normal_space[0]=1;
     two_point_flux = euler_physics.convective_numerical_split_flux_ranocha(soln_plus, soln_mins);
     std::cout << "Ra split flux" << std::endl;
     print_flux<dim,nstate>(two_point_flux); // matches julia.
 
     std::array<double, nstate> dissipation;
-    dissipation = euler_physics.dissipation_for_entropy_stable_numerical_flux(soln_plus,soln_mins);
+    dissipation = euler_physics.dissipation_for_entropy_stable_numerical_flux(soln_plus,soln_mins, normal_space);
     for (int i = 0; i < nstate; ++i){
         std::cout << dissipation[i] << std::endl;
     }
