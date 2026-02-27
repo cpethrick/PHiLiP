@@ -1,4 +1,6 @@
 #include "ADTypes.hpp"
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/mpi.h>
 
 #include "convective_numerical_flux.hpp"
 
@@ -38,14 +40,18 @@ std::array<real, nstate> NumericalFluxConvective<dim,nstate,real>
     const dealii::Tensor<1,dim,real> &normal_int) const
 {
     std::array<real, nstate> numerical_flux_dot_n;
+    dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
     if (is_spacetime && (abs(normal_int[dim-1])>1E-14)) {
         // If abs(normal_int[dim])==1, we are on a temporal face
-        if (normal_int[dim-1] + 1 < 1E-14) { //normal_int == -1
+        const real temporal_advection = -1;
+        if (abs(normal_int[dim-1]*temporal_advection+1) < 1E-14) {
             // on a t^n face. Return external solution.
+            pcout << "On a t^n face" << std::endl;
             for (int s=0; s<nstate; s++) {
                 numerical_flux_dot_n[s] = -1.0 * soln_ext[s];
             }
-        } else if (normal_int[dim-1] - 1<1E-14){ //normal_int == 1
+        }else if (abs(normal_int[dim-1]*temporal_advection-1) < 1E-14) {
+            pcout << "On a t^n+1 face" << std::endl;
             // on a t^{n+1} face. Return internal solution.
             for (int s=0; s<nstate; s++) {
                 numerical_flux_dot_n[s] = soln_int[s];
@@ -147,7 +153,8 @@ EntropyConservingWithMatrixDissipation<dim, nstate, real>::EntropyConservingWith
     std::shared_ptr<Physics::PhysicsBase<dim, nstate, real>> physics_input)
     : NumericalFluxConvective<dim,nstate,real>(
         std::make_unique< EntropyConservingBaselineNumericalFluxConvective<dim, nstate, real> > (physics_input), 
-        std::make_unique< EntropyStableMatrixDissipation<dim, nstate, real> > (physics_input))
+        std::make_unique< EntropyStableMatrixDissipation<dim, nstate, real> > (physics_input),
+        physics_input->all_parameters->is_spacetime)
 {}
 
 template <int dim, int nstate, typename real>
