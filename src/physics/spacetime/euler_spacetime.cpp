@@ -31,10 +31,10 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate
     }
 
     // temporal
-    const real temporal_advection = 1.0; // unit by definition
     for (int istate = 0; istate < nstate; ++istate){
         conv_flux[istate][dim-1] += temporal_advection * conservative_soln[istate]; 
     }
+
     return conv_flux;
 }
 
@@ -78,9 +78,10 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nspecies,nstate,real>
     dealii::Tensor<2,nstate,real> jacobian;
     if (abs(abs(normal[dim-1])- 1) < 1E-13) {
         // Temporal flux is solution, so directional Jacobian is identity
+        
         for (int istate = 0; istate < nstate; ++istate){
             if (istate != nstate-2){ // skip unused velocity
-                jacobian[istate][istate]=1.0;
+                jacobian[istate][istate]=1;
             }
         }
     }
@@ -127,7 +128,7 @@ void EulerSpacetime<dim,nspecies,nstate,real>
    std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
     if (boundary_type == 1010) {
-        // Manufactured solution boundary condition
+        // Temporal face boundary
         boundary_purely_upwind(pos, normal_int, soln_int, soln_grad_int, soln_bc, soln_grad_bc);
     } else {
         this->pcout << "Warning: Only pure upwind has been verified for EulerSpacetime!" << std::endl
@@ -148,18 +149,19 @@ boundary_purely_upwind(
     std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
 
-    if (abs(normal_int[dim-1]-1) < 1E-14) {
+    if (abs(normal_int[dim-1]*temporal_advection-1) < 1E-14) {
         // normal in temporal dimension = 1: this boundary will be pure convective outflow
         soln_bc = soln_int;
         soln_grad_bc = soln_grad_int;
-    } else if (abs(normal_int[dim-1]+1) < 1E-14){
+    } else if (  (abs(normal_int[dim-1]*temporal_advection+1) < 1E-14)  && apply_initial_condition  ){
         // normal in temporal dimension = -1: this boundary will be pure upwinding
         // of a Dirichlet boundary
         const real pi = atan(1.0)*4;
         
         const real x = pos[0];
         const real y = (dim == 2) ? 0 : pos[1];
-        const real t = 0.0; //time zero
+        const real t = pos[dim-1]; //time zero
+
 
         // Density
         soln_bc[0] = 2 + 0.1 * sin(pi * (x + y - 2*t));
@@ -172,7 +174,7 @@ boundary_purely_upwind(
             soln_momentums [1] = 2 + 0.1 * sin(pi * (x + y - 2*t)); // WARNING : manuf solution may not work in 3D...
         }
         // last dim: always zero because we store an additional unused state
-        soln_momentums[dim-1] = 0.0;
+        soln_momentums[dim-1] = 0;
 
         for (int idim=0; idim < dim; ++idim){
             soln_bc[idim+1] = soln_momentums[idim];
@@ -211,7 +213,6 @@ convective_numerical_split_flux (
         std::array<dealii::Tensor<1,dim,real>,nstate> nothing_tensor;
         conv_num_split_flux = nothing_tensor;
     }
-
 
     return conv_num_split_flux;
 }
@@ -283,8 +284,6 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate
     if (dim==3)
         conv_num_split_flux[nstate-1][dim-1] += rho_log * (vel_avg[1]*vel_avg[1] - 0.25 * (vel1[1]+vel2[1]));
 
-
-    
    return conv_num_split_flux; 
 
 }
@@ -494,6 +493,7 @@ std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
         }
 
     }
+    
     return dissipation_vector;
     
 }

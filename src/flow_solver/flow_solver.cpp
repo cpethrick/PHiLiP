@@ -572,6 +572,7 @@ int FlowSolver<dim,nspecies,nstate>::run() const
             dg->set_unsteady_model_time_step(time_step);
 
             ode_solver->step_in_time(time_step,false);
+            //flow_solver_case->modify_solution_between_time_steps(ode_solver,dg);
 
             bool do_write_unsteady_data_table_file = false;
             if(flow_solver_param.write_unsteady_data_table_file_every_dt_time_intervals > 0.0) {
@@ -721,6 +722,7 @@ int FlowSolver<dim,nspecies,nstate>::run() const
         ode_solver->steady_state();
         flow_solver_case->steady_state_postprocessing(dg);
         
+        dg->output_results_vtk(9999,ode_solver->current_time);
         const bool use_isotropic_mesh_adaptation = (all_param.mesh_adaptation_param.total_mesh_adaptation_cycles > 0) 
                                         && (all_param.mesh_adaptation_param.mesh_adaptation_type != Parameters::MeshAdaptationParam::MeshAdaptationType::anisotropic_adaptation);
         
