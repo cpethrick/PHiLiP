@@ -1514,7 +1514,7 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate, re
     }
 
     // apply a perturbation
-    //t *= 0.95;
+    t *= 0.95;
 
     real val = 0;
     //density

@@ -45,15 +45,13 @@ std::array<real, nstate> NumericalFluxConvective<dim,nspecies,nstate,real>
     dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
     if (is_spacetime && (abs(normal_int[dim-1])>1E-14)) {
         // If abs(normal_int[dim])==1, we are on a temporal face
-        const real temporal_advection = -1;
+        const real temporal_advection = 1;
         if (abs(normal_int[dim-1]*temporal_advection+1) < 1E-14) {
             // on a t^n face. Return external solution.
-            pcout << "On a t^n face" << std::endl;
             for (int s=0; s<nstate; s++) {
                 numerical_flux_dot_n[s] = -1.0 * soln_ext[s];
             }
         }else if (abs(normal_int[dim-1]*temporal_advection-1) < 1E-14) {
-            pcout << "On a t^n+1 face" << std::endl;
             // on a t^{n+1} face. Return internal solution.
             for (int s=0; s<nstate; s++) {
                 numerical_flux_dot_n[s] = soln_int[s];

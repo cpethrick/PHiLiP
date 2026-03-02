@@ -117,7 +117,7 @@ public:
                 this->velocities_inf[2] = 0.0;
             }
             assert(std::abs(this->velocities_inf.norm() - 1.0) < 1e-14);
-            temporal_advection=-1;
+            temporal_advection=1;
             apply_initial_condition=true;
         };
 
