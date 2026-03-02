@@ -67,7 +67,7 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nstate,real>
         
         for (int istate = 0; istate < nstate; ++istate){
             if (istate != nstate-2){ // skip unused velocity
-                jacobian[istate][istate]=1;
+                jacobian[istate][istate]=temporal_advection;
             }
         }
     }
@@ -269,6 +269,9 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim, nstate, real>
         + rho_log * (vel_avg[0]*vel_avg[0] - 0.25 * (vel1[0]+vel2[0]));
     if (dim==3)
         conv_num_split_flux[nstate-1][dim-1] += rho_log * (vel_avg[1]*vel_avg[1] - 0.25 * (vel1[1]+vel2[1]));
+    for (int istate = 0; istate < nstate; ++istate){
+        conv_num_split_flux[istate][dim-1]*= temporal_advection;
+    }
 
    return conv_num_split_flux; 
 
