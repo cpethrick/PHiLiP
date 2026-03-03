@@ -4589,6 +4589,12 @@ void DGBase<dim,real,MeshType>::set_current_time(const real current_time_input)
     this->current_time = current_time_input;
 }
 
+template <int dim, typename real, typename MeshType>
+real DGBase<dim,real,MeshType>::get_current_time()
+{
+    return this->current_time;
+}
+
 #if PHILIP_DIM!=1
 template class DGBase <PHILIP_DIM, double, dealii::parallel::distributed::Triangulation<PHILIP_DIM>>;
 #endif

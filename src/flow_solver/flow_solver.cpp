@@ -447,7 +447,41 @@ int FlowSolver<dim,nstate>::run() const
     //----------------------------------------------------
     // Select unsteady or steady-state
     //----------------------------------------------------
-    if(flow_solver_param.steady_state == false){
+    if (flow_solver_param.steady_state) {
+        //----------------------------------------------------
+        // Steady-state solution
+        //----------------------------------------------------
+        using ODEEnum = Parameters::ODESolverParam::ODESolverEnum;
+        if(flow_solver_param.steady_state_polynomial_ramping && (ode_param.ode_solver_type != ODEEnum::pod_galerkin_solver && ode_param.ode_solver_type != ODEEnum::pod_petrov_galerkin_solver && ode_param.ode_solver_type != ODEEnum::hyper_reduced_petrov_galerkin_solver)) {
+            ode_solver->initialize_steady_polynomial_ramping(poly_degree);
+        }
+
+        ode_solver->steady_state();
+        flow_solver_case->steady_state_postprocessing(dg);
+
+        dg->output_results_vtk(9999,ode_solver->current_time);
+        const bool use_isotropic_mesh_adaptation = (all_param.mesh_adaptation_param.total_mesh_adaptation_cycles > 0) 
+                                        && (all_param.mesh_adaptation_param.mesh_adaptation_type != Parameters::MeshAdaptationParam::MeshAdaptationType::anisotropic_adaptation);
+        
+        if(use_isotropic_mesh_adaptation)
+        {
+            perform_steady_state_mesh_adaptation();
+        }
+    } else if (flow_solver_param.is_decoupled_spacetime) {
+        //----------------------------------------------------
+        //                 DECOUPLED TIMESLABS 
+        //----------------------------------------------------
+
+        double dt = 0.25; //hard code for now
+        while (dg->get_current_time() < flow_solver_param.final_time -1E-12) {
+            ode_solver->steady_state();
+            dg->set_current_time(dg->get_current_time()+dt);
+            // reverse temporal advection here
+            pcout << "Current DG time: " << dg->get_current_time() << std::endl;
+        }
+
+
+    } else {
         //----------------------------------------------------
         //                  UNSTEADY FLOW
         //----------------------------------------------------
@@ -627,27 +661,8 @@ int FlowSolver<dim,nstate>::run() const
         const double max_wall_time = dealii::Utilities::MPI::max(timer.wall_time(), this->mpi_communicator);
         pcout << "Elapsed wall time (mpi max): " << max_wall_time << " seconds." << std::endl;
         pcout << "Elapsed CPU time: " << timer.cpu_time() << " seconds." << std::endl;
-    } else {
-        //----------------------------------------------------
-        // Steady-state solution
-        //----------------------------------------------------
-        using ODEEnum = Parameters::ODESolverParam::ODESolverEnum;
-        if(flow_solver_param.steady_state_polynomial_ramping && (ode_param.ode_solver_type != ODEEnum::pod_galerkin_solver && ode_param.ode_solver_type != ODEEnum::pod_petrov_galerkin_solver && ode_param.ode_solver_type != ODEEnum::hyper_reduced_petrov_galerkin_solver)) {
-            ode_solver->initialize_steady_polynomial_ramping(poly_degree);
-        }
+    } 
 
-        ode_solver->steady_state();
-        flow_solver_case->steady_state_postprocessing(dg);
-        
-        dg->output_results_vtk(9999,ode_solver->current_time);
-        const bool use_isotropic_mesh_adaptation = (all_param.mesh_adaptation_param.total_mesh_adaptation_cycles > 0) 
-                                        && (all_param.mesh_adaptation_param.mesh_adaptation_type != Parameters::MeshAdaptationParam::MeshAdaptationType::anisotropic_adaptation);
-        
-        if(use_isotropic_mesh_adaptation)
-        {
-            perform_steady_state_mesh_adaptation();
-        }
-    }
     pcout << "done." << std::endl;
     return 0;
 }
