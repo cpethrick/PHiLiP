@@ -59,7 +59,8 @@ std::array<real, nstate> NumericalFluxConvective<dim,nspecies,nstate,real>
         } else {
             // I expect that the temporal face would always have a unit normal of [ 0*zeros(spatial_dim) +/-1]
             // Including a break statement here in case this assumption is incorrect.
-            std::cout << "ERROR: Space-time normal is not parallel to temporal axis." << std::endl
+            std::cout << "ERROR: Space-time normal " << normal_int << std::endl
+                      << "is not parallel to temporal axis." << std::endl
                       << "Unexpected behaviour; aborting." << std::endl;
             std::abort();
         }

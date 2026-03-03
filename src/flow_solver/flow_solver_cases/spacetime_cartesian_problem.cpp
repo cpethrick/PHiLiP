@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include "mesh/grids/straight_semiperiodic_cube.hpp"
+#include "mesh/gmsh_reader.hpp"
+#include <deal.II/grid/grid_tools.h>
 
 namespace PHiLiP {
 
@@ -20,13 +22,44 @@ SpacetimeCartesianProblem<dim,nspecies,nstate>::SpacetimeCartesianProblem(const 
         , domain_size(pow(this->domain_right - this->domain_left, dim))
 { }
 
+// Helper function to scale the width of the time-slab
+dealii::Point<2> scale_timeslab(const double factor, const dealii::Point<2> &in)
+{
+    return dealii::Point<2,double>(in(0), in(1) * factor);
+}
 
 template <int dim, int nspecies, int nstate>
 std::shared_ptr<Triangulation> SpacetimeCartesianProblem<dim,nspecies,nstate>::generate_grid() const
 {
     if(this->all_param.flow_solver_param.use_gmsh_mesh) {
-        this->pcout << "ERROR: gmsh mesh not configured for this flow case." << std::endl;
-        std::abort();
+        if constexpr(dim==2){
+            const std::string mesh_filename = this->all_param.flow_solver_param.input_mesh_filename + std::string(".msh");
+            this->pcout << "- Generating grid using input mesh: " << mesh_filename << std::endl;
+            std::shared_ptr <HighOrderGrid<dim, double>> cube_mesh = read_gmsh<dim, dim>(
+                mesh_filename, 
+                this->all_param.flow_solver_param.use_periodic_BC_in_x, 
+                this->all_param.flow_solver_param.use_periodic_BC_in_y, 
+                this->all_param.flow_solver_param.use_periodic_BC_in_z, 
+                this->all_param.flow_solver_param.x_periodic_id_face_1, 
+                this->all_param.flow_solver_param.x_periodic_id_face_2, 
+                this->all_param.flow_solver_param.y_periodic_id_face_1, 
+                this->all_param.flow_solver_param.y_periodic_id_face_2, 
+                this->all_param.flow_solver_param.z_periodic_id_face_1, 
+                this->all_param.flow_solver_param.z_periodic_id_face_2,
+                this->all_param.flow_solver_param.mesh_reader_verbose_output,
+                this->all_param.do_renumber_dofs);
+
+            const double factor = 2.0 / cube_mesh->triangulation->n_cells();
+            // See deal.ii tutorial steps 49 and 53 for details on transforming a mesh
+            dealii::GridTools::transform(std::bind( scale_timeslab,
+                        std::cref(factor),
+                        std::placeholders::_1 ),
+                    *(cube_mesh->triangulation));
+            return cube_mesh->triangulation;
+        }else{
+            this->pcout << "ERROR: gmsh mesh not configured for this flow case." << std::endl;
+            std::abort();
+        }
     } else {
         this->pcout << "- Generating grid using dealii GridGenerator" << std::endl;
         

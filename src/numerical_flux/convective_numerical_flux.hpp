@@ -265,7 +265,7 @@ protected:
     /// Upwind convective numerical flux object
     std::unique_ptr< RiemannSolverDissipation<dim,nspecies,nstate,real> > riemann_solver_dissipation;
 
-    /// Flag identifyign space-time discretizations
+    /// Flag identifying space-time discretizations
     const bool is_spacetime;
 
 public:
