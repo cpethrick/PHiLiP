@@ -1179,13 +1179,16 @@ public:
 
     /// Sets the current time within DG to be used for unsteady source terms.
     void set_current_time(const real current_time_input);
+    
+    /// Gets the current time within DG.
+    real get_current_time();
 
     /// Computational time for assembling residual.
     double assemble_residual_time;
 
 protected:
     /// The current time set in set_current_time()
-    real current_time;
+    real current_time=0;
     /// Continuous distribution of artificial dissipation.
     const dealii::FE_Q<dim> fe_q_artificial_dissipation;
 

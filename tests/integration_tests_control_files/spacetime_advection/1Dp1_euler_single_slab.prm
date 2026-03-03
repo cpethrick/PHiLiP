@@ -53,7 +53,7 @@ subsection ODE solver
 end
 
 subsection manufactured solution convergence study
-  set use_manufactured_source_term = true
+  #set use_manufactured_source_term = true
   set manufactured_solution_type = euler_spacetime
 end
 
@@ -63,7 +63,8 @@ subsection time_refinement_study
 end
 subsection flow_solver
     set flow_case_type = spacetime_cartesian
-    set steady_state = true
+    #set steady_state = true
+    set is_decoupled_spacetime = true
     set poly_degree = 2
     subsection grid
       set use_gmsh_mesh = true
@@ -77,6 +78,6 @@ subsection flow_solver
       #set grid_right_bound = 2.0
       #set number_of_grid_elements_per_dimension = 16
     end
-    set final_time = 0.004 #small such that we don't actually take a step
+    set final_time = 2.0
 end
 
