@@ -4666,8 +4666,8 @@ void DGBase<dim,nspecies,real,MeshType>::set_current_time(const real current_tim
     this->current_time = current_time_input;
 }
 
-template <int dim, typename real, typename MeshType>
-real DGBase<dim,real,MeshType>::get_current_time()
+template <int dim, int nspecies, typename real, typename MeshType>
+real DGBase<dim,nspecies,real,MeshType>::get_current_time()
 {
     return this->current_time;
 }

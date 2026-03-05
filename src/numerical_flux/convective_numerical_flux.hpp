@@ -269,6 +269,10 @@ protected:
     const bool is_spacetime;
 
 public:
+
+    /// Direction for temporal advection (unused if is_spacetime=false)
+    real temporal_advection=1;
+
     /// Returns the convective numerical flux at an interface.
     std::array<real, nstate> evaluate_flux (
         const std::array<real, nstate> &soln_int,

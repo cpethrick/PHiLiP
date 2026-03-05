@@ -491,7 +491,9 @@ int FlowSolver<dim,nspecies,nstate>::run() const
         while (dg->get_current_time() < flow_solver_param.final_time -1E-12) {
             ode_solver->steady_state();
             dg->set_current_time(dg->get_current_time()+dt);
-            // reverse temporal advection here
+            // Within the flow solver case object, access space-time physics and reverse the temporal advection direction.
+            // Thus, the t^n+1 face becomes the t^n face, and vice versa.
+            flow_solver_case->modify_dg_object(dg);
             pcout << "Current DG time: " << dg->get_current_time() << std::endl;
         }
 

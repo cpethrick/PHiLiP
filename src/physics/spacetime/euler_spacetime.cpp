@@ -32,7 +32,7 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate
 
     // temporal
     for (int istate = 0; istate < nstate; ++istate){
-        conv_flux[istate][dim-1] += temporal_advection * conservative_soln[istate]; 
+        conv_flux[istate][dim-1] += this->temporal_advection * conservative_soln[istate]; 
     }
 
     return conv_flux;
@@ -81,7 +81,7 @@ dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nspecies,nstate,real>
         
         for (int istate = 0; istate < nstate; ++istate){
             if (istate != nstate-2){ // skip unused velocity
-                jacobian[istate][istate]=temporal_advection;
+                jacobian[istate][istate]=this->temporal_advection;
             }
         }
     }
@@ -149,18 +149,21 @@ boundary_purely_upwind(
     std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
 
-    if (abs(normal_int[dim-1]*temporal_advection-1) < 1E-14) {
+    //this->pcout << "Boundary upwind";
+    if (abs(normal_int[dim-1]*this->temporal_advection-1) < 1E-14) {
+        //this->pcout <<" Outflow at " << pos[0] << " " << pos[1] << std::endl;
         // normal in temporal dimension = 1: this boundary will be pure convective outflow
         soln_bc = soln_int;
         soln_grad_bc = soln_grad_int;
-    } else if (  (abs(normal_int[dim-1]*temporal_advection+1) < 1E-14)  && apply_initial_condition  ){
+    } else if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && this->apply_initial_condition  ){
+        //this->pcout <<" Inflow at " << pos[0] << " " << pos[1] << std::endl;
         // normal in temporal dimension = -1: this boundary will be pure upwinding
         // of a Dirichlet boundary
         const real pi = atan(1.0)*4;
         
         const real x = pos[0];
         const real y = (dim == 2) ? 0 : pos[1];
-        const real t = pos[dim-1]; //time zero
+        const real t = pos[dim-1];
 
 
         // Density
@@ -284,7 +287,7 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate
     if (dim==3)
         conv_num_split_flux[nstate-1][dim-1] += rho_log * (vel_avg[1]*vel_avg[1] - 0.25 * (vel1[1]+vel2[1]));
     for (int istate = 0; istate < nstate; ++istate){
-        conv_num_split_flux[istate][dim-1]*= temporal_advection;
+        conv_num_split_flux[istate][dim-1]*= this->temporal_advection;
     }
 
    return conv_num_split_flux; 

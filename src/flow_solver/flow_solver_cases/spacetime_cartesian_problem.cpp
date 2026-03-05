@@ -5,6 +5,7 @@
 #include "mesh/grids/straight_semiperiodic_cube.hpp"
 #include "mesh/gmsh_reader.hpp"
 #include <deal.II/grid/grid_tools.h>
+#include "dg/dg_base_state.hpp"
 
 namespace PHiLiP {
 
@@ -80,6 +81,36 @@ template <int dim, int nspecies, int nstate>
 void SpacetimeCartesianProblem<dim,nspecies,nstate>::display_additional_flow_case_specific_parameters() const
 {
     // Empty for now.
+}
+
+template <int dim, int nspecies, int nstate>
+void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::shared_ptr <DGBase<dim,nspecies,double>> dg) const
+{
+    // Dynamic cast to DGBaseState to gain access to dg_state->->conv_num_flux<> and dg_base_state->pde_physics<>
+    std::shared_ptr <DGBaseState<dim,nspecies,nstate,double>> dg_state = std::dynamic_pointer_cast<DGBaseState<dim,nspecies,nstate,double>> (dg);
+
+    // Go through all AD types & modify temporal advection direction
+    dg_state->pde_physics_double->temporal_advection *= -1;
+    dg_state->pde_physics_fad->temporal_advection *= -1;
+    dg_state->pde_physics_rad->temporal_advection *= -1;
+    dg_state->pde_physics_fad_fad->temporal_advection *= -1;
+    dg_state->pde_physics_rad_fad->temporal_advection *= -1;
+
+    dg_state->conv_num_flux_double->temporal_advection *= -1;
+    dg_state->conv_num_flux_fad->temporal_advection *= -1;
+    dg_state->conv_num_flux_rad->temporal_advection *= -1;
+    dg_state->conv_num_flux_fad_fad->temporal_advection *= -1;
+    dg_state->conv_num_flux_rad_fad->temporal_advection *= -1;
+
+    if (dg->get_current_time() == 0.0){
+        // No longer need to apply IC
+        dg_state->pde_physics_double->apply_initial_condition=false;
+        dg_state->pde_physics_fad->apply_initial_condition=false;
+        dg_state->pde_physics_rad->apply_initial_condition=false;
+        dg_state->pde_physics_fad_fad->apply_initial_condition=false;
+        dg_state->pde_physics_rad_fad->apply_initial_condition=false;
+    }
+
 }
 
 #if PHILIP_DIM>1

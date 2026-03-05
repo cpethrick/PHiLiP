@@ -269,6 +269,15 @@ public:
     /** Type double so that typecasting works with all real types */
     const double BIG_NUMBER = 1e100;
     
+    /// Temporal advection direction
+    /** Consider moving to derived class (currently here to avoid dynamic casting)
+     */
+    real temporal_advection=1.0;
+    /// Flag to apply analytical IC at the t^n surface of spacetime discretization
+    /** Consider moving to derived class (currently here to avoid dynamic casting)
+     */
+    bool apply_initial_condition=true;
+
 protected:
     /// ConditionalOStream.
     /** Used as std::cout, but only prints if mpi_rank == 0
