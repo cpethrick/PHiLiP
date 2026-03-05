@@ -376,6 +376,14 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           dealii::Patterns::Bool(),
                           "Flag to adjust the last timestep such that the simulation "
                           "ends exactly at final_time. True by default.");
+
+        prm.declare_entry("is_decoupled_spacetime", "false",
+                          dealii::Patterns::Bool(),
+                          "Flag to solve as a series of decoupled space-time slabs. "
+                          "The flow solver assumes that the mesh is input as a <spatial+temporal> dim "
+                          "mesh with unit thickness in the temporal (last) dimension. "
+                          "The mesh must be created with only one element in the temporal dimension. "
+                          "Note, use the steady_state parameter if solving multiple timeslabs simultaneously.");
     }
     prm.leave_subsection();
 }
@@ -548,6 +556,7 @@ void FlowSolverParam::parse_parameters(dealii::ParameterHandler &prm)
         prm.leave_subsection();
 
         end_exactly_at_final_time = prm.get_bool("end_exactly_at_final_time");
+        is_decoupled_spacetime = prm.get_bool("is_decoupled_spacetime");
     }
     prm.leave_subsection();
 }

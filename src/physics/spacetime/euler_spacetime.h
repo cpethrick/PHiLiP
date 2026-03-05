@@ -116,12 +116,12 @@ public:
                 this->velocities_inf[2] = 0.0;
             }
             assert(std::abs(this->velocities_inf.norm() - 1.0) < 1e-14);
-            temporal_advection=1;
-            apply_initial_condition=true;
+            this->temporal_advection=1;
+            this->apply_initial_condition=true;
         };
 
-    real temporal_advection;
-    bool apply_initial_condition;
+    //real temporal_advection;
+    //bool apply_initial_condition;
     
     /// Convective flux: \f$ \mathbf{F}_{conv} \f$
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_flux (

@@ -173,6 +173,8 @@ public:
     std::string output_flow_field_files_directory_name; ///< Name of directory for writing flow field files
 
     bool end_exactly_at_final_time; ///< Flag to adjust the last timestep such that the simulation ends exactly at final_time
+    
+    bool is_decoupled_spacetime; ///< Flag to use the decoupled space-time flowsolver.
 
     /// Declares the possible variables and sets the defaults.
     static void declare_parameters (dealii::ParameterHandler &prm);

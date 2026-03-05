@@ -22,6 +22,14 @@ public:
     /// Function to generate the grid
     std::shared_ptr<Triangulation> generate_grid() const override;
     
+    /// Modifies parameters of DG object during flow solver routines
+    /** Used to modify the direction of temporal advection
+     *  within dg->physics
+     *  reverse the temporal advection direction.
+     *  Thus, the t^n+1 face becomes the t^n face, and vice versa.
+     */
+    void modify_dg_object(std::shared_ptr <DGBase<dim, double>> dg) const override;
+    
 protected:
     const int number_of_cells_per_direction; ///< Number of cells per direction for the grid
     const double domain_left; ///< Domain left-boundary value for generating the grid

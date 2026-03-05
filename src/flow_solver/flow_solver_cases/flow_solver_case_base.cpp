@@ -235,6 +235,11 @@ double FlowSolverCaseBase<dim, nstate>::get_time_step() const
     return this->time_step;
 }
 
+template <int dim, int nstate>
+void FlowSolverCaseBase<dim, nstate>::modify_dg_object(std::shared_ptr <DGBase<dim, double>> /*dg*/) const
+{
+    // Do nothing by default
+}
 template class FlowSolverCaseBase<PHILIP_DIM,1>;
 template class FlowSolverCaseBase<PHILIP_DIM,2>;
 template class FlowSolverCaseBase<PHILIP_DIM,3>;

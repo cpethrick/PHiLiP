@@ -70,6 +70,9 @@ public:
     /// Setter for time step
     void set_time_step(const double time_step_input);
 
+    /// Modifies parameters of DG object during flow solver routines
+    virtual void modify_dg_object(std::shared_ptr <DGBase<dim, double>> dg) const;
+
 protected:
     const Parameters::AllParameters all_param; ///< All parameters
     const MPI_Comm mpi_communicator; ///< MPI communicator.
