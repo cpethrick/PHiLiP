@@ -5,8 +5,8 @@
 namespace PHiLiP {
 namespace Physics {
 
-template <int dim, int nstate, typename real>
-std::array<dealii::Tensor<1,dim,real>,nstate> AdvectionSpacetime<dim,nstate,real>
+template <int dim, int nspecies, int nstate, typename real>
+std::array<dealii::Tensor<1,dim,real>,nstate> AdvectionSpacetime<dim,nspecies,nstate,real>
 ::convective_flux (const std::array<real,nstate> &solution) const
 {
     std::array<dealii::Tensor<1,dim,real>,nstate> conv_flux;
@@ -24,8 +24,8 @@ std::array<dealii::Tensor<1,dim,real>,nstate> AdvectionSpacetime<dim,nstate,real
     return conv_flux;
     
 }
-template <int dim, int nstate, typename real>
-dealii::Tensor<1,dim-1,real> AdvectionSpacetime<dim,nstate,real>
+template <int dim, int nspecies, int nstate, typename real>
+dealii::Tensor<1,dim-1,real> AdvectionSpacetime<dim,nspecies,nstate,real>
 ::advection_speed () const
 {
     dealii::Tensor<1,dim-1,real> advection_speed;
@@ -35,8 +35,8 @@ dealii::Tensor<1,dim-1,real> AdvectionSpacetime<dim,nstate,real>
     return advection_speed;
 }
 
-template <int dim, int nstate, typename real>
-std::array<real,nstate> AdvectionSpacetime<dim,nstate,real>
+template <int dim, int nspecies, int nstate, typename real>
+std::array<real,nstate> AdvectionSpacetime<dim,nspecies,nstate,real>
 ::convective_eigenvalues (
     const std::array<real,nstate> &/*solution*/,
     const dealii::Tensor<1,dim,real> &normal) const
@@ -53,8 +53,8 @@ std::array<real,nstate> AdvectionSpacetime<dim,nstate,real>
     return eig;
 }
 
-template <int dim, int nstate, typename real>
-real AdvectionSpacetime<dim,nstate,real>
+template <int dim, int nspecies, int nstate, typename real>
+real AdvectionSpacetime<dim,nspecies,nstate,real>
 ::max_convective_eigenvalue (const std::array<real,nstate> &/*soln*/) const
 {
     const dealii::Tensor<1,dim-1,real> advection_speed = this->advection_speed();
@@ -66,10 +66,10 @@ real AdvectionSpacetime<dim,nstate,real>
     return max_eig;
 }
 
-template class AdvectionSpacetime < PHILIP_DIM, 1, double >;
-template class AdvectionSpacetime < PHILIP_DIM, 1, FadType>;
-template class AdvectionSpacetime < PHILIP_DIM, 1, RadType>;
-template class AdvectionSpacetime < PHILIP_DIM, 1, FadFadType>;
-template class AdvectionSpacetime < PHILIP_DIM, 1, RadFadType>;
+template class AdvectionSpacetime < PHILIP_DIM, PHILIP_SPECIES, 1, double >;
+template class AdvectionSpacetime < PHILIP_DIM, PHILIP_SPECIES, 1, FadType>;
+template class AdvectionSpacetime < PHILIP_DIM, PHILIP_SPECIES, 1, RadType>;
+template class AdvectionSpacetime < PHILIP_DIM, PHILIP_SPECIES, 1, FadFadType>;
+template class AdvectionSpacetime < PHILIP_DIM, PHILIP_SPECIES, 1, RadFadType>;
 } // Physics namespace
 } // PHiLiP namespace

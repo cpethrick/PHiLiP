@@ -28,9 +28,9 @@ const double TOLERANCE = 1E-6;
 using namespace std;
 //namespace PHiLiP {
 
-template <int dim, int nstate>
+template <int dim, int nspecies, int nstate>
 void assemble_weak_auxiliary_volume(
-    std::shared_ptr < PHiLiP::DGStrong<dim,nstate,double> > &dg,
+    std::shared_ptr < PHiLiP::DGStrong<dim,nspecies,nstate,double> > &dg,
     const std::vector<dealii::types::global_dof_index> &current_dofs_indices,
     const unsigned int poly_degree,
     PHiLiP::OPERATOR::basis_functions<dim,2*dim> &soln_basis,
@@ -87,9 +87,9 @@ void assemble_weak_auxiliary_volume(
         }
     }
 }
-template <int dim, int nstate>
+template <int dim, int nspecies, int nstate>
 void assemble_face_term_auxiliary_weak(
-    std::shared_ptr < PHiLiP::DGStrong<dim,nstate,double> > &dg,
+    std::shared_ptr < PHiLiP::DGStrong<dim,nspecies,nstate,double> > &dg,
     const unsigned int iface, const unsigned int neighbor_iface,
     const dealii::types::global_dof_index /*current_cell_index*/,
     const dealii::types::global_dof_index /*neighbor_cell_index*/,
@@ -136,11 +136,11 @@ void assemble_face_term_auxiliary_weak(
         soln_at_surf_q_int[istate].resize(n_face_quad_pts);
         soln_at_surf_q_ext[istate].resize(n_face_quad_pts);
         //solve soln at facet cubature nodes
-        soln_basis_int.matrix_vector_mult_surface_1D(iface,
+        soln_basis_int.matrix_vector_mult_surface_1D({true, false, false},iface,
                                                      soln_coeff_int[istate], soln_at_surf_q_int[istate],
                                                      soln_basis_int.oneD_surf_operator,
                                                      soln_basis_int.oneD_vol_operator);
-        soln_basis_ext.matrix_vector_mult_surface_1D(neighbor_iface,
+        soln_basis_ext.matrix_vector_mult_surface_1D({true, false, false}, neighbor_iface,
                                                      soln_coeff_ext[istate], soln_at_surf_q_ext[istate],
                                                      soln_basis_ext.oneD_surf_operator,
                                                      soln_basis_ext.oneD_vol_operator);
@@ -204,7 +204,7 @@ void assemble_face_term_auxiliary_weak(
         for(int idim=0; idim<dim; idim++){
             std::vector<double> rhs_int(n_shape_fns_int);
 
-            soln_basis_int.inner_product_surface_1D(iface, 
+            soln_basis_int.inner_product_surface_1D({true, false, false}, iface, 
                                                 surf_num_flux_int_dot_normal[istate][idim],
                                                 surf_quad_weights, rhs_int,
                                                 soln_basis_int.oneD_surf_operator,
@@ -216,7 +216,7 @@ void assemble_face_term_auxiliary_weak(
             }
             std::vector<double> rhs_ext(n_shape_fns_ext);
 
-            soln_basis_ext.inner_product_surface_1D(neighbor_iface, 
+            soln_basis_ext.inner_product_surface_1D({true, false, false}, neighbor_iface, 
                                                 surf_num_flux_ext_dot_normal[istate][idim],
                                                 surf_quad_weights, rhs_ext,
                                                 soln_basis_ext.oneD_surf_operator,
@@ -239,6 +239,7 @@ int main (int argc, char * argv[])
     using namespace PHiLiP;
     std::cout << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << std::scientific;
     const int dim = PHILIP_DIM;
+    const int nspecies = 1;
     dealii::ParameterHandler parameter_handler;
     PHiLiP::Parameters::AllParameters::declare_parameters (parameter_handler);
     dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);
@@ -297,10 +298,10 @@ int main (int argc, char * argv[])
             //choose NS equations
             all_parameters_new.pde_type = PDE_enum::navier_stokes;
             all_parameters_new.use_weak_form = false;
-            all_parameters_new.use_periodic_bc = true;
+            all_parameters_new.all_boundaries_are_periodic = true;
             all_parameters_new.ode_solver_param.ode_solver_type = ODE_enum::runge_kutta_solver;//auxiliary only works explicit for now
             all_parameters_new.use_inverse_mass_on_the_fly = true;
-            std::shared_ptr < PHiLiP::DGStrong<dim,dim+2,double> > dg = std::make_shared< PHiLiP::DGStrong<dim,dim+2,real,Triangulation> >(&all_parameters_new, poly_degree, poly_degree, grid_degree, grid);
+            std::shared_ptr < PHiLiP::DGStrong<dim,nspecies,dim+2,double> > dg = std::make_shared< PHiLiP::DGStrong<dim,nspecies,dim+2,real,Triangulation> >(&all_parameters_new, poly_degree, poly_degree, grid_degree, grid);
             dg->allocate_system (false,false,false);
             if(!all_parameters_new.use_inverse_mass_on_the_fly){
                 dg->evaluate_mass_matrices(true);
@@ -344,7 +345,6 @@ int main (int argc, char * argv[])
             //loop over cells and compare rhs strong versus rhs weak
             for (auto current_cell = dg->dof_handler.begin_active(); current_cell!=dg->dof_handler.end(); ++current_cell, ++metric_cell) {
                 if (!current_cell->is_locally_owned()) continue;
-            
                 //get mapping support points
                 std::vector<dealii::types::global_dof_index> current_metric_dofs_indices(n_metric_dofs);
                 metric_cell->get_dof_indices (current_metric_dofs_indices);
@@ -397,7 +397,7 @@ int main (int argc, char * argv[])
                     metric_oper,
                     rhs_strong);
                 //assemble weak DG auxiliary eq
-                assemble_weak_auxiliary_volume<PHILIP_DIM,PHILIP_DIM+2>(
+                assemble_weak_auxiliary_volume<PHILIP_DIM, PHILIP_SPECIES,PHILIP_DIM+PHILIP_SPECIES+1>(
                     dg,
                     current_dofs_indices,
                     poly_degree,
@@ -438,11 +438,17 @@ int main (int argc, char * argv[])
                         }
                         soln_coeff_ext[istate][ishape] = dg->solution[neighbor_dofs_indices[idof]];
                     }
-                     
+
+                    //Check interior quadrature point ordering
+                    std::vector<bool> face_orientation_int = {current_cell->face_orientation(iface), current_cell->face_rotation(iface), current_cell->face_flip(iface)};
+                    //Check exterior quadrature point ordering
+                    std::vector<bool> face_orientation_ext = {neighbor_cell->face_orientation(neighbor_iface), neighbor_cell->face_rotation(neighbor_iface), neighbor_cell->face_flip(neighbor_iface)};
+                    
                     //evaluate facet auxiliary RHS
                     dg->assemble_face_term_auxiliary_equation<double> (
                         iface, neighbor_iface, 
                         current_cell_index, neighbor_cell_index,
+                        face_orientation_int, face_orientation_ext,
                         soln_coeff, soln_coeff_ext,
                         poly_degree, poly_degree,
                         basis, basis,
@@ -455,7 +461,7 @@ int main (int argc, char * argv[])
                     //assemble facet auxiliary WEAK DG RHS
                     //note that for the ext rhs, this function will return the DG strong 
                     //facet rhs in rhs_ext_weak to directly compare to the above's neighbour
-                    assemble_face_term_auxiliary_weak<PHILIP_DIM,PHILIP_DIM+2> (
+                    assemble_face_term_auxiliary_weak<PHILIP_DIM, PHILIP_SPECIES,PHILIP_DIM+PHILIP_SPECIES+1> (
                         dg,
                         iface, neighbor_iface, 
                         current_cell_index, neighbor_cell_index,

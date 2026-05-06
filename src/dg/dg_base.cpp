@@ -56,19 +56,19 @@ unsigned int d2R_mult;
 
 namespace PHiLiP {
 
-template <int dim, typename real, typename MeshType>
-DGBase<dim,real,MeshType>::DGBase(
+template <int dim, int nspecies, typename real, typename MeshType>
+DGBase<dim,nspecies,real,MeshType>::DGBase(
     const int nstate_input,
     const Parameters::AllParameters *const parameters_input,
     const unsigned int degree,
     const unsigned int max_degree_input,
     const unsigned int grid_degree_input,
     const std::shared_ptr<Triangulation> triangulation_input)
-    : DGBase<dim,real,MeshType>(nstate_input, parameters_input, degree, max_degree_input, grid_degree_input, triangulation_input, this->create_collection_tuple(max_degree_input, nstate_input, parameters_input))
+    : DGBase<dim,nspecies,real,MeshType>(nstate_input, parameters_input, degree, max_degree_input, grid_degree_input, triangulation_input, this->create_collection_tuple(max_degree_input, nstate_input, parameters_input))
 { }
 
-template <int dim, typename real, typename MeshType>
-DGBase<dim,real,MeshType>::DGBase(
+template <int dim, int nspecies, typename real, typename MeshType>
+DGBase<dim,nspecies,real,MeshType>::DGBase(
     const int nstate_input,
     const Parameters::AllParameters *const parameters_input,
     const unsigned int degree,
@@ -108,8 +108,8 @@ DGBase<dim,real,MeshType>::DGBase(
 
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::reinit()
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::reinit()
 {
     high_order_grid->reinit();
 
@@ -117,8 +117,8 @@ void DGBase<dim,real,MeshType>::reinit()
     set_all_cells_fe_degree(initial_degree);
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::set_high_order_grid(std::shared_ptr<HighOrderGrid<dim,real,MeshType>> new_high_order_grid)
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::set_high_order_grid(std::shared_ptr<HighOrderGrid<dim,real,MeshType>> new_high_order_grid)
 {
     high_order_grid = new_high_order_grid;
     triangulation = high_order_grid->triangulation;
@@ -128,7 +128,7 @@ void DGBase<dim,real,MeshType>::set_high_order_grid(std::shared_ptr<HighOrderGri
 }
 
 
-template <int dim, typename real, typename MeshType>
+template <int dim, int nspecies, typename real, typename MeshType>
 std::tuple<
         //dealii::hp::MappingCollection<dim>, // Mapping
         dealii::hp::FECollection<dim>, // Solution FE
@@ -139,7 +139,7 @@ std::tuple<
         dealii::hp::FECollection<1>, // Solution FE 1D for a single state
         dealii::hp::FECollection<1>,  // Collocated flux basis 1D for Strong
         dealii::hp::QCollection<1> >// 1D quadrature for strong form
-DGBase<dim,real,MeshType>::create_collection_tuple(
+DGBase<dim,nspecies,real,MeshType>::create_collection_tuple(
     const unsigned int max_degree, 
     const int nstate, 
     const Parameters::AllParameters *const parameters_input) const
@@ -260,9 +260,8 @@ DGBase<dim,real,MeshType>::create_collection_tuple(
     return std::make_tuple(fe_coll, volume_quad_coll, face_quad_coll, fe_coll_lagr, fe_coll_1D, fe_coll_1D_1state, fe_coll_lagr_1D, oneD_quad_coll);
 }
 
-
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::time_scale_solution_update ( dealii::LinearAlgebra::distributed::Vector<double> &solution_update, const real CFL ) const
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::time_scale_solution_update ( dealii::LinearAlgebra::distributed::Vector<double> &solution_update, const real CFL ) const
 {
     std::vector<dealii::types::global_dof_index> dofs_indices;
 
@@ -289,8 +288,8 @@ void DGBase<dim,real,MeshType>::time_scale_solution_update ( dealii::LinearAlgeb
 }
 
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::set_all_cells_fe_degree ( const unsigned int degree )
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::set_all_cells_fe_degree ( const unsigned int degree )
 {
     triangulation->prepare_coarsening_and_refinement();
     for (auto cell = dof_handler.begin_active(); cell != dof_handler.end(); ++cell)
@@ -301,8 +300,8 @@ void DGBase<dim,real,MeshType>::set_all_cells_fe_degree ( const unsigned int deg
     triangulation->execute_coarsening_and_refinement();
 }
 
-template <int dim, typename real, typename MeshType>
-unsigned int DGBase<dim,real,MeshType>::get_max_fe_degree()
+template <int dim, int nspecies, typename real, typename MeshType>
+unsigned int DGBase<dim,nspecies,real,MeshType>::get_max_fe_degree()
 {
     unsigned int max_fe_degree = 0;
 
@@ -313,8 +312,8 @@ unsigned int DGBase<dim,real,MeshType>::get_max_fe_degree()
     return dealii::Utilities::MPI::max(max_fe_degree, MPI_COMM_WORLD);
 }
 
-template <int dim, typename real, typename MeshType>
-unsigned int DGBase<dim,real,MeshType>::get_min_fe_degree()
+template <int dim, int nspecies, typename real, typename MeshType>
+unsigned int DGBase<dim,nspecies,real,MeshType>::get_min_fe_degree()
 {
     unsigned int min_fe_degree = max_degree;
 
@@ -325,8 +324,8 @@ unsigned int DGBase<dim,real,MeshType>::get_min_fe_degree()
     return dealii::Utilities::MPI::min(min_fe_degree, MPI_COMM_WORLD);
 }
 
-template <int dim, typename real, typename MeshType>
-dealii::Point<dim> DGBase<dim,real,MeshType>::coordinates_of_highest_refined_cell(bool check_for_p_refined_cell)
+template <int dim, int nspecies, typename real, typename MeshType>
+dealii::Point<dim> DGBase<dim,nspecies,real,MeshType>::coordinates_of_highest_refined_cell(bool check_for_p_refined_cell)
 {
     const int iproc = dealii::Utilities::MPI::this_mpi_process(mpi_communicator);
     const dealii::Point<dim> unit_vertex = dealii::GeometryInfo<dim>::unit_cell_vertex(0);
@@ -393,9 +392,9 @@ dealii::Point<dim> DGBase<dim,real,MeshType>::coordinates_of_highest_refined_cel
     return refined_cell_coord;
  }   
 
-template <int dim, typename real, typename MeshType>
+template <int dim, int nspecies, typename real, typename MeshType>
 template<typename DoFCellAccessorType>
-real DGBase<dim,real,MeshType>::evaluate_penalty_scaling (
+real DGBase<dim,nspecies,real,MeshType>::evaluate_penalty_scaling (
     const DoFCellAccessorType &cell,
     const int iface,
     const dealii::hp::FECollection<dim> fe_collection) const
@@ -413,9 +412,9 @@ real DGBase<dim,real,MeshType>::evaluate_penalty_scaling (
     return penalty;
 }
 
-template <int dim, typename real, typename MeshType>
+template <int dim, int nspecies, typename real, typename MeshType>
 template<typename DoFCellAccessorType1, typename DoFCellAccessorType2>
-bool DGBase<dim,real,MeshType>::current_cell_should_do_the_work (
+bool DGBase<dim,nspecies,real,MeshType>::current_cell_should_do_the_work (
     const DoFCellAccessorType1 &current_cell, 
     const DoFCellAccessorType2 &neighbor_cell) const
 {
@@ -449,9 +448,9 @@ bool DGBase<dim,real,MeshType>::current_cell_should_do_the_work (
     return false;
 }
     
-template <int dim, typename real, typename MeshType>
+template <int dim, int nspecies, typename real, typename MeshType>
 template<typename adtype>
-void DGBase<dim,real,MeshType>::assemble_cell_residual_and_ad_derivatives (
+void DGBase<dim,nspecies,real,MeshType>::assemble_cell_residual_and_ad_derivatives (
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<dim, dim, false>> &current_cell,
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<dim, dim, false>> &current_metric_cell,
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,
@@ -518,9 +517,16 @@ void DGBase<dim,real,MeshType>::assemble_cell_residual_and_ad_derivatives (
     if((this->all_parameters->use_weak_form==false) 
        && (this->all_parameters->ode_solver_param.ode_solver_type
                     == Parameters::ODESolverParam::ODESolverEnum::implicit_solver)
-       && this->use_auxiliary_eq)
+       && (this->use_auxiliary_eq || this->all_parameters->using_wall_model))
     {
-        pcout<<"ERROR: Implicit does not currently work for strong form with Auxiliary Equation. The added terms dR/dq * dq/du needs to be added. Aborting..."<<std::endl;
+        if(this->use_auxiliary_eq)
+        {
+            pcout<<"ERROR: Implicit does not currently work for strong form with Auxiliary Equation. The added terms dR/dq * dq/du needs to be added. Aborting..."<<std::endl;
+        }
+        else
+        {
+            pcout<<"ERROR: Implicit does not currently work for strong form with wall model. The Jacobian dR/du does not account for the neighboring solution at the wall. Aborting..."<<std::endl;
+        }
         std::abort();
     }
 
@@ -869,8 +875,8 @@ void DGBase<dim,real,MeshType>::assemble_cell_residual_and_ad_derivatives (
 }
 
 // Double version
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::assemble_volume_codi_taped_derivatives_ad(
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::assemble_volume_codi_taped_derivatives_ad(
     typename dealii::DoFHandler<dim>::active_cell_iterator cell,
     const dealii::types::global_dof_index                  current_cell_index,
     const std::vector<dealii::types::global_dof_index>     &soln_dofs_indices,
@@ -978,10 +984,10 @@ void DGBase<dim,real,MeshType>::assemble_volume_codi_taped_derivatives_ad(
 }
 
 // AD version
-template <int dim, typename real, typename MeshType>
+template <int dim, int nspecies, typename real, typename MeshType>
 template <typename adtype>
 typename std::enable_if<!std::is_same<adtype, double>::value,void>::type
-    DGBase<dim,real,MeshType>::assemble_volume_codi_taped_derivatives_ad(
+    DGBase<dim,nspecies,real,MeshType>::assemble_volume_codi_taped_derivatives_ad(
     typename dealii::DoFHandler<dim>::active_cell_iterator cell,
     const dealii::types::global_dof_index                  current_cell_index,
     const std::vector<dealii::types::global_dof_index>     &soln_dofs_indices,
@@ -1239,10 +1245,10 @@ typename std::enable_if<!std::is_same<adtype, double>::value,void>::type
 }
 
 /// AD version
-template <int dim, typename real, typename MeshType>
+template <int dim, int nspecies, typename real, typename MeshType>
 template <typename adtype>
 typename std::enable_if<!std::is_same<adtype, double>::value,void>::type
-    DGBase<dim,real,MeshType>::assemble_boundary_codi_taped_derivatives_ad(
+    DGBase<dim,nspecies,real,MeshType>::assemble_boundary_codi_taped_derivatives_ad(
     typename dealii::DoFHandler<dim>::active_cell_iterator cell,
     const dealii::types::global_dof_index                  current_cell_index,
     const unsigned int                                     iface,
@@ -1497,8 +1503,8 @@ typename std::enable_if<!std::is_same<adtype, double>::value,void>::type
 }
 
 // Double version
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::assemble_boundary_codi_taped_derivatives_ad(
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::assemble_boundary_codi_taped_derivatives_ad(
     typename dealii::DoFHandler<dim>::active_cell_iterator cell,
     const dealii::types::global_dof_index                  current_cell_index,
     const unsigned int                                     iface,
@@ -1600,10 +1606,10 @@ void DGBase<dim,real,MeshType>::assemble_boundary_codi_taped_derivatives_ad(
 }
 
 // AD version
-template <int dim, typename real, typename MeshType>
+template <int dim, int nspecies, typename real, typename MeshType>
 template <typename adtype>
 typename std::enable_if<!std::is_same<adtype, double>::value,void>::type
-    DGBase<dim,real,MeshType>::assemble_face_codi_taped_derivatives_ad(
+    DGBase<dim,nspecies,real,MeshType>::assemble_face_codi_taped_derivatives_ad(
     typename dealii::DoFHandler<dim>::active_cell_iterator cell,
     typename dealii::DoFHandler<dim>::active_cell_iterator neighbor_cell,
     const dealii::types::global_dof_index                  current_cell_index,
@@ -2110,8 +2116,8 @@ typename std::enable_if<!std::is_same<adtype, double>::value,void>::type
 }
 
 // Double version
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::assemble_face_codi_taped_derivatives_ad(
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::assemble_face_codi_taped_derivatives_ad(
     typename dealii::DoFHandler<dim>::active_cell_iterator cell,
     typename dealii::DoFHandler<dim>::active_cell_iterator neighbor_cell,
     const dealii::types::global_dof_index current_cell_index,
@@ -2284,9 +2290,9 @@ void DGBase<dim,real,MeshType>::assemble_face_codi_taped_derivatives_ad(
     }
 }
 
-template <int dim, typename real, typename MeshType>
+template <int dim, int nspecies, typename real, typename MeshType>
 template <typename real2>
-double DGBase<dim,real,MeshType>::getValue(const real2 &x) 
+double DGBase<dim,nspecies,real,MeshType>::getValue(const real2 &x) 
 {
     if constexpr (std::is_same<real2, double>::value) {
         return x;
@@ -2295,8 +2301,8 @@ double DGBase<dim,real,MeshType>::getValue(const real2 &x)
     }
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::automatic_differentiation_indexing_1(
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::automatic_differentiation_indexing_1(
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,
     const unsigned int n_soln_dofs, const unsigned int n_metric_dofs,
     unsigned int &w_start, unsigned int &w_end,
@@ -2322,8 +2328,8 @@ void DGBase<dim,real,MeshType>::automatic_differentiation_indexing_1(
     }
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::automatic_differentiation_indexing_2(
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::automatic_differentiation_indexing_2(
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,
     const unsigned int n_soln_dofs_int, const unsigned int n_soln_dofs_ext, const unsigned int n_metric_dofs,
     unsigned int &w_int_start, unsigned int &w_int_end, unsigned int &w_ext_start, unsigned int &w_ext_end,
@@ -2358,14 +2364,14 @@ void DGBase<dim,real,MeshType>::automatic_differentiation_indexing_2(
 }
 
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::set_dual(const dealii::LinearAlgebra::distributed::Vector<real> &dual_input)
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::set_dual(const dealii::LinearAlgebra::distributed::Vector<real> &dual_input)
 {
     dual = dual_input;
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::update_artificial_dissipation_discontinuity_sensor()
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::update_artificial_dissipation_discontinuity_sensor()
 {
     const auto mapping = (*(high_order_grid->mapping_fe_field));
     dealii::hp::MappingCollection<dim> mapping_collection(mapping);
@@ -2420,7 +2426,7 @@ void DGBase<dim,real,MeshType>::update_artificial_dissipation_discontinuity_sens
 
         // Projection quadrature.
         const dealii::QGauss<dim> projection_quadrature(degree+5);
-        std::vector< double > soln_coeff_lower = project_function<dim,double>( soln_coeff_high, fe_high, fe_lower, projection_quadrature);
+        std::vector< double > soln_coeff_lower = project_function<dim,nspecies,double>( soln_coeff_high, fe_high, fe_lower, projection_quadrature);
 
         // Quadrature used for solution difference.
         const dealii::Quadrature<dim> &quadrature = fe_values_volume.get_quadrature();
@@ -2548,8 +2554,8 @@ void DGBase<dim,real,MeshType>::update_artificial_dissipation_discontinuity_sens
     artificial_dissipation_c0.update_ghost_values();
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::reinit_operators_for_cell_residual_loop(
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::reinit_operators_for_cell_residual_loop(
     const unsigned int poly_degree_int, 
     const unsigned int poly_degree_ext, 
     const unsigned int /*grid_degree*/,
@@ -2587,15 +2593,15 @@ void DGBase<dim,real,MeshType>::reinit_operators_for_cell_residual_loop(
 
     //basis functions projection operator
     soln_basis_projection_oper_int.build_1D_volume_operator(oneD_fe_collection_1state[poly_degree_int], oneD_quadrature_collection[poly_degree_int]);
-    soln_basis_projection_oper_ext.build_1D_volume_operator(oneD_fe_collection_1state[poly_degree_int], oneD_quadrature_collection[poly_degree_int]);
+    soln_basis_projection_oper_ext.build_1D_volume_operator(oneD_fe_collection_1state[poly_degree_ext], oneD_quadrature_collection[poly_degree_ext]);
 
     //We only need to compute the most recent mapping basis since we compute interior before looping faces
     mapping_basis.build_1D_shape_functions_at_grid_nodes(high_order_grid->oneD_fe_system, high_order_grid->oneD_grid_nodes);
     mapping_basis.build_1D_shape_functions_at_flux_nodes(high_order_grid->oneD_fe_system, oneD_quadrature_collection[poly_degree_ext], oneD_face_quadrature);
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R, const double CFL_mass)
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::assemble_residual (const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R, const double CFL_mass)
 {
     dealii::deal_II_exceptions::disable_abort_on_exception(); // Allows us to catch negative Jacobians.
     Assert( !(compute_dRdW && compute_dRdX)
@@ -2748,7 +2754,8 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
         if(all_parameters->artificial_dissipation_param.add_artificial_dissipation) update_artificial_dissipation_discontinuity_sensor();
         
         // updates model variables only if there is a model
-        if(all_parameters->pde_type == Parameters::AllParameters::PartialDifferentialEquation::physics_model) update_model_variables();
+        if(all_parameters->pde_type == Parameters::AllParameters::PartialDifferentialEquation::physics_model ||
+           all_parameters->pde_type == Parameters::AllParameters::PartialDifferentialEquation::physics_model_filtered) update_model_variables();
 
         // assembles and solves for auxiliary variable if necessary.
         assemble_auxiliary_residual(compute_dRdW, compute_dRdX, compute_d2R);
@@ -2848,8 +2855,8 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
     } catch(...) {
         assembly_error = 1;
     }
+    // NOTE: To debug the code with gdb, the above 3 lines `catch(...)` may need to be commented out
     const int mpi_assembly_error = dealii::Utilities::MPI::sum(assembly_error, mpi_communicator);
-
 
     if (mpi_assembly_error != 0) {
         std::cout << "Invalid residual assembly encountered..."
@@ -2911,8 +2918,8 @@ void DGBase<dim,real,MeshType>::assemble_residual (const bool compute_dRdW, cons
 
 } // end of assemble_system_explicit ()
 
-template <int dim, typename real, typename MeshType>
-double DGBase<dim,real,MeshType>::get_residual_linfnorm () const
+template <int dim, int nspecies, typename real, typename MeshType>
+double DGBase<dim,nspecies,real,MeshType>::get_residual_linfnorm () const
 {
     pcout << "Evaluating residual Linf-norm..." << std::endl;
     const auto mapping = (*(high_order_grid->mapping_fe_field));
@@ -2959,8 +2966,8 @@ double DGBase<dim,real,MeshType>::get_residual_linfnorm () const
 }
 
 
-template <int dim, typename real, typename MeshType>
-double DGBase<dim,real,MeshType>::get_residual_l2norm () const
+template <int dim, int nspecies, typename real, typename MeshType>
+double DGBase<dim,nspecies,real,MeshType>::get_residual_l2norm () const
 {
 
     //return get_residual_linfnorm ();
@@ -3017,8 +3024,8 @@ double DGBase<dim,real,MeshType>::get_residual_l2norm () const
     return std::sqrt(mpi_residual_l2_norm) / mpi_domain_volume;
 }
 
-template <int dim, typename real, typename MeshType>
-unsigned int DGBase<dim,real,MeshType>::n_dofs () const
+template <int dim, int nspecies, typename real, typename MeshType>
+unsigned int DGBase<dim,nspecies,real,MeshType>::n_dofs () const
 {
     return dof_handler.n_dofs();
 }
@@ -3190,8 +3197,10 @@ public:
 
 
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::output_face_results_vtk (const unsigned int cycle, const double current_time)// const
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::output_face_results_vtk (const unsigned int cycle, const double current_time, 
+                                                    const bool output_time_averaged_solution,
+                                                    const bool output_fluctuating_quantities)// const
 {
 
     DataOutEulerFaces<dim, dealii::DoFHandler<dim>> data_out;
@@ -3226,8 +3235,16 @@ void DGBase<dim,real,MeshType>::output_face_results_vtk (const unsigned int cycl
 
 
     // Let the physics post-processor determine what to output.
-    const std::unique_ptr< dealii::DataPostprocessor<dim> > post_processor = Postprocess::PostprocessorFactory<dim>::create_Postprocessor(all_parameters);
-    data_out.add_data_vector (solution, *post_processor);
+    const std::unique_ptr< dealii::DataPostprocessor<dim> > post_processor = Postprocess::PostprocessorFactory<dim,nspecies>::create_Postprocessor(all_parameters);
+    if(output_time_averaged_solution && !output_fluctuating_quantities){
+        data_out.add_data_vector (time_averaged_solution, *post_processor);
+    }  else if(output_fluctuating_quantities && !output_time_averaged_solution){
+        std::vector<std::string> fluctuating_quantities_names = {"u'v'","u'u'", "v'v'", "w'w'", "u'w'"};
+        data_out.add_data_vector (fluctuating_quantities, fluctuating_quantities_names, dealii::DataOut_DoFData<dealii::DoFHandler<dim>,dim-1,dim>::DataVectorType::type_dof_data);
+    } else {
+        data_out.add_data_vector (solution, *post_processor);
+    }
+    
 
     NormalPostprocessor<dim> normals_post_processor;
     data_out.add_data_vector (solution, normals_post_processor);
@@ -3282,7 +3299,10 @@ void DGBase<dim,real,MeshType>::output_face_results_vtk (const unsigned int cycl
     data_out.set_flags(vtkflags);
 
     const int iproc = dealii::Utilities::MPI::this_mpi_process(mpi_communicator);
-    std::string filename = this->all_parameters->solution_vtk_files_directory_name + "/" + "surface_solution-" + dealii::Utilities::int_to_string(dim, 1) +"D_maxpoly"+dealii::Utilities::int_to_string(max_degree, 2)+"-";
+    std::string filename_prefix = "surface_solution"; // default
+    if(output_time_averaged_solution && !output_fluctuating_quantities) filename_prefix = "time_averaged_surface_solution";
+    else if(output_fluctuating_quantities && !output_time_averaged_solution) filename_prefix = "fluctuating_surface_quantities";
+    std::string filename = this->all_parameters->solution_vtk_files_directory_name + "/" + filename_prefix + "-" + dealii::Utilities::int_to_string(dim, 1) +"D_maxpoly"+dealii::Utilities::int_to_string(max_degree, 2)+"-";
     filename += dealii::Utilities::int_to_string(cycle, 4) + ".";
     filename += dealii::Utilities::int_to_string(iproc, 4);
     filename += ".vtu";
@@ -3292,8 +3312,11 @@ void DGBase<dim,real,MeshType>::output_face_results_vtk (const unsigned int cycl
 
     if (iproc == 0) {
         std::vector<std::string> filenames;
-        for (unsigned int iproc = 0; iproc < dealii::Utilities::MPI::n_mpi_processes(mpi_communicator); ++iproc) {
-            std::string fn = "surface_solution-" + dealii::Utilities::int_to_string(dim, 1) +"D_maxpoly"+dealii::Utilities::int_to_string(max_degree, 2)+"-";
+        std::string filename_prefix = "surface_solution"; // default
+        if(output_time_averaged_solution && !output_fluctuating_quantities) filename_prefix = "time_averaged_surface_solution";
+        else if(output_fluctuating_quantities && !output_time_averaged_solution) filename_prefix = "fluctuating_surface_quantities";
+        for (unsigned int iproc = 0; iproc < dealii::Utilities::MPI::n_mpi_processes(mpi_communicator); ++iproc) {;
+            std::string fn = filename_prefix + "-" + dealii::Utilities::int_to_string(dim, 1) +"D_maxpoly"+dealii::Utilities::int_to_string(max_degree, 2)+"-";
             fn += dealii::Utilities::int_to_string(cycle, 4) + ".";
             fn += dealii::Utilities::int_to_string(iproc, 4);
             fn += ".vtu";
@@ -3304,12 +3327,23 @@ void DGBase<dim,real,MeshType>::output_face_results_vtk (const unsigned int cycl
         std::ofstream master_output(master_fn);
         data_out.write_pvtu_record(master_output, filenames);
     }
+    if (all_parameters->flow_solver_param.do_compute_time_averaged_solution && 
+        (current_time >= all_parameters->flow_solver_param.time_to_start_averaging) && 
+        (output_time_averaged_solution == false) && (output_fluctuating_quantities == false)) {
+        output_face_results_vtk (cycle, current_time, true, false);
+        if (all_parameters->flow_solver_param.do_compute_Reynolds_stress && 
+        (current_time >= all_parameters->flow_solver_param.time_to_start_computing_Reynolds_stress)){
+            output_face_results_vtk (cycle, current_time, false, true);
+        }
+    }
 
 }
 #endif
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::output_results_vtk (const unsigned int cycle, const double current_time)// const
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::output_results_vtk (const unsigned int cycle, const double current_time, 
+                                                    const bool output_time_averaged_solution,
+                                                    const bool output_fluctuating_quantities)// const
 {
 #if PHILIP_DIM>1
     if(this->all_parameters->output_face_results_vtk) output_face_results_vtk (cycle, current_time);
@@ -3349,8 +3383,15 @@ void DGBase<dim,real,MeshType>::output_results_vtk (const unsigned int cycle, co
 
 
     // Let the physics post-processor determine what to output.
-    const std::unique_ptr< dealii::DataPostprocessor<dim> > post_processor = Postprocess::PostprocessorFactory<dim>::create_Postprocessor(all_parameters);
-    data_out.add_data_vector (solution, *post_processor);
+    const std::unique_ptr< dealii::DataPostprocessor<dim> > post_processor = Postprocess::PostprocessorFactory<dim,nspecies>::create_Postprocessor(all_parameters);
+    if(output_time_averaged_solution && !output_fluctuating_quantities){
+        data_out.add_data_vector (time_averaged_solution, *post_processor);
+    } else if(output_fluctuating_quantities && !output_time_averaged_solution){
+        std::vector<std::string> fluctuating_quantities_names = {"u'v'","u'u'", "v'v'", "w'w'", "u'w'"};
+        data_out.add_data_vector (fluctuating_quantities, fluctuating_quantities_names, dealii::DataOut_DoFData<dealii::DoFHandler<dim>,dim>::DataVectorType::type_dof_data);
+    } else {
+        data_out.add_data_vector (solution, *post_processor);
+    }
 
     // Output the polynomial degree in each cell
     std::vector<unsigned int> active_fe_indices;
@@ -3388,7 +3429,10 @@ void DGBase<dim,real,MeshType>::output_results_vtk (const unsigned int cycle, co
     data_out.set_flags(vtkflags);
 
     const int iproc = dealii::Utilities::MPI::this_mpi_process(mpi_communicator);
-    std::string filename = this->all_parameters->solution_vtk_files_directory_name + "/" + "solution-" + dealii::Utilities::int_to_string(dim, 1) +"D_maxpoly"+dealii::Utilities::int_to_string(max_degree, 2)+"-";
+    std::string filename_prefix = "solution"; // default
+    if(output_time_averaged_solution && !output_fluctuating_quantities) filename_prefix = "time_averaged_solution";
+    else if(output_fluctuating_quantities && !output_time_averaged_solution) filename_prefix = "fluctuating_quantities";
+    std::string filename = this->all_parameters->solution_vtk_files_directory_name + "/" + filename_prefix + "-" + dealii::Utilities::int_to_string(dim, 1) +"D_maxpoly"+dealii::Utilities::int_to_string(max_degree, 2)+"-";
     filename += dealii::Utilities::int_to_string(cycle, 4) + ".";
     filename += dealii::Utilities::int_to_string(iproc, 4);
     filename += ".vtu";
@@ -3399,7 +3443,7 @@ void DGBase<dim,real,MeshType>::output_results_vtk (const unsigned int cycle, co
     if (iproc == 0) {
         std::vector<std::string> filenames;
         for (unsigned int iproc = 0; iproc < dealii::Utilities::MPI::n_mpi_processes(mpi_communicator); ++iproc) {
-            std::string fn = "solution-" + dealii::Utilities::int_to_string(dim, 1) +"D_maxpoly"+dealii::Utilities::int_to_string(max_degree, 2)+"-";
+            std::string fn = filename_prefix + "-" + dealii::Utilities::int_to_string(dim, 1) +"D_maxpoly"+dealii::Utilities::int_to_string(max_degree, 2)+"-";
             fn += dealii::Utilities::int_to_string(cycle, 4) + ".";
             fn += dealii::Utilities::int_to_string(iproc, 4);
             fn += ".vtu";
@@ -3411,10 +3455,20 @@ void DGBase<dim,real,MeshType>::output_results_vtk (const unsigned int cycle, co
         data_out.write_pvtu_record(master_output, filenames);
     }
 
+    if (all_parameters->flow_solver_param.do_compute_time_averaged_solution && 
+        (current_time >= all_parameters->flow_solver_param.time_to_start_averaging) && 
+        (output_time_averaged_solution == false) && (output_fluctuating_quantities == false))/*Only when false, such that it's not endlessly recursive. Do not set to true.*/ {
+        output_results_vtk (cycle, current_time, true, false); //time-averaged quantites
+        if (all_parameters->flow_solver_param.do_compute_Reynolds_stress && 
+        (current_time >= all_parameters->flow_solver_param.time_to_start_computing_Reynolds_stress)){
+            output_results_vtk (cycle, current_time, false, true); //fluctuating quantitites
+        }
+    }
+
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::allocate_auxiliary_equation()
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::allocate_auxiliary_equation()
 {
     for (int idim=0; idim<dim; idim++) {
         auxiliary_right_hand_side[idim].reinit(locally_owned_dofs, ghost_dofs, mpi_communicator);
@@ -3425,8 +3479,8 @@ void DGBase<dim,real,MeshType>::allocate_auxiliary_equation()
     }
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::allocate_system (
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::allocate_system (
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R)
 {
     pcout << "Allocating DG system and initializing FEValues" << std::endl;
@@ -3464,7 +3518,8 @@ void DGBase<dim,real,MeshType>::allocate_system (
     reduced_mesh_weights.reinit(triangulation->n_active_cells());
 
     // allocates model variables only if there is a model
-    if(all_parameters->pde_type == Parameters::AllParameters::PartialDifferentialEquation::physics_model) allocate_model_variables();
+    if(all_parameters->pde_type == Parameters::AllParameters::PartialDifferentialEquation::physics_model ||
+       all_parameters->pde_type == Parameters::AllParameters::PartialDifferentialEquation::physics_model_filtered) allocate_model_variables();
 
     solution.reinit(locally_owned_dofs, ghost_dofs, mpi_communicator);
     solution *= 0.0;
@@ -3472,11 +3527,33 @@ void DGBase<dim,real,MeshType>::allocate_system (
     //right_hand_side.reinit(locally_owned_dofs, mpi_communicator);
     right_hand_side.reinit(locally_owned_dofs, ghost_dofs, mpi_communicator);
     right_hand_side.add(1.0); // Avoid 0 initial residual for output and logarithmic visualization.
+    //time averaged solution
+    if(all_parameters->flow_solver_param.do_compute_time_averaged_solution){
+        time_averaged_solution.reinit(locally_owned_dofs, ghost_dofs, mpi_communicator);
+        time_averaged_solution *= 0.0;
+        time_averaged_solution.add(std::numeric_limits<real>::lowest());
+    }
+    //fluctuating quantities (i.e, Reynolds stresses)
+    if(all_parameters->flow_solver_param.do_compute_time_averaged_solution && all_parameters->flow_solver_param.do_compute_Reynolds_stress){
+        fluctuating_quantities.reinit(locally_owned_dofs, ghost_dofs, mpi_communicator);
+        fluctuating_quantities *= 0.0;
+        fluctuating_quantities.add(std::numeric_limits<real>::lowest());
+    }
+    if(all_parameters->flow_solver_param.do_compute_Reynolds_stress && !all_parameters->flow_solver_param.do_compute_time_averaged_solution){
+        std::cout << "\nNeed time-averaged solution to compute Reynolds stresses. Please set do_compute_time_averaged_solution=true. Aborting...\n";
+        std::abort();
+    }
 
     allocate_dual_vector(compute_d2R);
 
     // Set use_auxiliary_eq flag
     set_use_auxiliary_eq();
+
+    // Set store_vol_flux_nodes flag
+    set_store_vol_flux_nodes();
+
+    // Set store_surf_flux_nodes flag
+    set_store_surf_flux_nodes();
 
     // Allocate for auxiliary equation only.
     if(use_auxiliary_eq) allocate_auxiliary_equation ();
@@ -3530,8 +3607,8 @@ void DGBase<dim,real,MeshType>::allocate_system (
     }
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::allocate_artificial_dissipation ()
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::allocate_artificial_dissipation ()
 {
     const dealii::IndexSet locally_owned_dofs_artificial_dissipation = dof_handler_artificial_dissipation.locally_owned_dofs();
 
@@ -3549,8 +3626,8 @@ void DGBase<dim,real,MeshType>::allocate_artificial_dissipation ()
 }
 
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::allocate_second_derivatives ()
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::allocate_second_derivatives ()
 {
     locally_owned_dofs = dof_handler.locally_owned_dofs();
     {
@@ -3575,8 +3652,8 @@ void DGBase<dim,real,MeshType>::allocate_second_derivatives ()
     }
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::allocate_dRdX ()
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::allocate_dRdX ()
 {
     // dRdXv matrix allocation
     dealii::SparsityPattern dRdXv_sparsity_pattern = get_dRdX_sparsity_pattern ();
@@ -3585,8 +3662,8 @@ void DGBase<dim,real,MeshType>::allocate_dRdX ()
     dRdXv.reinit(row_parallel_partitioning, col_parallel_partitioning, dRdXv_sparsity_pattern, MPI_COMM_WORLD);
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::reinit_operators_for_mass_matrix(
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::reinit_operators_for_mass_matrix(
     const bool Cartesian_element,
     const unsigned int poly_degree, const unsigned int grid_degree,
     OPERATOR::mapping_shape_functions<dim,2*dim> &mapping_basis,
@@ -3623,8 +3700,8 @@ void DGBase<dim,real,MeshType>::reinit_operators_for_mass_matrix(
     }
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::evaluate_mass_matrices (bool do_inverse_mass_matrix)
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::evaluate_mass_matrices (bool do_inverse_mass_matrix)
 {   
     using FR_enum = Parameters::AllParameters::Flux_Reconstruction;
     const FR_enum FR_Type = this->all_parameters->flux_reconstruction_type;
@@ -3791,8 +3868,8 @@ void DGBase<dim,real,MeshType>::evaluate_mass_matrices (bool do_inverse_mass_mat
     }
 }
 
-template<int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::evaluate_local_metric_dependent_mass_matrix_and_set_in_global_mass_matrix(
+template<int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::evaluate_local_metric_dependent_mass_matrix_and_set_in_global_mass_matrix(
     const bool Cartesian_element,
     const bool do_inverse_mass_matrix, 
     const unsigned int poly_degree, 
@@ -4014,8 +4091,8 @@ void DGBase<dim,real,MeshType>::evaluate_local_metric_dependent_mass_matrix_and_
     }
 }
 
-template<int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::apply_inverse_global_mass_matrix(
+template<int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::apply_inverse_global_mass_matrix(
         const dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
         dealii::LinearAlgebra::distributed::Vector<double> &output_vector,
         const bool use_auxiliary_eq)
@@ -4188,8 +4265,8 @@ void DGBase<dim,real,MeshType>::apply_inverse_global_mass_matrix(
     }
 }
 
-template<int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::apply_global_mass_matrix(
+template<int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::apply_global_mass_matrix(
         const dealii::LinearAlgebra::distributed::Vector<double> &input_vector,
         dealii::LinearAlgebra::distributed::Vector<double> &output_vector,
         const bool use_auxiliary_eq,
@@ -4366,18 +4443,18 @@ void DGBase<dim,real,MeshType>::apply_global_mass_matrix(
     }//end of cell loop
 }
 
-template<int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::add_mass_matrices(const real scale)
+template<int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::add_mass_matrices(const real scale)
 {
     system_matrix.add(scale, global_mass_matrix);
 }
-template<int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::add_time_scaled_mass_matrices()
+template<int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::add_time_scaled_mass_matrices()
 {
     system_matrix.add(1.0, time_scaled_global_mass_matrix);
 }
-template<int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::time_scaled_mass_matrices(const real dt_scale)
+template<int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::time_scaled_mass_matrices(const real dt_scale)
 {
     time_scaled_global_mass_matrix.reinit(system_matrix);
     time_scaled_global_mass_matrix = 0.0;
@@ -4417,7 +4494,7 @@ void DGBase<dim,real,MeshType>::time_scaled_mass_matrices(const real dt_scale)
     time_scaled_global_mass_matrix.compress(dealii::VectorOperation::insert);
 }
 
-template<int dim, typename real> // To be replaced with operators->projection_operator
+template<int dim, int nspecies, typename real> // To be replaced with operators->projection_operator
 std::vector< real > project_function(
     const std::vector< real > &function_coeff,
     const dealii::FESystem<dim,dim> &fe_input,
@@ -4495,9 +4572,9 @@ std::vector< real > project_function(
 
 }
 
-template <int dim, typename real,typename MeshType>
+template <int dim, int nspecies, typename real,typename MeshType>
 template <typename real2>
-real2 DGBase<dim,real,MeshType>::discontinuity_sensor(
+real2 DGBase<dim,nspecies,real,MeshType>::discontinuity_sensor(
     const dealii::Quadrature<dim> &volume_quadrature,
     const std::vector< real2 > &soln_coeff_high,
     const dealii::FiniteElement<dim,dim> &fe_high,
@@ -4517,7 +4594,7 @@ real2 DGBase<dim,real,MeshType>::discontinuity_sensor(
 
     // Projection quadrature.
     const dealii::QGauss<dim> projection_quadrature(degree+5);
-    std::vector< real2 > soln_coeff_lower = project_function<dim,real2>( soln_coeff_high, fe_high, fe_lower, projection_quadrature);
+    std::vector< real2 > soln_coeff_lower = project_function<dim,nspecies,real2>( soln_coeff_high, fe_high, fe_lower, projection_quadrature);
 
     // Quadrature used for solution difference.
     const std::vector<dealii::Point<dim,double>> &unit_quad_pts = volume_quadrature.get_points();
@@ -4584,43 +4661,43 @@ real2 DGBase<dim,real,MeshType>::discontinuity_sensor(
     return eps;
 }
 
-template <int dim, typename real, typename MeshType>
-void DGBase<dim,real,MeshType>::set_current_time(const real current_time_input)
+template <int dim, int nspecies, typename real, typename MeshType>
+void DGBase<dim,nspecies,real,MeshType>::set_current_time(const real current_time_input)
 {
     this->current_time = current_time_input;
 }
 
 #if PHILIP_DIM!=1
-template class DGBase <PHILIP_DIM, double, dealii::parallel::distributed::Triangulation<PHILIP_DIM>>;
+template class DGBase <PHILIP_DIM, PHILIP_SPECIES, double, dealii::parallel::distributed::Triangulation<PHILIP_DIM>>;
 #endif
 
-template class DGBase <PHILIP_DIM, double, dealii::Triangulation<PHILIP_DIM>>;
-template class DGBase <PHILIP_DIM, double, dealii::parallel::shared::Triangulation<PHILIP_DIM>>;
+template class DGBase <PHILIP_DIM, PHILIP_SPECIES, double, dealii::Triangulation<PHILIP_DIM>>;
+template class DGBase <PHILIP_DIM, PHILIP_SPECIES, double, dealii::parallel::shared::Triangulation<PHILIP_DIM>>;
 
-template double DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<double>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< double > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<double>  &jac_det);
-template FadType DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadType>  &jac_det);
-template RadType DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadType>  &jac_det);
-template FadFadType DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadFadType>  &jac_det);
-template RadFadType DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadFadType>  &jac_det);
-
-
-template double DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<double>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< double > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<double>  &jac_det);
-template FadType DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadType>  &jac_det);
-template RadType DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadType>  &jac_det);
-template FadFadType DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadFadType>  &jac_det);
-template RadFadType DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadFadType>  &jac_det);
+template double DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<double>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< double > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<double>  &jac_det);
+template FadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadType>  &jac_det);
+template RadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadType>  &jac_det);
+template FadFadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadFadType>  &jac_det);
+template RadFadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadFadType>  &jac_det);
 
 
-template double DGBase<PHILIP_DIM,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<double>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< double > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<double>  &jac_det);
-template FadType DGBase<PHILIP_DIM,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadType>  &jac_det);
-template RadType DGBase<PHILIP_DIM,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadType>  &jac_det);
-template FadFadType DGBase<PHILIP_DIM,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadFadType>  &jac_det);
-template RadFadType DGBase<PHILIP_DIM,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadFadType>  &jac_det);
+template double DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<double>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< double > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<double>  &jac_det);
+template FadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadType>  &jac_det);
+template RadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadType>  &jac_det);
+template FadFadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadFadType>  &jac_det);
+template RadFadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadFadType>  &jac_det);
+
+
+template double DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<double>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< double > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<double>  &jac_det);
+template FadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadType>  &jac_det);
+template RadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadType>  &jac_det);
+template FadFadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<FadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< FadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<FadFadType>  &jac_det);
+template RadFadType DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::discontinuity_sensor<RadFadType>(const dealii::Quadrature<PHILIP_DIM> &volume_quadrature, const std::vector< RadFadType > &soln_coeff_high, const dealii::FiniteElement<PHILIP_DIM,PHILIP_DIM> &fe_high, const std::vector<RadFadType>  &jac_det);
 
 
 
 template void 
-DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_JacobianComputationType> (
+DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_JacobianComputationType> (
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_cell,
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_metric_cell,
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,
@@ -4642,7 +4719,7 @@ DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::assemble_cell_resid
     std::array<dealii::LinearAlgebra::distributed::Vector<double>,PHILIP_DIM> &rhs_aux);
 
 template void 
-DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_HessianComputationType> (
+DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_HessianComputationType> (
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_cell,
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_metric_cell,
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,
@@ -4663,7 +4740,7 @@ DGBase<PHILIP_DIM,double,dealii::Triangulation<PHILIP_DIM>>::assemble_cell_resid
     dealii::LinearAlgebra::distributed::Vector<double>                               &rhs,
     std::array<dealii::LinearAlgebra::distributed::Vector<double>,PHILIP_DIM>        &rhs_aux);
 template void 
-DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_JacobianComputationType> (
+DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_JacobianComputationType> (
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_cell,
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_metric_cell,
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,
@@ -4685,7 +4762,7 @@ DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM
     std::array<dealii::LinearAlgebra::distributed::Vector<double>,PHILIP_DIM> &rhs_aux);
 
 template void 
-DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_HessianComputationType> (
+DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_HessianComputationType> (
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_cell,
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_metric_cell,
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,
@@ -4709,7 +4786,7 @@ DGBase<PHILIP_DIM,double,dealii::parallel::distributed::Triangulation<PHILIP_DIM
 
 
 template void 
-DGBase<PHILIP_DIM,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_JacobianComputationType> (
+DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_JacobianComputationType> (
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_cell,
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_metric_cell,
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,
@@ -4731,7 +4808,7 @@ DGBase<PHILIP_DIM,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::a
     std::array<dealii::LinearAlgebra::distributed::Vector<double>,PHILIP_DIM> &rhs_aux);
 
 template void 
-DGBase<PHILIP_DIM,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_HessianComputationType> (
+DGBase<PHILIP_DIM,PHILIP_SPECIES,double,dealii::parallel::shared::Triangulation<PHILIP_DIM>>::assemble_cell_residual_and_ad_derivatives<codi_HessianComputationType> (
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_cell,
     const dealii::TriaActiveIterator<dealii::DoFCellAccessor<PHILIP_DIM, PHILIP_DIM, false>> &current_metric_cell,
     const bool compute_dRdW, const bool compute_dRdX, const bool compute_d2R,

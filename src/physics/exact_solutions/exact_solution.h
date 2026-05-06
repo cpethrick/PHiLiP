@@ -9,7 +9,7 @@
 namespace PHiLiP {
 
 /// Exact solution function used for a particular flow setup/case
-template <int dim, int nstate, typename real>
+template <int dim, int nspecies, int nstate, typename real>
 class ExactSolutionFunction : public dealii::Function<dim,real>
 {
 protected:
@@ -24,9 +24,9 @@ public:
 };
 
 /// Exact Solution Function: Zero Function; used as a placeholder when there is no exact solution
-template <int dim, int nstate, typename real>
+template <int dim, int nspecies, int nstate, typename real>
 class ExactSolutionFunction_Zero
-        : public ExactSolutionFunction<dim,nstate,real>
+        : public ExactSolutionFunction<dim,nspecies,nstate,real>
 {
 protected:
     using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
@@ -43,9 +43,9 @@ public:
 };
 
 /// Exact Solution Function: 1D Sine Function; used for temporal convergence
-template <int dim, int nstate, typename real>
+template <int dim, int nspecies, int nstate, typename real>
 class ExactSolutionFunction_1DSine
-        : public ExactSolutionFunction<dim,nstate,real>
+        : public ExactSolutionFunction<dim,nspecies,nstate,real>
 {
 protected:
     using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
@@ -62,10 +62,30 @@ public:
     real value (const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
 };
 
+/// Exact Solution Function: 1D periodic manufactured solution
+template <int dim, int nspecies, int nstate, typename real>
+class ExactSolutionFunction_BurgersInviscidManufactured
+        : public ExactSolutionFunction<dim,nspecies,nstate,real>
+{
+protected:
+    using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
+
+public:
+    /// Constructor for ExactSolutionFunction_1DSine
+    /** Calls the Function(const unsigned int n_components) constructor in deal.II*/
+    explicit ExactSolutionFunction_BurgersInviscidManufactured (double time_compare);
+
+    /// Time at which to compute the exact solution
+    const double t; 
+
+    /// Value of the exact solution at a point 
+    real value (const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
+};
+
 /// Exact Solution Function: Isentropic vortex 
-template <int dim, int nstate, typename real>
+template <int dim, int nspecies, int nstate, typename real>
 class ExactSolutionFunction_IsentropicVortex
-        : public ExactSolutionFunction<dim,nstate,real>
+        : public ExactSolutionFunction<dim,nspecies,nstate,real>
 {
 protected:
     using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
@@ -87,9 +107,9 @@ public:
 /// Note that no final time is passed; we assume the (dim-1)-th coordinate
 /// is time. Solution must be converged.
 /// NOTE: advection speed is assumed to be (0.3,0.4).
-template <int dim, int nstate, typename real>
+template <int dim, int nspecies, int nstate, typename real>
 class ExactSolutionFunction_SpacetimeCartesian
-        : public ExactSolutionFunction<dim,nstate,real>
+        : public ExactSolutionFunction<dim,nspecies,nstate,real>
 {
 protected:
     using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
@@ -104,7 +124,7 @@ public:
 };
 
 /// Exact solution function factory
-template <int dim, int nstate, typename real>
+template <int dim, int nspecies, int nstate, typename real>
 class ExactSolutionFactory
 {
 protected:    
@@ -113,7 +133,7 @@ protected:
 
 public:
     /// Construct ExactSolutionFunction object from global parameter file
-    static std::shared_ptr<ExactSolutionFunction<dim,nstate,real>>
+    static std::shared_ptr<ExactSolutionFunction<dim,nspecies,nstate,real>>
         create_ExactSolutionFunction(const Parameters::FlowSolverParam& flow_solver_parameters, const double time_compare);
 };
 

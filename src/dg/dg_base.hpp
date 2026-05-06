@@ -46,11 +46,11 @@
 #include <deal.II/base/timer.h>
 
 // Template specialization of MappingFEField
-//extern template class dealii::MappingFEField<PHILIP_DIM,PHILIP_DIM,dealii::LinearAlgebra::distributed::Vector<double>, dealii::DoFHandler<PHILIP_DIM> >;
+//extern template class dealii::MappingFEField<PHILIP_DIM, PHILIP_SPECIES,PHILIP_DIM, PHILIP_SPECIES,dealii::LinearAlgebra::distributed::Vector<double>, dealii::DoFHandler<PHILIP_DIM> >;
 namespace PHiLiP {
 
 /// Get the coefficients of a function projected onto a set of basis (to be replaced with operators->projection_operator). 
-template<int dim, typename real>
+template<int dim, int nspecies, typename real>
 std::vector< real > project_function(
     const std::vector< real > &function_coeff,
     const dealii::FESystem<dim,dim> &fe_input,
@@ -75,9 +75,9 @@ std::vector< real > project_function(
   *
   */
 #if PHILIP_DIM==1 // dealii::parallel::distributed::Triangulation<dim> does not work for 1D
-template <int dim, typename real, typename MeshType = dealii::Triangulation<dim>>
+template <int dim, int nspecies, typename real, typename MeshType = dealii::Triangulation<dim>>
 #else
-template <int dim, typename real, typename MeshType = dealii::parallel::distributed::Triangulation<dim>>
+template <int dim, int nspecies, typename real, typename MeshType = dealii::parallel::distributed::Triangulation<dim>>
 #endif
 class DGBase 
 {
@@ -408,6 +408,10 @@ public:
      */
     dealii::LinearAlgebra::distributed::Vector<double> solution;
 
+    dealii::LinearAlgebra::distributed::Vector<double> time_averaged_solution;
+
+    dealii::LinearAlgebra::distributed::Vector<double> fluctuating_quantities;
+
     ///The auxiliary equations' right hand sides.
     std::array<dealii::LinearAlgebra::distributed::Vector<double>,dim> auxiliary_right_hand_side;
 
@@ -527,8 +531,9 @@ public:
 
     void initialize_manufactured_solution (); ///< Virtual function defined in DG
 
-    void output_results_vtk (const unsigned int cycle, const double current_time=0.0); ///< Output solution
-    void output_face_results_vtk (const unsigned int cycle, const double current_time=0.0); ///< Output Euler face solution
+    // Output VTK files. Do not modify default output_time_averaged_solution or output_fluctuating_quantities flags.
+    void output_results_vtk (const unsigned int cycle, const double current_time=0.0, const bool output_time_averaged_solution=false, const bool output_fluctuating_quantities=false); ///< Output solution
+    void output_face_results_vtk (const unsigned int cycle, const double current_time=0.0, const bool output_time_averaged_solution=false, const bool output_fluctuating_quantities=false); ///< Output Euler face solution
 
     bool update_artificial_diss;
     /// Main loop of the DG class.
@@ -1294,11 +1299,20 @@ public:
     virtual void allocate_model_variables() = 0;
     /// Update the necessary variables declared in src/physics/model.h
     virtual void update_model_variables() = 0;
+    /// Set the unsteady time step variable declared in src/physics/model.h
+    virtual void set_unsteady_model_time_step(const double time_step) = 0;
     /// Flag for using the auxiliary equation
     bool use_auxiliary_eq;
     /// Set use_auxiliary_eq flag
     virtual void set_use_auxiliary_eq() = 0;
-
+    /// Flag for storing volume flux nodes
+    bool store_vol_flux_nodes;
+    /// Set store_vol_flux_nodes flag
+    virtual void set_store_vol_flux_nodes() = 0;
+    /// Flag for storing surface flux nodes
+    bool store_surf_flux_nodes;
+    /// Set store_surf_flux_nodes flag
+    virtual void set_store_surf_flux_nodes() = 0;
 }; // end of DGBase class
 
 } // PHiLiP namespace

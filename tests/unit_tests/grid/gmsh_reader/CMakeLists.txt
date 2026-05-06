@@ -30,6 +30,8 @@ foreach(dim RANGE 2 3)
 
     # Replace occurences of PHILIP_DIM with 1, 2, or 3 in the code
     target_compile_definitions(${TEST_TARGET} PRIVATE PHILIP_DIM=${dim})
+    # Replace occurences of PHILIP_SPECIES with user-defined value in the code
+    target_compile_definitions(${TEST_TARGET} PRIVATE PHILIP_SPECIES=${NUMBER_OF_SPECIES})
 
     # Compile this executable when 'make unit_tests'
     add_dependencies(unit_tests ${TEST_TARGET})
@@ -172,29 +174,7 @@ set_tests_labels(3D_GMSH_READER_3D_CUBE_PERIODIC    GRID
                                                     QUICK
                                                     UNIT_TEST)
 
-set (filename "SD7003_1_cell_spanwise.msh")
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${filename})
-  message(SEND_ERROR
-"Missing 3D GMSH file named ${filename}. Please download it from
-    https://drive.google.com/drive/folders/1xaQRTCd8VXDeaV1alQ5oHI_YMm2X0X5R?usp=sharing
-and place them in
-      ${CMAKE_CURRENT_SOURCE_DIR}, or simply run get_gmsh_mesh_files_local.sh"
-      )
-endif()
-configure_file(${filename} ${filename} COPYONLY)
-add_test(
-  NAME 3D_GMSH_READER_SD7003_01_CELL_SPANWISE
-  COMMAND mpirun -n ${MPIMAX} ${CMAKE_CURRENT_BINARY_DIR}/3D_GMSH_READER --input=${filename}
-  WORKING_DIRECTORY ${TEST_OUTPUT_DIR}
-)
-set_tests_labels(3D_GMSH_READER_SD7003_01_CELL_SPANWISE GRID
-                                                        3D
-                                                        PARALLEL
-                                                        GMSH
-                                                        QUICK
-                                                        UNIT_TEST)
-
-set (filename "SD7003_4_cell_spanwise.msh")
+set (filename "SD7003_3rd_Order_4_Cell_Span.msh")
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${filename})
   message(SEND_ERROR
 "Missing 3D GMSH file named ${filename}. Please download it from
@@ -213,30 +193,6 @@ set_tests_labels(3D_GMSH_READER_SD7003_04_CELL_SPANWISE GRID
                                                         3D
                                                         PARALLEL
                                                         GMSH
-                                                        EXPECTED_FAILURE
-                                                        QUICK
-                                                        UNIT_TEST)
-
-set (filename "SD7003_12_cell_spanwise.msh")
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${filename})
-  message(SEND_ERROR
-"Missing 3D GMSH file named ${filename}. Please download it from
-    https://drive.google.com/drive/folders/1xaQRTCd8VXDeaV1alQ5oHI_YMm2X0X5R?usp=sharing
-and place them in
-      ${CMAKE_CURRENT_SOURCE_DIR}, or simply run get_gmsh_mesh_files_local.sh"
-      )
-endif()
-configure_file(${filename} ${filename} COPYONLY)
-add_test(
-  NAME 3D_GMSH_READER_SD7003_12_CELL_SPANWISE
-  COMMAND mpirun -n ${MPIMAX} ${CMAKE_CURRENT_BINARY_DIR}/3D_GMSH_READER --input=${filename}
-  WORKING_DIRECTORY ${TEST_OUTPUT_DIR}
-)
-set_tests_labels(3D_GMSH_READER_SD7003_12_CELL_SPANWISE GRID
-                                                        3D
-                                                        PARALLEL
-                                                        GMSH
-                                                        EXPECTED_FAILURE
                                                         QUICK
                                                         UNIT_TEST)
 
