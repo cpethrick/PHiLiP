@@ -160,7 +160,13 @@ FlowSolverFactory<dim,nspecies,nstate>
                 std::shared_ptr<FlowSolverCaseBase<dim, nspecies, nstate>> flow_solver_case = std::make_shared<Airfoil_3D_LES<dim,nspecies,nstate>>(parameters_input);
                 return std::make_unique<FlowSolver<dim,nspecies,nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
             }
-        } 
+        } else if (flow_type == FlowCaseEnum::spacetime_cartesian) {
+            if constexpr ((dim>=2 && nstate==1) // Linear advection
+                    || (dim>=2 && nstate == dim+2)) { //Euler
+                std::shared_ptr<FlowSolverCaseBase<dim,nspecies,nstate>> flow_solver_case = std::make_shared<SpacetimeCartesianProblem<dim,nspecies,nstate>>(parameters_input);
+                return std::make_unique<FlowSolver<dim,nspecies,nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
+            }
+        }
     }
     else if (nspecies > 1 && nstate==dim+2+nspecies-1) {
         if (flow_type == FlowCaseEnum::multi_species_vortex_advection){
@@ -183,13 +189,6 @@ FlowSolverFactory<dim,nspecies,nstate>
                 std::shared_ptr<FlowSolverCaseBase<dim, nspecies, nstate>> flow_solver_case = std::make_shared<MultispeciesTests<dim, nspecies, nstate>>(parameters_input);
                 return std::make_unique<FlowSolver<dim, nspecies, nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
             }
-        }
-    } else if (flow_type == FlowCaseEnum::spacetime_cartesian) {
-        std::cout << "Creating spacetime_cartesian flowcase" << std::endl;
-        if constexpr ((dim>=2 && nstate==1) // Linear advection
-                || (dim>=2 && nstate == dim+2)) { //Euler
-            std::shared_ptr<FlowSolverCaseBase<dim,nspecies,nstate>> flow_solver_case = std::make_shared<SpacetimeCartesianProblem<dim,nspecies,nstate>>(parameters_input);
-            return std::make_unique<FlowSolver<dim,nspecies,nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
         }
     } else {
             std::cout << "Invalid flow case. You probably forgot to add it to the list of flow cases in flow_solver_factory.cpp" << std::endl;

@@ -324,8 +324,10 @@ std::unique_ptr< TestsBase > TestsFactory<dim,nspecies,nstate,MeshType>
         if constexpr (dim>1 && nstate==1 && nspecies==1)  return std::make_unique<GeneralRefinementStudy<dim,nspecies,nstate>>(parameters_input, parameter_handler_input, 
                 GeneralRefinementStudy<dim, nspecies, nstate>::RefinementType::timestep);
     } else if(test_type == Test_enum::general_h_refinement_study) {
-        if constexpr (dim>1 && nstate==1 && nspecies==1)  return std::make_unique<GeneralRefinementStudy<dim,nspecies,nstate>>(parameters_input, parameter_handler_input, 
+        if constexpr (dim>1 && (nstate==1 || nstate == dim+2) && nspecies==1) {
+            return std::make_unique<GeneralRefinementStudy<dim,nspecies,nstate>>(parameters_input, parameter_handler_input, 
                 GeneralRefinementStudy<dim,nspecies,nstate>::RefinementType::cell_length);
+        }
     } else if(test_type == Test_enum::h_refinement_study_isentropic_vortex) {
         if constexpr (dim+2==nstate && dim!=1 && nspecies==1)  return std::make_unique<HRefinementStudyIsentropicVortex<dim, nspecies, nstate>>(parameters_input, parameter_handler_input);
     } else if(test_type == Test_enum::time_refinement_study_reference) {
