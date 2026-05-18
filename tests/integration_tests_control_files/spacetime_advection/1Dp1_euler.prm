@@ -1,7 +1,7 @@
 # -------------------
 
-#set run_type = flow_simulation
-set test_type = general_h_refinement_study
+set run_type = flow_simulation
+#set test_type = general_h_refinement_study
 
 # Number of SPATIAL dimensions
 set dimension = 1
@@ -15,9 +15,6 @@ set overintegration = 0
 #set flux_nodes_type = GL
 
 set use_split_form = true
-
-# TO DO think about how this should be set
-set use_periodic_bc = true
 
 set use_inverse_mass_on_the_fly = false
 

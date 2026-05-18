@@ -16,9 +16,6 @@ set overintegration = 0
 
 set use_split_form = true
 
-# TO DO think about how this should be set
-set use_periodic_bc = true
-
 set use_inverse_mass_on_the_fly = false
 
 # The PDE we want to solve
