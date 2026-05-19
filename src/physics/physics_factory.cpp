@@ -114,9 +114,9 @@ PhysicsFactory<dim,nspecies,nstate,real>
                     false,
                     diffusion_tensor,
                     manufactured_solution_function);
-        } else if (pde_type == PDE_enum::euler) {
-            if constexpr (nstate==dim+2) {
-                return std::make_shared < Euler<dim,nspecies,nstate,real> > (
+        } else if (pde_type == PDE_enum::euler && spacetime) {
+            if constexpr (nstate==dim+2 && dim>1) {
+                return std::make_shared < EulerSpacetime<dim,nspecies,nstate,real> > (
                     parameters_input,
                     parameters_input->euler_param.ref_length,
                     parameters_input->euler_param.gamma_gas,
@@ -126,9 +126,9 @@ PhysicsFactory<dim,nspecies,nstate,real>
                     manufactured_solution_function,
                     parameters_input->two_point_num_flux_type);
             }
-        } else if (pde_type == PDE_enum::euler && spacetime) {
-            if constexpr (nstate==dim+2 && dim>1) {
-                return std::make_shared < EulerSpacetime<dim,nspecies,nstate,real> > (
+        } else if (pde_type == PDE_enum::euler) {
+            if constexpr (nstate==dim+2) {
+                return std::make_shared < Euler<dim,nspecies,nstate,real> > (
                     parameters_input,
                     parameters_input->euler_param.ref_length,
                     parameters_input->euler_param.gamma_gas,

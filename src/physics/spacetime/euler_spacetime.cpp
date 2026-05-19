@@ -39,20 +39,6 @@ std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate
 }
 
 template <int dim, int nspecies, int nstate, typename real>
-std::array<real,nstate> EulerSpacetime<dim,nspecies,nstate,real>
-::convective_source_term (
-    const dealii::Point<dim,real> &/*pos*/) const
-{
-    this->pcout << "ERROR: convective_source_term not implemented! Aborting..." << std::endl;
-    std::abort();
-    //Note, I don't think this would be different than Euler base, but
-    //that assumption hasn't been validated so best to abort.
-    std::array<real,nstate> convective_source_term;
-
-    return convective_source_term;
-}
-
-template <int dim, int nspecies, int nstate, typename real>
 dealii::Tensor<2,nstate,real> EulerSpacetime<dim,nspecies,nstate,real>
 ::convective_flux_directional_jacobian (
     const std::array<real,nstate> &conservative_soln,

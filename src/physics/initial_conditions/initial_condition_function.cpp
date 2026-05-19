@@ -1703,6 +1703,7 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
         if constexpr (nstate==dim && dim<3) return std::make_shared<InitialConditionFunction_BurgersInviscid<dim, nspecies, nstate, real> >();
     } else if (flow_type == FlowCaseEnum::spacetime_cartesian) {
         if constexpr (dim>=2 && nstate==1) return std::make_shared<InitialConditionFunction_Zero<dim, nspecies, nstate,real> > ();
+        if constexpr (dim>=2 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::multi_species_vortex_advection) {
         if constexpr ((nspecies==2||nspecies==3) && nstate==dim+nspecies+1) return std::make_shared<InitialConditionFunction_Multispecies_VortexAdvection<dim,nspecies,nstate,real> >(param,false);
     } else if (flow_type == FlowCaseEnum::multi_species_vortex_advection_high_temp) {
@@ -1712,7 +1713,6 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
     } else if (flow_type == FlowCaseEnum::multi_species_isentropic_vortex) {
         if constexpr (dim==2 && nspecies==2 && nstate==dim+nspecies+1) return std::make_shared<InitialConditionFunction_Multispecies_IsentropicVortex<dim,nspecies,nstate,real> >(param);
     } else {
-        if constexpr (dim>=2 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate,real> > ();
         std::cout << "Invalid Flow Case Type. You probably forgot to add it to the list of flow cases in initial_condition_function.cpp" << std::endl;
         std::abort();
         return std::make_shared<InitialConditionFunction_Zero<dim, nspecies, nstate, real> >();
@@ -1770,6 +1770,9 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
     template class InitialConditionFunction_LowDensity <PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double>;
     #endif
 
+    #if PHILIP_DIM > 1
+        template class InitialConditionFunction_EulerSpacetimeManufactured <PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double>;
+    #endif 
     // functions instantiated for all dim
     template class InitialConditionFunction_Zero <PHILIP_DIM, PHILIP_SPECIES,1, double>;
     template class InitialConditionFunction_Zero <PHILIP_DIM, PHILIP_SPECIES,2, double>;

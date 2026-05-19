@@ -133,10 +133,6 @@ public:
         const std::array<real,nstate> &conservative_soln,
         const dealii::Tensor<1,dim,real> &normal) const override;
 
-    /// Convective flux contribution to the source term
-    std::array<real,nstate> convective_source_term (
-        const dealii::Point<dim,real> &pos) const override;
-
     ///  Evaluates convective flux based on the chosen split form.
     /// Currently, none of these are implemented, so this function returns zero.
     std::array<dealii::Tensor<1,dim,real>,nstate> convective_numerical_split_flux (
