@@ -110,19 +110,25 @@ void EulerSpacetime<dim,nspecies,nstate,real>
    const dealii::Tensor<1,dim,real> &normal_int,
    const std::array<real,nstate> &soln_int,
    const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
+   const std::array<real,nstate> &/*filtered_soln_int*/,
+   const std::array<dealii::Tensor<1,dim,real>,nstate> &/*filtered_soln_grad_int*/,
    std::array<real,nstate> &soln_bc,
-   std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
+   std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc,
+   const int icell,
+   const int iquad) const
 {
+    (void) icell;
+    (void) iquad;
+
     if (boundary_type == 1010) {
         // Temporal face boundary
-        boundary_purely_upwind(pos, normal_int, soln_int, soln_grad_int, soln_bc, soln_grad_bc);
+        boundary_purely_upwind(pos, normal_int, soln_int, soln_grad_int, soln_bc, soln_grad_bc, icell, iquad);
     } else {
         this->pcout << "Warning: Only pure upwind has been verified for EulerSpacetime!" << std::endl
               << "Proceed with caution!" << std::endl;
-        return Euler<dim,nspecies,nstate,real>::boundary_face_values (boundary_type,pos,normal_int,soln_int,soln_grad_int,soln_bc,soln_grad_bc);
+        Euler<dim,nspecies,nstate,real>::boundary_face_values (boundary_type,pos,normal_int,soln_int,soln_grad_int,soln_bc,soln_grad_bc);
     }
 }
-
 
 template <int dim, int nspecies, int nstate, typename real>
 void EulerSpacetime<dim,nspecies,nstate,real>::
@@ -132,16 +138,13 @@ boundary_purely_upwind(
     const std::array<real,nstate> &soln_int,
     const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
     std::array<real,nstate> &soln_bc,
-    std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
+    std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc,
+    const int icell,
+    const int iquad) const
 {
 
-    //this->pcout << "Boundary upwind";
-    if (abs(normal_int[dim-1]*this->temporal_advection-1) < 1E-14) {
-        //this->pcout <<" Outflow at " << pos[0] << " " << pos[1] << std::endl;
-        // normal in temporal dimension = 1: this boundary will be pure convective outflow
-        soln_bc = soln_int;
-        soln_grad_bc = soln_grad_int;
-    } else if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && this->apply_initial_condition  ){
+    if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && this->apply_initial_condition  ){
+
         //this->pcout <<" Inflow at " << pos[0] << " " << pos[1] << std::endl;
         // normal in temporal dimension = -1: this boundary will be pure upwinding
         // of a Dirichlet boundary
@@ -170,12 +173,33 @@ boundary_purely_upwind(
         }
         
         soln_bc[nstate-1] =  pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
-    
+        if (x < 0.3){
+                soln_bc[0]= 1;
+                soln_bc[1]= 0;
+                soln_bc[2]= 0;
+                soln_bc[3] =  1.0/0.4;
+        } else{
+                soln_bc[0]= 1.125;
+                soln_bc[1]= 0;
+                soln_bc[2]= 0;
+                soln_bc[3] =  1.1/0.4;
+        }
 
         for (int istate = 0; istate < nstate;  ++istate){
             soln_grad_bc[istate] = 0;
         }
 
+    } else if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && !this->apply_initial_condition  ){
+        for (int istate=0; istate <nstate; ++istate){
+            soln_bc[istate] = this->imposed_boundary[icell][iquad][istate];
+
+            soln_grad_bc[istate] = 0; //In Euler, this isn't used to my knowledge. 
+        }
+    } else if ( (abs(normal_int[dim-1]*this->temporal_advection)-1) < 1E-14) {
+        //this->pcout <<" Outflow at " << pos[0] << " " << pos[1] << std::endl;
+        // ABS(normal) in temporal dimension = 1: this boundary will be pure convective outflow or outflow. Either way, set as soln_int.
+        soln_bc = soln_int;
+        soln_grad_bc = soln_grad_int;
     } else {
         this->pcout << "Warning: attempting to use purely upwind boundary on a non-temporal boundary!" << std::endl;
         //Return internal state.

@@ -1920,7 +1920,7 @@ void DGStrong<dim,nspecies,nstate,real,MeshType>::assemble_boundary_term_strong(
                 }
             }
         }
-    }
+    } // End of filtered solution logic
 
     // Get volume reference fluxes and interpolate them to the facet.
     // Compute reference volume fluxes in both interior and exterior cells.
@@ -2271,7 +2271,7 @@ void DGStrong<dim,nspecies,nstate,real,MeshType>::assemble_boundary_term_strong(
         //or solution from the projected entropy variables.
         //Now, it uses projected entropy variables for NSFR, and solution
         //interpolated to face for conservative DG.
-        pde_physics.boundary_face_values (boundary_id, surf_flux_node, unit_phys_normal_int, soln_state, aux_soln_state, filtered_soln_state, filtered_aux_soln_state, soln_boundary, grad_soln_boundary);
+        pde_physics.boundary_face_values (boundary_id, surf_flux_node, unit_phys_normal_int, soln_state, aux_soln_state, filtered_soln_state, filtered_aux_soln_state, soln_boundary, grad_soln_boundary, current_cell_index, iquad);
         
         // Convective numerical flux.
         std::array<adtype,nstate> conv_num_flux_dot_n_at_q;

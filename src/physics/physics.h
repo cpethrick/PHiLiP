@@ -193,7 +193,9 @@ public:
         const std::array<real,nstate> &/*filtered_soln_int*/,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &/*filtered_soln_grad_int*/,
         std::array<real,nstate> &/*soln_bc*/,
-        std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const;
+        std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/,
+        const int icell=0,
+        const int iquad=0) const;
 
     /// Evaluates boundary values and gradients on the other side of the face for the viscous flux
     virtual void boundary_face_values_viscous_flux (
@@ -277,6 +279,12 @@ public:
     /** Consider moving to derived class (currently here to avoid dynamic casting)
      */
     bool apply_initial_condition=true;
+
+    // Store a boundary to impose as the external solution
+    // Storage as [icell][iquad][istate]
+    // As of the time of implementation, this is only use in space-time euler.
+    std::vector<std::vector<std::vector<real>>> imposed_boundary;
+
 
 protected:
     /// ConditionalOStream.

@@ -1486,6 +1486,7 @@ void Euler<dim,nspecies,nstate,real>
    std::array<real,nstate> &soln_bc,
    std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
+    std::cout << "EULER" << std::endl;
     // NEED TO PROVIDE AS INPUT ************************************** (ask Doug where this should be moved to, protected member?)
     const real total_inlet_pressure = pressure_inf*pow(1.0+0.5*gamm1*mach_inf_sqr, gam/gamm1);
     const real total_inlet_temperature = temperature_inf*pow(total_inlet_pressure/pressure_inf, gamm1/gam);

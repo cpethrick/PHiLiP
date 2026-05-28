@@ -114,7 +114,7 @@ void ODESolverBase<dim,nspecies,real,MeshType>::write_ode_solver_steady_state_co
 }
 
 template <int dim, int nspecies, typename real, typename MeshType>
-int ODESolverBase<dim,nspecies,real,MeshType>::steady_state ()
+int ODESolverBase<dim,nspecies,real,MeshType>::steady_state (const bool do_reset_iterations)
 {
     try {
         valid_initial_conditions();
@@ -130,7 +130,7 @@ int ODESolverBase<dim,nspecies,real,MeshType>::steady_state ()
 
     this->residual_norm_decrease = 1; // Always do at least 1 iteration
     update_norm = 1; // Always do at least 1 iteration
-    this->current_iteration = 0;
+    if (do_reset_iterations)    this->current_iteration = 0;
     if (ode_param.output_solution_every_x_steps >= 0) this->dg->output_results_vtk(this->current_iteration);
 
     pcout << " Evaluating right-hand side and setting system_matrix to Jacobian before starting iterations... " << std::endl;

@@ -1515,6 +1515,25 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate, re
 
     // apply a perturbation
     //t *= 0.95;
+    if (x < 0.3){
+        if (istate==0)
+            return 1;
+        else if (istate == 1)
+            return 0;
+        else if (istate == 2)
+            return 0;
+        else if (istate==3)
+            return 1.0/0.4;
+    } else{
+        if (istate==0)
+            return 1.125;
+        else if (istate==1)
+            return 0;
+        else if (istate==2)
+            return 0;
+        else if (istate==3)
+            return 1.1/0.4;
+    }
 
     real val = 0;
     //density

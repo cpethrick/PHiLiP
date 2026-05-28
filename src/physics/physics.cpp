@@ -183,8 +183,11 @@ void PhysicsBase<dim,nspecies,nstate,real>
         const std::array<real,nstate> &/*filtered_soln_int*/,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &/*filtered_soln_grad_int*/,
         std::array<real,nstate> &soln_bc,
-        std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
+        std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc,
+        const int /*icell*/,
+        const int /*iquad*/) const
 {
+    std::cout << "BFV in physics base" << std::endl;
     this->boundary_face_values(boundary_type,
                                pos,
                                normal,
@@ -202,8 +205,8 @@ void PhysicsBase<dim,nspecies,nstate,real>
         const dealii::Tensor<1,dim,real> &normal,
         const std::array<real,nstate> &soln_int,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
-        const std::array<real,nstate> &/*filtered_soln_int*/,
-        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*filtered_soln_grad_int*/,
+        const std::array<real,nstate> &filtered_soln_int,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &filtered_soln_grad_int,
         std::array<real,nstate> &soln_bc,
         std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const
 {
@@ -212,6 +215,8 @@ void PhysicsBase<dim,nspecies,nstate,real>
                                normal,
                                soln_int,
                                soln_grad_int,
+                               filtered_soln_int,
+                               filtered_soln_grad_int,
                                soln_bc,
                                soln_grad_bc);
 }

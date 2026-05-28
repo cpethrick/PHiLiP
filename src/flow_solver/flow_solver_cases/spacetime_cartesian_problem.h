@@ -41,6 +41,10 @@ protected:
 
     /// Display grid parameters
     void display_grid_parameters() const;
+
+    template<typename adtype>
+    void get_surface_solution_for_BC(std::shared_ptr <DGBase<dim,nspecies,double>> dg,
+std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics) const;
 };
 
 } // FlowSolver namespace

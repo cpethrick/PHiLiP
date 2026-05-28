@@ -147,8 +147,12 @@ public:
         const dealii::Tensor<1,dim,real> &/*normal*/,
         const std::array<real,nstate> &/*soln_int*/,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_int*/,
+        const std::array<real,nstate> &/*filtered_soln_int*/,
+        const std::array<dealii::Tensor<1,dim,real>,nstate> &/*filtered_soln_grad_int*/,
         std::array<real,nstate> &/*soln_bc*/,
-        std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/) const override;
+        std::array<dealii::Tensor<1,dim,real>,nstate> &/*soln_grad_bc*/,
+        const int icell=0,
+        const int iquad=0) const override;
 
     /// Purely upwind boundary
     /// For temporal dimension surfaces only.
@@ -159,7 +163,9 @@ public:
         const std::array<real,nstate> &soln_int,
         const std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_int,
         std::array<real,nstate> &soln_bc,
-        std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc) const;
+        std::array<dealii::Tensor<1,dim,real>,nstate> &soln_grad_bc,
+        const int icell,
+        const int iquad) const;
 
     /////// Numerical fluxes here....:
     // Add all and describe that they aren't implemented.

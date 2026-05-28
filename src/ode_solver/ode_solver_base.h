@@ -45,7 +45,7 @@ public:
         const std::shared_ptr <dealii::TableHandler> data_table) const;
 
     /// Evaluate steady state solution.
-    virtual int steady_state ();
+    virtual int steady_state (const bool do_reset_iterations = true);
 
 
     /// Ramps up the solution from p0 all the way up to the given global_final_poly_degree.

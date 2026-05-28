@@ -28,7 +28,7 @@ public:
     virtual ~ReducedOrderODESolver() = default;
 
     /// Evaluate steady state solution.
-    int steady_state () override;
+    int steady_state (const bool do_reset_iterations = true) override;
 
     /// Function to evaluate solution update
     void step_in_time(real dt, const bool pseudotime) override;

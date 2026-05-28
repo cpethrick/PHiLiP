@@ -22,7 +22,7 @@ ReducedOrderODESolver<dim,nspecies,real,MeshType>::ReducedOrderODESolver(std::sh
 {}
 
 template <int dim, int nspecies, typename real, typename MeshType>
-int ReducedOrderODESolver<dim,nspecies,real,MeshType>::steady_state ()
+int ReducedOrderODESolver<dim,nspecies,real,MeshType>::steady_state ( const bool do_reset_iterations)
 {
     this->pcout << " Performing steady state analysis... " << std::endl;
 
@@ -34,7 +34,7 @@ int ReducedOrderODESolver<dim,nspecies,real,MeshType>::steady_state ()
         this->pcout.set_condition(false);
     }
 
-    this->current_iteration = 0;
+    if (do_reset_iterations) this->current_iteration = 0;
 
     this->pcout << " Evaluating right-hand side and setting system_matrix to Jacobian before starting iterations... " << std::endl;
     const bool compute_dRdW = true;
