@@ -257,6 +257,7 @@ void DGStrong<dim,nspecies,nstate,real,MeshType>::assemble_boundary_term_and_bui
         }
     }
 
+
     if(compute_auxiliary_right_hand_side){
         assemble_boundary_term_auxiliary_equation<adtype> (
             face_number, current_cell_index, 
