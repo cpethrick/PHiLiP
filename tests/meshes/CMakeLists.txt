@@ -9,6 +9,7 @@ configure_file(3d_gaussian_bump.msh 3d_gaussian_bump.msh COPYONLY)
 configure_file(3d_cube_periodic.msh 3d_cube_periodic.msh COPYONLY)
 configure_file(SD7003_3rd_Order_4_Cell_Span.msh SD7003_3rd_Order_4_Cell_Span.msh COPYONLY)
 configure_file(slab2D.msh slab2D.msh COPYONLY)
+configure_file(mesh_3D_structured.msh mesh_3D_structured.msh COPYONLY)
 
 set (filename "naca0012_hopw_ref0.msh")
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${filename})
