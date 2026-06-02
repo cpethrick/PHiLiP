@@ -145,6 +145,7 @@ boundary_purely_upwind(
 
     if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && this->apply_initial_condition  ){
 
+#if PHILIP_DIM==2
         //this->pcout <<" Inflow at " << pos[0] << " " << pos[1] << std::endl;
         // normal in temporal dimension = -1: this boundary will be pure upwinding
         // of a Dirichlet boundary
@@ -189,6 +190,39 @@ boundary_purely_upwind(
             soln_grad_bc[istate] = 0;
         }
 
+#elif PHILIP_DIM==3
+
+        // Setting constants
+        const real pi = dealii::numbers::PI;
+        const real gam = 1.4;
+        const real M_infty = sqrt(2/gam);
+        const real R = 1;
+        const real sigma = 1;
+        const real beta = M_infty * 5 * sqrt(2.0)/4.0/pi * exp(1.0/2.0);
+        const real alpha = pi/4; //rad
+
+        // Centre of the vortex  at t=0
+        const real x0 = 0.0;
+        const real y0 = 0.0;
+        const real x = pos[0] - x0;
+        const real y = pos[1] - y0;
+
+        const real Omega = beta * exp(-0.5/sigma/sigma* (x/R * x/R + y/R * y/R));
+        const real delta_Ux = -y/R * Omega;
+        const real delta_Uy =  x/R * Omega;
+        const real delta_T  = -(gam-1.0)/2.0 * Omega * Omega;
+
+        // Primitive
+        std::array<real,nstate> soln_primitive;
+        soln_primitive[0] = pow((1 + delta_T), 1.0/(gam-1.0));
+        soln_primitive[1] = M_infty * cos(alpha) + delta_Ux;
+        soln_primitive[2] = M_infty * sin(alpha) + delta_Uy;
+        soln_primitive[3] = 0; //unused velocity
+        soln_primitive[nstate-1] = 1.0/gam*pow(1+delta_T, gam/(gam-1.0));
+
+        soln_bc = this->convert_primitive_to_conservative(soln_primitive);
+
+#endif
     } else if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && !this->apply_initial_condition  ){
         for (int istate=0; istate <nstate; ++istate){
             soln_bc[istate] = this->imposed_boundary[icell][iquad][istate];

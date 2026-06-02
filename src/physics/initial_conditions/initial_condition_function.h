@@ -745,6 +745,29 @@ public:
     real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
 };
 
+/// Initial condition for Euler spacetime isentropic vortex
+/** Apply initial condition across the entire domain. 
+ *  Not deriving from EulerBase because there are no primitive-conservative conversions.
+ */
+template <int dim, int nspecies, int nstate, typename real>
+class InitialConditionFunction_EulerSpacetimeIsentropic : public InitialConditionFunction<dim,nspecies,nstate,real>
+{
+protected:
+    using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
+    
+public:
+    /// Constructor
+    InitialConditionFunction_EulerSpacetimeIsentropic( Parameters::AllParameters const *const param);
+
+    /// Returns zero.
+    real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
+
+protected:
+
+    // Euler physics pointer. Used to convert primitive to conservative.
+    std::shared_ptr < Physics::Euler<dim, nspecies, nstate, double > > euler_physics;
+};
+
 
 /// Initial condition 0.
 template <int dim, int nspecies, int nstate, typename real>
