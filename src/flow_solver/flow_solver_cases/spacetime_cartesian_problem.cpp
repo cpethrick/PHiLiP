@@ -35,17 +35,22 @@ SpacetimeCartesianProblem<dim,nspecies,nstate>::SpacetimeCartesianProblem(const 
         , domain_size(pow(this->domain_right - this->domain_left, dim))
 { }
 
-// Helper function to scale the width of the time-slab
-dealii::Point<2> scale_timeslab(const double factor, const dealii::Point<2> &in)
+// Helper function to scale the width of the time-slab - 2D
+dealii::Point<2> scale_timeslab_2D(const double factor, const dealii::Point<2> &in)
 {
     return dealii::Point<2,double>(in(0), in(1) * factor);
+}
+// Helper function to scale the width of the time-slab - 3D
+dealii::Point<3> scale_timeslab_3D(const double factor, const dealii::Point<3> &in)
+{
+    return dealii::Point<3,double>(in(0), in(1), in(2) * factor);
 }
 
 template <int dim, int nspecies, int nstate>
 std::shared_ptr<Triangulation> SpacetimeCartesianProblem<dim,nspecies,nstate>::generate_grid() const
 {
     if(this->all_param.flow_solver_param.use_gmsh_mesh) {
-        if constexpr(dim==2){
+        if constexpr(dim==2 || dim==3){
             const std::string mesh_filename = this->all_param.flow_solver_param.input_mesh_filename + std::string(".msh");
             this->pcout << "- Generating grid using input mesh: " << mesh_filename << std::endl;
             std::shared_ptr <HighOrderGrid<dim, double>> cube_mesh = read_gmsh<dim, dim>(
@@ -62,12 +67,19 @@ std::shared_ptr<Triangulation> SpacetimeCartesianProblem<dim,nspecies,nstate>::g
                 this->all_param.flow_solver_param.mesh_reader_verbose_output,
                 this->all_param.do_renumber_dofs);
 
-            const double factor = 2.0 / cube_mesh->triangulation->n_cells();
+            const double factor = 2.0 / pow(cube_mesh->triangulation->n_cells(),dim-1);
             // See deal.ii tutorial steps 49 and 53 for details on transforming a mesh
-            dealii::GridTools::transform(std::bind( scale_timeslab,
-                        std::cref(factor),
-                        std::placeholders::_1 ),
-                    *(cube_mesh->triangulation));
+            if constexpr(dim==2){
+                dealii::GridTools::transform(std::bind( scale_timeslab_2D,
+                            std::cref(factor),
+                            std::placeholders::_1 ),
+                        *(cube_mesh->triangulation));
+            } else if constexpr(dim==3) {
+                dealii::GridTools::transform(std::bind( scale_timeslab_3D,
+                            std::cref(factor),
+                            std::placeholders::_1 ),
+                        *(cube_mesh->triangulation));
+            }
             return cube_mesh->triangulation;
         }else{
             this->pcout << "ERROR: gmsh mesh not configured for this flow case." << std::endl;
@@ -100,7 +112,7 @@ template<typename adtype>
 void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_surface_solution_for_BC(std::shared_ptr <DGBase<dim,nspecies,double>> dg,
 std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics) const
 {
-    const double grid_height = 2.0/dg->triangulation->n_cells();
+    const double grid_height = 2.0/pow(dg->triangulation->n_cells(), dim-1);
 
     //Get operators for cell loop
     const unsigned int init_grid_degree = dg->high_order_grid->fe_system.tensor_degree();
@@ -158,8 +170,8 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
 
         // ############### Face loop
         for (unsigned int iface=0; iface < dealii::GeometryInfo<dim>::faces_per_cell; ++iface) {
-            // ######### Filter out correct face by direction of normal (LATER)
-            // if normal NOT +1 in time CONTINUE
+            // ######### Filter out correct face by coordinate of temporal dimension
+            // if NOT on outflow temporal face CONTINUE
 
             const dealii::FESystem<dim> &fe_metric = dg->high_order_grid->fe_system;
             const unsigned int n_metric_dofs = fe_metric.dofs_per_cell;
@@ -196,7 +208,6 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
             for (unsigned int iquad=0; iquad<n_face_quad_pts; ++iquad) {
                 for(int idim=0; idim<dim; idim++){
                     surf_flux_node[idim] = metric_oper.flux_nodes_surf[iface][idim][iquad];
-                    //std::cout << surf_flux_node[idim] << " ";
                 }
                 //std::cout << std::endl;
                 if ((surf_flux_node[dim-1] == grid_height  && pde_physics->temporal_advection>0 )
@@ -285,7 +296,6 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
                 std::array<adtype,nstate> entropy_var_face;
                 for(int istate=0; istate<nstate; istate++){
                     entropy_var_face[istate] = projected_entropy_var_surf[istate][iquad];
-                    // std::cout << entropy_var_face[istate] << " at " <<  soln_cell->active_cell_index() << " " << iquad << " " << istate << " core" << (dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)) << std::endl;
                 }
                 // Get entropy-projected surface soln.
                  std::array<adtype,nstate> conservative_vars_quad = pde_physics->compute_conservative_variables_from_entropy_variables (entropy_var_face);    
@@ -347,9 +357,6 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
         get_surface_solution_for_BC<FadFadType>(dg, dg_state->pde_physics_fad_fad);
         get_surface_solution_for_BC<RadFadType>(dg, dg_state->pde_physics_rad_fad);
         this->pcout << "Done!" << std::endl;
-        //std::abort();
-
-        
 
     }
 
