@@ -67,7 +67,8 @@ std::shared_ptr<Triangulation> SpacetimeCartesianProblem<dim,nspecies,nstate>::g
                 this->all_param.flow_solver_param.mesh_reader_verbose_output,
                 this->all_param.do_renumber_dofs);
 
-            const double factor = 2.0 / pow(cube_mesh->triangulation->n_cells(),dim-1);
+            const double factor = 20.0 / pow(cube_mesh->triangulation->n_cells(),1.0/(dim-1));
+            this->pcout << "Rescaling temporal dimension to " << factor << std::endl;
             // See deal.ii tutorial steps 49 and 53 for details on transforming a mesh
             if constexpr(dim==2){
                 dealii::GridTools::transform(std::bind( scale_timeslab_2D,
@@ -112,7 +113,7 @@ template<typename adtype>
 void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_surface_solution_for_BC(std::shared_ptr <DGBase<dim,nspecies,double>> dg,
 std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics) const
 {
-    const double grid_height = 2.0/pow(dg->triangulation->n_cells(), dim-1);
+    const double grid_height = 2.0/pow(dg->triangulation->n_cells(), 1.0/(dim-1));
 
     //Get operators for cell loop
     const unsigned int init_grid_degree = dg->high_order_grid->fe_system.tensor_degree();
@@ -334,13 +335,14 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
             // if (!(dg->triangulation->get_cell(icell).is_locally_owned())) continue;
 
             // LATER: Only allocate memory when that cell is active.
-            const int n_quad_face = dg->all_parameters->flow_solver_param.poly_degree + dg->all_parameters->overintegration + 1;
+            //const int n_quad_face = dg->all_parameters->flow_solver_param.poly_degree + dg->all_parameters->overintegration + 1;
+            const unsigned int n_quad_face = dg->face_quadrature_collection[dg->all_parameters->flow_solver_param.poly_degree].size();
             dg_state->pde_physics_double->imposed_boundary[icell].resize(n_quad_face);
             dg_state->pde_physics_fad->imposed_boundary[icell].resize(n_quad_face);
             dg_state->pde_physics_rad->imposed_boundary[icell].resize(n_quad_face);
             dg_state->pde_physics_fad_fad->imposed_boundary[icell].resize(n_quad_face);
             dg_state->pde_physics_rad_fad->imposed_boundary[icell].resize(n_quad_face);
-            for (int iquad = 0; iquad < n_quad_face; ++iquad) {
+            for (unsigned int iquad = 0; iquad < n_quad_face; ++iquad) {
                 dg_state->pde_physics_double->imposed_boundary[icell][iquad].resize(nstate);
                 dg_state->pde_physics_fad->imposed_boundary[icell][iquad].resize(nstate);
                 dg_state->pde_physics_rad->imposed_boundary[icell][iquad].resize(nstate);

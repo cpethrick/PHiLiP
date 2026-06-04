@@ -1658,7 +1658,6 @@ void local_Flux_Reconstruction_operator<dim,n_faces>::get_FR_correction_paramete
         c/=2.0;//since orthonormal
         c/=pow(pow(2.0,curr_cell_degree),2);//since ref elem [0,1]
     }
-    this->pcout << "Set c value = " << c << std::endl;
 }
 template <int dim, int n_faces>  
 void local_Flux_Reconstruction_operator<dim,n_faces>::build_local_Flux_Reconstruction_operator(
@@ -1687,8 +1686,6 @@ void local_Flux_Reconstruction_operator<dim,n_faces>::build_1D_volume_operator(
     //build the FR correction operator
     derivative_p<dim,n_faces> pth_derivative(this->nstate, this->max_degree, this->max_grid_degree);
     pth_derivative.build_1D_volume_operator(finite_element, quadrature);
-    this->pcout << "P-th derivatve 1D" << std::endl;
-    pth_derivative.oneD_vol_operator.print_formatted(std::cout);
 
     local_mass<dim,n_faces> local_Mass_Matrix(this->nstate, this->max_degree, this->max_grid_degree);
     local_Mass_Matrix.build_1D_volume_operator(finite_element, quadrature);

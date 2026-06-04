@@ -487,7 +487,8 @@ int FlowSolver<dim,nspecies,nstate>::run() const
         //                 DECOUPLED TIMESLABS 
         //----------------------------------------------------
 
-        double dt = 0.25; //hard code for now
+        //double dt = 0.25; //hard code for now
+        double dt = 20.0 / pow(dg->triangulation->n_cells(),1.0/(dim-1));
         while (dg->get_current_time() < flow_solver_param.final_time -1E-12) {
             ode_solver->steady_state(false); //false so that iteration counter is not reset to zero, allowing more VTK files to be output
             dg->set_current_time(dg->get_current_time()+dt);
