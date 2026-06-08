@@ -33,7 +33,7 @@ SpacetimeCartesianProblem<dim,nspecies,nstate>::SpacetimeCartesianProblem(const 
         , domain_left(this->all_param.flow_solver_param.grid_left_bound)
         , domain_right(this->all_param.flow_solver_param.grid_right_bound)
         , domain_size(pow(this->domain_right - this->domain_left, dim))
-{ }
+{this->height = 0.25; }
 
 // Helper function to scale the width of the time-slab - 2D
 dealii::Point<2> scale_timeslab_2D(const double factor, const dealii::Point<2> &in)
@@ -67,7 +67,7 @@ std::shared_ptr<Triangulation> SpacetimeCartesianProblem<dim,nspecies,nstate>::g
                 this->all_param.flow_solver_param.mesh_reader_verbose_output,
                 this->all_param.do_renumber_dofs);
 
-            const double factor = 20.0 / pow(cube_mesh->triangulation->n_cells(),1.0/(dim-1));
+            const double factor = this->height;
             this->pcout << "Rescaling temporal dimension to " << factor << std::endl;
             // See deal.ii tutorial steps 49 and 53 for details on transforming a mesh
             if constexpr(dim==2){
@@ -113,7 +113,6 @@ template<typename adtype>
 void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_surface_solution_for_BC(std::shared_ptr <DGBase<dim,nspecies,double>> dg,
 std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics) const
 {
-    const double grid_height = 2.0/pow(dg->triangulation->n_cells(), 1.0/(dim-1));
 
     //Get operators for cell loop
     const unsigned int init_grid_degree = dg->high_order_grid->fe_system.tensor_degree();
@@ -139,6 +138,7 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
     {
         if (!soln_cell->is_locally_owned()) continue;
 
+        const int icell = soln_cell->active_cell_index();
         // ############ Get local solution 
 
         // Current reference element related to this physical cell
@@ -211,7 +211,7 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
                     surf_flux_node[idim] = metric_oper.flux_nodes_surf[iface][idim][iquad];
                 }
                 //std::cout << std::endl;
-                if ((surf_flux_node[dim-1] == grid_height  && pde_physics->temporal_advection>0 )
+                if ((surf_flux_node[dim-1] == this->height  && pde_physics->temporal_advection>0 )
                         ||( surf_flux_node[dim-1] == 0.0 && pde_physics->temporal_advection<0)) {
                     //std::cout << "On top face! " << std::endl;
                 } else {
@@ -219,7 +219,13 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
                 }
                     
             }
-            if (!on_outflow_face) continue;
+            //this->pcout << "Cell " << icell << std::endl;
+            if (!on_outflow_face) {
+                //this->pcout << "Not outflow on " << iface << std::endl;
+                continue;
+            }
+
+            //this->pcout << "Detected an outflow face on " << iface << std::endl;
 
 
             std::vector<bool> face_orientation = {soln_cell->face_orientation(iface), soln_cell->face_rotation(iface), soln_cell->face_flip(iface)};
@@ -301,10 +307,13 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
                 // Get entropy-projected surface soln.
                  std::array<adtype,nstate> conservative_vars_quad = pde_physics->compute_conservative_variables_from_entropy_variables (entropy_var_face);    
                 // STORE: 
-                const int icell = soln_cell->active_cell_index();
+                this->pcout << "Storing imposed boundary in icell " << icell << " iquad " << iquad << " ";
                 for (int istate = 0; istate<nstate; ++istate){
                     pde_physics->imposed_boundary[icell][iquad][istate] = conservative_vars_quad[istate];
+                    this->pcout << pde_physics->imposed_boundary[icell][iquad][istate] << " ";
+                    
                 }
+                this->pcout << std::endl;
             }
         }
     }
@@ -353,15 +362,19 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
         }
 
         this->pcout << "About to find surface solutions from converged solution..." << std::endl;
+        this->pcout << "double" << std::endl;
         get_surface_solution_for_BC<double>(dg, dg_state->pde_physics_double);
+        this->pcout << "fad" << std::endl;
         get_surface_solution_for_BC<FadType>(dg, dg_state->pde_physics_fad);
+        this->pcout << "rad" << std::endl;
         get_surface_solution_for_BC<RadType>(dg, dg_state->pde_physics_rad);
+        this->pcout << "fadfad" << std::endl;
         get_surface_solution_for_BC<FadFadType>(dg, dg_state->pde_physics_fad_fad);
+        this->pcout << "radfad" << std::endl;
         get_surface_solution_for_BC<RadFadType>(dg, dg_state->pde_physics_rad_fad);
         this->pcout << "Done!" << std::endl;
 
     }
-
     // Go through all AD types & modify temporal advection direction
    dg_state->pde_physics_double->temporal_advection *= -1;
    dg_state->pde_physics_fad->temporal_advection *= -1;

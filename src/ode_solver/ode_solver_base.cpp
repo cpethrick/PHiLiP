@@ -204,8 +204,8 @@ int ODESolverBase<dim,nspecies,real,MeshType>::steady_state (const bool do_reset
         }
 
         const bool pseudotime = true;
-        step_in_time(ramped_CFL, pseudotime);
-        //step_in_time(initial_CFL,pseudotime); 
+        //step_in_time(ramped_CFL, pseudotime);
+        step_in_time(initial_CFL,pseudotime); 
 
         this->dg->assemble_residual ();
 
@@ -230,6 +230,8 @@ int ODESolverBase<dim,nspecies,real,MeshType>::steady_state (const bool do_reset
         || CFL_factor <= 1e-2)
     {
         this->dg->solution = initial_solution;
+        
+        pcout << "Resetting solution !!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
         if(CFL_factor <= 1e-2) this->dg->right_hand_side.add(1.0);
     }
@@ -255,6 +257,8 @@ int ODESolverBase<dim,nspecies,real,MeshType>::steady_state (const bool do_reset
           << std::endl
           << " ********************************************************** "
           << std::endl;
+
+    this->current_iteration += 1; // hard-coded to make numbering work for spacetime...
 
     return convergence_error;
 }

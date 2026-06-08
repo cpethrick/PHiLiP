@@ -488,9 +488,10 @@ int FlowSolver<dim,nspecies,nstate>::run() const
         //----------------------------------------------------
 
         //double dt = 0.25; //hard code for now
-        double dt = 20.0 / pow(dg->triangulation->n_cells(),1.0/(dim-1));
+        double dt = flow_solver_case->height;
         while (dg->get_current_time() < flow_solver_param.final_time -1E-12) {
             ode_solver->steady_state(false); //false so that iteration counter is not reset to zero, allowing more VTK files to be output
+            //dg->assemble_residual();
             dg->set_current_time(dg->get_current_time()+dt);
             // Within the flow solver case object, access space-time physics and reverse the temporal advection direction.
             // Thus, the t^n+1 face becomes the t^n face, and vice versa.

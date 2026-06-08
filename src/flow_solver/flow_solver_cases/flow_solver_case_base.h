@@ -112,6 +112,10 @@ private:
 
     /// Current time step
     double time_step;
+
+
+    public:
+    double height;
 };
 
 } // FlowSolver namespace
