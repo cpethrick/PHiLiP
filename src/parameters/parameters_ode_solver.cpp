@@ -236,7 +236,8 @@ void ODESolverParam::parse_parameters (dealii::ParameterHandler &prm)
 
         const std::string solver_type_for_diagonally_implicit_RK_string = prm.get("solver_type_for_diagonally_implicit_RK");
         if (solver_type_for_diagonally_implicit_RK_string == "JFNK")    { solver_type_for_diagonally_implicit_RK = DIRKSolverEnum::JFNK; }
-        if (solver_type_for_diagonally_implicit_RK_string == "AD")      { solver_type_for_diagonally_implicit_RK = DIRKSolverEnum::AD; }
+        if (solver_type_for_diagonally_implicit_RK_string == "AD")      { solver_type_for_diagonally_implicit_RK = DIRKSolverEnum::AD; 
+                                                                          allocate_matrix_dRdW = true;}
 
         print_iteration_modulo = prm.get_integer("print_iteration_modulo");
         output_final_steady_state_solution_to_file = prm.get_bool("output_final_steady_state_solution_to_file");
