@@ -12,16 +12,16 @@ namespace ODE {
 
 /// Runge-Kutta ODE solver (explicit or implicit) derived from ODESolver.
 #if PHILIP_DIM==1
-template <int dim, int nspecies, typename real, int n_rk_stages, typename MeshType = dealii::Triangulation<dim>>
+template <int dim, typename real, int n_rk_stages, typename MeshType = dealii::Triangulation<dim>>
 #else
-template <int dim, int nspecies, typename real, int n_rk_stages, typename MeshType = dealii::parallel::distributed::Triangulation<dim>>
+template <int dim, typename real, int n_rk_stages, typename MeshType = dealii::parallel::distributed::Triangulation<dim>>
 #endif
-class RungeKuttaODESolver: public RungeKuttaBase <dim, nspecies, real, n_rk_stages, MeshType>
+class RungeKuttaODESolver: public RungeKuttaBase <dim, real, n_rk_stages, MeshType>
 {
 public:
-    RungeKuttaODESolver(std::shared_ptr< DGBase<dim, nspecies, real, MeshType> > dg_input,
+    RungeKuttaODESolver(std::shared_ptr< DGBase<dim, real, MeshType> > dg_input,
             std::shared_ptr<RKTableauButcherBase<dim,real,MeshType>> rk_tableau_input,
-            std::shared_ptr<EmptyRRKBase<dim,nspecies,real,MeshType>> RRK_object_input); ///< Constructor.
+            std::shared_ptr<EmptyRRKBase<dim,real,MeshType>> RRK_object_input); ///< Constructor.
 
     /// Function to allocate the Specific RK allocation
     void allocate_runge_kutta_system () override;
@@ -37,7 +37,9 @@ public:
     /// Function to adjust time step size
     real adjust_time_step (real dt) override;
 
-protected:
+    std::array<dealii::LinearAlgebra::distributed::Vector<double>,3> soln_stored;
+
+public:
     /// Stores Butcher tableau a and b, which specify the RK method
     std::shared_ptr<RKTableauButcherBase<dim,real,MeshType>> butcher_tableau;
 };
