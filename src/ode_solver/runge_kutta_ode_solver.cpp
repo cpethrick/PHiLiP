@@ -62,7 +62,11 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::calculate_stag
             delY = Y_guess;
             rhs = Y_guess;
             int n_newton_iterations = 0;
-            while( rhs.linfty_norm() > 1.0e-5*(this->rk_stage[istage].linfty_norm()+1.0e-5) )
+            if (istage==0)
+                n_newton_iterations = 5; // assemble residual at beginning of step
+            const double scale = 1E-3;
+            bool linsolve_failed = false;
+            while( rhs.linfty_norm() > scale*(this->rk_stage[istage].linfty_norm()+scale) )
             {
                 this->dg->solution = Y_guess;
                 if(n_newton_iterations > 4)
@@ -82,16 +86,26 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::calculate_stag
                 delY -= Y_guess;
                 this->dg->global_mass_matrix.vmult_add(rhs,delY);
                 solve_linear(this->dg->system_matrix,rhs,delY,this->ODESolverBase<dim,nspecies,real,MeshType>::all_parameters->linear_solver_param);
-                if(std::isnan(delY.l2_norm())) 
+                if(std::isnan(delY.linfty_norm()) || delY.linfty_norm() == 0) 
                 {
-                    this->pcout << " ERROR: Linear solver failed and delY is nan. Aborting..." << std::endl;
-                    std::abort();
+                    //rhs.print(std::cout);
+                    this->pcout << "rhs l inf norm: " << rhs.linfty_norm() << std::endl;
+                    if (!linsolve_failed){
+                        this->pcout << " ERROR: Linear solver failed. Trying again with a fresh Jacobian." << std::endl;
+                        n_newton_iterations = 100; // to trigger assemble_residual(true) and update system matrix
+                        Y_guess = this->rk_stage[istage]; // resetting solution
+                        linsolve_failed = true;
+                    } else{
+                        this->pcout << " ERROR: Linear solver failed. Aborting..." << std::endl;
+                        std::abort();
+                    }
                 }
                 Y_guess += delY;
 
                 n_newton_iterations++;
             }
             this->rk_stage[istage] = Y_guess;
+            this->pcout << "Implicit solve converged!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
         } else if (this->ode_param.solver_type_for_diagonally_implicit_RK == DIRKSolverEnum::JFNK) {
 
             //JFNK version
@@ -106,6 +120,7 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::calculate_stag
     this->relaxation_runge_kutta->store_stage_solutions(istage, this->rk_stage[istage]);
 
     this->dg->solution = this->rk_stage[istage];
+    std::cout << "#################Done step " << this->current_time << std::endl;
 
 }
 
