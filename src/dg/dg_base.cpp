@@ -3348,6 +3348,7 @@ void DGBase<dim,nspecies,real,MeshType>::output_results_vtk (const unsigned int 
 #if PHILIP_DIM>1
     if(this->all_parameters->output_face_results_vtk) output_face_results_vtk (cycle, current_time);
 #endif
+    this->pcout << "Outputting results " << cycle << std::endl;
 
     const bool enable_higher_order_vtk_output = this->all_parameters->enable_higher_order_vtk_output;
     dealii::DataOut<dim, dealii::DoFHandler<dim>> data_out;

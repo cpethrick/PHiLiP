@@ -70,7 +70,7 @@ subsection flow_solver
     set poly_degree = 5
     subsection grid
       set use_gmsh_mesh = true
-      set input_mesh_filename = ../../meshes/slab2D_coarse
+      set input_mesh_filename = ../../meshes/slab2D
       subsection gmsh_boundary_IDs
         set use_periodic_BC_in_x = true
         set x_periodic_id_face_1 = 2003

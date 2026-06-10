@@ -191,6 +191,7 @@ boundary_purely_upwind(
         }
 
 #elif PHILIP_DIM==3
+        this->pcout << "here" << " " ;
 
         // Setting constants
         const real pi = dealii::numbers::PI;
@@ -224,11 +225,14 @@ boundary_purely_upwind(
 
 #endif
     } else if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && !this->apply_initial_condition  ){
+        //this->pcout << "Imposing boundary in icell " << icell << " iquad " << iquad  << " ";
         for (int istate=0; istate <nstate; ++istate){
             soln_bc[istate] = this->imposed_boundary[icell][iquad][istate];
+          //  this->pcout << this->imposed_boundary[icell][iquad][istate] << " ";
 
             soln_grad_bc[istate] = 0; //In Euler, this isn't used to my knowledge. 
         }
+        //this->pcout << std::endl;
     } else if ( (abs(normal_int[dim-1]*this->temporal_advection)-1) < 1E-14) {
         //this->pcout <<" Outflow at " << pos[0] << " " << pos[1] << std::endl;
         // ABS(normal) in temporal dimension = 1: this boundary will be pure convective outflow or outflow. Either way, set as soln_int.

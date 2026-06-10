@@ -32,12 +32,12 @@ set FR_user_specified_correction_parameter_value = 0
 
 subsection ODE solver
 
-  set ode_output = quiet
+  set ode_output = verbose
   
   #set nonlinear_max_iterations = 500
   set nonlinear_max_iterations = 50000
   #set nonlinear_max_iterations = 500
-  set nonlinear_steady_residual_tolerance = 1E-5
+  set nonlinear_steady_residual_tolerance = 1E-4
 
   #set print_iteration_modulo = 100
   set print_iteration_modulo = 1
@@ -51,9 +51,9 @@ subsection ODE solver
 end
 
 subsection linear solver
-  set linear_solver_output = quiet
+  set linear_solver_output = verbose
   subsection gmres options
-    set linear_residual_tolerance = 1E-2
+    set linear_residual_tolerance = 1E-3
   end
 end
 
@@ -73,7 +73,7 @@ subsection flow_solver
     set poly_degree = 3
     subsection grid
       set use_gmsh_mesh = true
-      set input_mesh_filename = ../../meshes/mesh_3D_structured
+      set input_mesh_filename = ../../meshes/mesh_3D_structured_VERYCOARSE
       subsection gmsh_boundary_IDs
         set use_periodic_BC_in_x = true # default IDs are used
         set use_periodic_BC_in_y = true # default IDs are used
@@ -82,6 +82,6 @@ subsection flow_solver
       #set grid_right_bound = 2.0
       #set number_of_grid_elements_per_dimension = 16
     end
-    set final_time = 0.5
+    set final_time = 2
 end
 
