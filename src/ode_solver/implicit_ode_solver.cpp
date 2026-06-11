@@ -25,7 +25,7 @@ void ImplicitODESolver<dim,nspecies,real,MeshType>::step_in_time (real dt, const
         this->dg->time_scaled_mass_matrices(CFL);
         this->dg->add_time_scaled_mass_matrices();
     } else {
-        this->dg->add_mass_matrices(1.0/dt);
+        //this->dg->add_mass_matrices(1.0/dt);
     }
 
     if ((this->ode_param.ode_output) == Parameters::OutputEnum::verbose &&

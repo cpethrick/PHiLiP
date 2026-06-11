@@ -2627,7 +2627,8 @@ void DGBase<dim,nspecies,real,MeshType>::assemble_residual (const bool compute_d
             if (l2_norm_node == 0.0) {
                 if (CFL_mass_dRdW == CFL_mass) {
                     pcout << " which is already assembled..." << std::endl;
-                    return;
+                    // HARD-CODED UNDER ADVISEMENT FROM PRANSHUL
+                    //return;
                 }
             }
         }

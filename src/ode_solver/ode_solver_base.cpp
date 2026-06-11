@@ -203,8 +203,9 @@ int ODESolverBase<dim,nspecies,real,MeshType>::steady_state (const bool do_reset
             this->dg->freeze_artificial_dissipation = false;
         }
 
-        const bool pseudotime = true;
+        const bool pseudotime = false;
         //step_in_time(ramped_CFL, pseudotime);
+        pcout << "!!! Warning: hard-coded to NOT use pseudo-timestepping." << std::endl;
         step_in_time(initial_CFL,pseudotime); 
 
         this->dg->assemble_residual ();
