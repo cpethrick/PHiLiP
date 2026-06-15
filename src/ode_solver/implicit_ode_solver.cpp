@@ -64,6 +64,18 @@ double ImplicitODESolver<dim,nspecies,real,MeshType>::linesearch ()
     this->pcout << " Step length " << step_length << ". Old residual: " << initial_residual << " New residual: " << new_residual << std::endl;
 
     int iline = 0;
+    while (isnan(new_residual) && iline < maxline ){
+        this->pcout << "New residual is NaN. Reducing step_length and trying again." << std::endl;  
+        step_length = step_length * step_reduction;
+        this->dg->solution = old_solution;
+        this->dg->solution.add(step_length, this->solution_update);
+        this->dg->assemble_residual ();
+        new_residual = this->dg->get_residual_l2norm();
+        this->pcout << " Step length " << step_length << " . Old residual: " << initial_residual << " New residual: " << new_residual << std::endl;
+        iline++;
+    }
+    iline = 0;
+
     for (iline = 0; iline < maxline && new_residual > initial_residual * reduction_tolerance_1; ++iline) {
         step_length = step_length * step_reduction;
         this->dg->solution = old_solution;
@@ -82,7 +94,7 @@ double ImplicitODESolver<dim,nspecies,real,MeshType>::linesearch ()
         new_residual = this->dg->get_residual_l2norm();
         this->pcout << " Step length " << step_length << " . Old residual: " << initial_residual << " New residual: " << new_residual << std::endl;
         for (iline = 0; iline < maxline && new_residual > initial_residual * reduction_tolerance_2 ; ++iline) {
-            step_length = step_length * step_reduction;
+             step_length = step_length * step_reduction;
             this->dg->solution = old_solution;
             this->dg->solution.add(step_length, this->solution_update);
             this->dg->assemble_residual ();
