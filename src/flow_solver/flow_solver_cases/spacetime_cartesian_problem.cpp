@@ -33,7 +33,7 @@ SpacetimeCartesianProblem<dim,nspecies,nstate>::SpacetimeCartesianProblem(const 
         , domain_left(this->all_param.flow_solver_param.grid_left_bound)
         , domain_right(this->all_param.flow_solver_param.grid_right_bound)
         , domain_size(pow(this->domain_right - this->domain_left, dim))
-{this->height = 0.25; }
+{this->height = this->all_param.flow_solver_param.constant_time_step; }
 
 // Helper function to scale the width of the time-slab - 2D
 dealii::Point<2> scale_timeslab_2D(const double factor, const dealii::Point<2> &in)
@@ -387,6 +387,13 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
    dg_state->conv_num_flux_rad->temporal_advection *= -1;
    dg_state->conv_num_flux_fad_fad->temporal_advection *= -1;
    dg_state->conv_num_flux_rad_fad->temporal_advection *= -1;
+
+   // Go thorugh all AD types and update current time
+   dg_state->pde_physics_double->dg_current_time+= this->height;
+   dg_state->pde_physics_fad->dg_current_time+= this->height;
+   dg_state->pde_physics_rad->dg_current_time+= this->height;
+   dg_state->pde_physics_fad_fad->dg_current_time+= this->height;
+   dg_state->pde_physics_rad_fad->dg_current_time+= this->height;
 }
 
 #if PHILIP_DIM>1

@@ -88,7 +88,7 @@ protected:
      *  Solution: In order to make the hidden function visible in derived class, 
      *  we need to add the following: */
     //using PhysicsBase<dim,nspecies,nstate,real>::dissipative_flux;
-    //using PhysicsBase<dim,nspecies,nstate,real>::source_term;
+    using Euler<dim,nspecies,nstate,real>::source_term;
     using Euler<dim,nspecies,nstate,real>::boundary_face_values;
 public:
     using two_point_num_flux_enum = Parameters::AllParameters::TwoPointNumericalFlux;
@@ -182,6 +182,19 @@ public:
         const std::array<real,nstate> &conservative_soln1,
         const std::array<real,nstate> &conservative_soln2,
         const dealii::Tensor<1,dim,real> &normal_int) const;
+    
+
+     /// (function overload) Source term is zero or depends on manufactured solution
+     /// This is hard-coded to use a manufactured solution that depends on the slab time.
+    std::array<real,nstate> source_term (
+        const dealii::Point<dim,real> &pos,
+        const std::array<real,nstate> &solution,
+        const real current_time,
+        const dealii::types::global_dof_index cell_index) const;
+
+    std::array<real,nstate> get_hard_coded_manufactured_solution( const dealii::Point<dim,real> &pos ) const;
+    std::array<dealii::Tensor<1,dim,real>,nstate> get_hard_coded_manufactured_solution_gradient ( const dealii::Point<dim,real> &pos ) const;
+    dealii::Point<dim,real> convert_pos_tslab( const dealii::Point<dim,real> &pos) const;
 };
 
 

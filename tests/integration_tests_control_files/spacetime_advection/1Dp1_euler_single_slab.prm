@@ -52,10 +52,13 @@ end
 
 subsection linear solver
   set linear_solver_output = quiet
+  subsection gmres options
+    set ilut_atol = 1E-7
+  end
 end
 
 subsection manufactured solution convergence study
-  #set use_manufactured_source_term = true
+  set use_manufactured_source_term = true
   #set manufactured_solution_type = euler_spacetime
 end
 
@@ -68,6 +71,7 @@ subsection flow_solver
     #set steady_state = true
     set is_decoupled_spacetime = true
     set poly_degree = 5
+    set constant_time_step = 0.25
     subsection grid
       set use_gmsh_mesh = true
       set input_mesh_filename = ../../meshes/slab2D
@@ -80,6 +84,6 @@ subsection flow_solver
       #set grid_right_bound = 2.0
       #set number_of_grid_elements_per_dimension = 16
     end
-    set final_time = 2.0
+    set final_time = 0.5
 end
 

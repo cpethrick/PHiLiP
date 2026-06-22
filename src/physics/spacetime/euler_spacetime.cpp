@@ -174,6 +174,7 @@ boundary_purely_upwind(
         }
         
         soln_bc[nstate-1] =  pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
+        /*
         if (x < 0.3){
                 soln_bc[0]= 1;
                 soln_bc[1]= 0;
@@ -185,7 +186,7 @@ boundary_purely_upwind(
                 soln_bc[2]= 0;
                 soln_bc[3] =  1.1/0.4;
         }
-
+*/
         for (int istate = 0; istate < nstate;  ++istate){
             soln_grad_bc[istate] = 0;
         }
@@ -551,6 +552,149 @@ std::array<real, nstate> EulerSpacetime<dim,nspecies,nstate, real>
     return dissipation_vector;
     
 }
+
+template <int dim, int nspecies, int nstate, typename real>
+std::array<real,nstate> EulerSpacetime<dim,nspecies,nstate,real>
+::source_term (
+    const dealii::Point<dim,real> &pos,
+    const std::array<real,nstate> &/*solution*/,
+    const real current_time,
+    const dealii::types::global_dof_index /*cell_index*/) const
+{
+    (void) pos;
+    (void) current_time;
+
+    if (this->all_parameters->manufactured_convergence_study_param.manufactured_solution_param.use_manufactured_source_term) {
+        
+        // UPDATE HERE
+        const std::array<real,nstate> manufactured_solution = get_hard_coded_manufactured_solution(pos);
+        const std::array<dealii::Tensor<1,dim,real>,nstate> manufactured_solution_gradient = get_hard_coded_manufactured_solution_gradient (pos);
+
+        dealii::Tensor<1,nstate,real> convective_flux_divergence;
+        for (int d=0;d<dim;d++) {
+            dealii::Tensor<1,dim,real> normal;
+            normal[d] = 1.0;
+            const dealii::Tensor<2,nstate,real> jacobian = convective_flux_directional_jacobian(manufactured_solution, normal);
+
+            //convective_flux_divergence += jacobian*manufactured_solution_gradient[d];
+            for (int sr = 0; sr < nstate; ++sr) {
+                real jac_grad_row = 0.0;
+                for (int sc = 0; sc < nstate; ++sc) {
+                    jac_grad_row += jacobian[sr][sc]*manufactured_solution_gradient[sc][d];
+                }
+                convective_flux_divergence[sr] += jac_grad_row;
+            }
+        }
+        std::array<real,nstate> convective_source_term;
+        for (int s=0; s<nstate; s++) {
+            convective_source_term[s] = convective_flux_divergence[s];
+        }
+
+        return convective_source_term;
+    } else {
+        std::array<real,nstate> zero = {{0.0}};
+        return zero;
+    }
+}
+
+
+template <int dim, int nspecies, int nstate, typename real>
+std::array<real,nstate> EulerSpacetime<dim,nspecies,nstate,real>::get_hard_coded_manufactured_solution( const dealii::Point<dim,real> &pos ) const {
+    dealii::Point<dim,real> point = convert_pos_tslab(pos);
+
+
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    real y = point[1];
+    
+    real t;
+    if constexpr(dim==2){
+        t = y;
+        y = 0;
+    }
+    else if constexpr (dim==3) {
+        const real z = point[2];
+        t = z;
+    }
+   
+    std::array<real,nstate> val = {{0.0}};
+    //density
+    val[0] = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    //momentum
+    val[1] = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    if (dim==3) val[2] = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    //second unused momentum
+    //val[dim] = 0; 
+    //energy
+    val[dim+1] = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
+
+    return val;
+}
+
+template <int dim, int nspecies, int nstate, typename real>
+std::array<dealii::Tensor<1,dim,real>,nstate> EulerSpacetime<dim,nspecies,nstate,real>::
+get_hard_coded_manufactured_solution_gradient( const dealii::Point<dim,real> &pos ) const {
+    dealii::Point<dim,real> point = convert_pos_tslab(pos);
+
+    std::array<dealii::Tensor<1,dim,real>,nstate> gradient = {};
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    real y = point[1];
+    
+    real t;
+    if constexpr(dim==2){
+        t = y;
+        y = 0;
+    }
+    else if constexpr (dim==3) {
+        const real z = point[2];
+        t = z;
+    }
+
+    //density
+    gradient[0][0] = 0.1*pi*cos(pi*(x+y-2*t));
+    gradient[0][1] = 0.1*pi*cos(pi*(x+y-2*t));
+    gradient[0][dim-1] = -0.2*pi*cos(pi*(x+y-2*t));
+    //momentum
+    gradient[1][0] = 0.1*pi*cos(pi*(x+y-2*t));
+    gradient[1][1] = 0.1*pi*cos(pi*(x+y-2*t));
+    gradient[1][dim-1] = -0.2*pi*cos(pi*(x+y-2*t));
+    if (dim==3) {
+        gradient[2][0] = 0.1*pi*cos(pi*(x+y-2*t));
+        gradient[2][1] = 0.1*pi*cos(pi*(x+y-2*t));
+        gradient[2][2] = -0.2*pi*cos(pi*(x+y-2*t));
+    }
+    //second unused momentum
+    gradient[dim][0]=0.0;
+    gradient[dim][1]=0.0;
+    gradient[dim][dim-1]=0.0;
+    //energy
+    gradient[dim+1][0] =  0.02 *pi* cos(pi* (x +y- 2* t)) *(20 + sin(pi* (x+y - 2 *t)));
+    gradient[dim+1][1] =  0.02 *pi* cos(pi* (x +y- 2* t)) *(20 + sin(pi* (x+y - 2 *t)));
+    gradient[dim+1][dim-1] = -0.04*pi*cos(pi* (x +y- 2 *t))* (20 + sin(pi* (x+y - 2 *t)));
+    return gradient;
+}
+
+//convert position to the current timeslab
+//for decoupled timeslabs
+template <int dim, int nspecies, int nstate, typename real>
+dealii::Point<dim,real> EulerSpacetime<dim,nspecies,nstate,real>::convert_pos_tslab( const dealii::Point<dim,real> &pos) const {
+    dealii::Point<dim,real> point_translated = pos;
+    // Case 1: temporal_advection = 1, BOTTOM face is t=dg_current_time
+    // and time +'ve is y (or z) +'ve
+    if (this->temporal_advection > 0) {
+        point_translated[dim-1] += this->dg_current_time;
+    }
+    // Case 2: temporal_advection = -1, TOP face is t=dg_current_time
+    // and time +'ve is y (or z) -'ve
+    else if (this->temporal_advection < 0) {
+        point_translated[dim-1] = this->dg_current_time - point_translated[dim-1];
+    }
+
+    return point_translated;
+}
+
+
 #if PHILIP_DIM>1
 template class EulerSpacetime < PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double >;
 template class EulerSpacetime < PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, FadType>;

@@ -61,6 +61,7 @@ end
 subsection flow_solver
     set flow_case_type = spacetime_cartesian
     set steady_state = true
+    set constant_time_step = 0.25
     set poly_degree = 2
     subsection grid
       set grid_left_bound = 0.0

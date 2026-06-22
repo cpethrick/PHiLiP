@@ -279,6 +279,13 @@ public:
     /** Consider moving to derived class (currently here to avoid dynamic casting)
      */
     bool apply_initial_condition=true;
+    /// Time in DG
+    /** For determining which timeslab we are on
+     *  when using decoupled timeslabs
+     *  hard-coded for manufactured solution; there's probably a 
+     *  better way to structure this but I don't have the time
+     */
+    real dg_current_time=0.0;
 
     // Store a boundary to impose as the external solution
     // Storage as [icell][iquad][istate]
