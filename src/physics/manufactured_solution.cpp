@@ -654,6 +654,7 @@ template <int dim, int nspecies, typename real>
 inline dealii::Tensor<1,dim,real> ManufacturedSolutionEulerSpacetime<dim,nspecies,real>
 ::gradient (const dealii::Point<dim,real> &point, const unsigned int istate) const
 {
+    std::cout << "should not be here!" << std::endl;
     dealii::Tensor<1,dim,real> gradient;
     const real pi = atan(1)*4;
     const real x = point[0];

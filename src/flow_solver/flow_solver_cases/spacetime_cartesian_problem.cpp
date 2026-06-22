@@ -376,6 +376,7 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
 
     }
     // Go through all AD types & modify temporal advection direction
+    /*
    dg_state->pde_physics_double->temporal_advection *= -1;
    dg_state->pde_physics_fad->temporal_advection *= -1;
    dg_state->pde_physics_rad->temporal_advection *= -1;
@@ -387,6 +388,7 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
    dg_state->conv_num_flux_rad->temporal_advection *= -1;
    dg_state->conv_num_flux_fad_fad->temporal_advection *= -1;
    dg_state->conv_num_flux_rad_fad->temporal_advection *= -1;
+   */
 
    // Go thorugh all AD types and update current time
    dg_state->pde_physics_double->dg_current_time+= this->height;
@@ -394,6 +396,12 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
    dg_state->pde_physics_rad->dg_current_time+= this->height;
    dg_state->pde_physics_fad_fad->dg_current_time+= this->height;
    dg_state->pde_physics_rad_fad->dg_current_time+= this->height;
+   // Go thorugh all AD types and update current time
+   dg_state->pde_physics_double->dt = this->height;
+   dg_state->pde_physics_fad->dt = this->height;
+   dg_state->pde_physics_rad->dt = this->height;
+   dg_state->pde_physics_fad_fad->dt = this->height;
+   dg_state->pde_physics_rad_fad->dt = this->height;
 }
 
 #if PHILIP_DIM>1
