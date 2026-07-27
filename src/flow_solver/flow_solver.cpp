@@ -489,6 +489,9 @@ int FlowSolver<dim,nspecies,nstate>::run() const
 
         //double dt = 0.25; //hard code for now
         double dt = flow_solver_case->height;
+        pcout << "Timer starting. " << std::endl;
+        dealii::Timer timer(this->mpi_communicator,false);
+        timer.start();
         while (dg->get_current_time() < flow_solver_param.final_time -1E-12) {
             ode_solver->steady_state(false); //false so that iteration counter is not reset to zero, allowing more VTK files to be output
             //dg->assemble_residual();
@@ -498,6 +501,19 @@ int FlowSolver<dim,nspecies,nstate>::run() const
             flow_solver_case->modify_dg_object(dg);
             pcout << "Current DG time: " << dg->get_current_time() << std::endl;
         }
+        pcout << "Timer ending. " << std::endl;
+        timer.stop();
+        pcout << "Timer stopped. " << std::endl;
+        const double cpu_time = timer.cpu_time();
+        const double total_wall_time = dealii::Utilities::MPI::sum(timer.wall_time(), this->mpi_communicator);
+        const double number_of_time_steps = (double)ode_solver->current_iteration;
+        const double avg_cpu_time_per_time_step = cpu_time/number_of_time_steps;
+        const double avg_total_wall_time_per_time_step = total_wall_time/number_of_time_steps;
+        pcout << "Elapsed CPU time: " << cpu_time << " seconds." << std::endl;
+        pcout << "Elapsed total wall time (mpi max): " << total_wall_time << " seconds." << std::endl;
+        pcout << "Average CPU time per time step: " << avg_cpu_time_per_time_step << " seconds." << std::endl;
+        pcout << "Average total wall time per time step: " << avg_total_wall_time_per_time_step << " seconds." << std::endl;
+
 
 
     } else {
