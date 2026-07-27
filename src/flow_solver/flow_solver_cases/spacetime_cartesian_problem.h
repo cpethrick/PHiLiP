@@ -45,6 +45,20 @@ protected:
     template<typename adtype>
     void get_surface_solution_for_BC(std::shared_ptr <DGBase<dim,nspecies,double>> dg,
 std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics) const;
+    
+    template<typename adtype>
+    void get_overintegrated_err_on_surface(std::shared_ptr <DGBase<dim,nspecies,double>> dg,
+std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics) const;
+
+    template<typename real>
+    real calculate_error_at_quad(
+        const std::array<real,nstate> conservative_soln, 
+        const int istate, 
+        const dealii::Point<dim,real> point, 
+        std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, real>>  pde_physics) const;
+
+    //void calculate_error_at_end(std::shared_ptr <DGBase<dim,nspecies,double>> dg) const; 
+    
 };
 
 } // FlowSolver namespace

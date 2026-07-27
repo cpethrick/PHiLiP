@@ -111,7 +111,8 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::display_additional_flow_cas
 template <int dim, int nspecies, int nstate>
 template<typename adtype>
 void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_surface_solution_for_BC(std::shared_ptr <DGBase<dim,nspecies,double>> dg,
-std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics) const
+        std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics
+        ) const
 {
 
     //Get operators for cell loop
@@ -132,6 +133,7 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
             flux_basis_stiffness, 
             soln_basis_projection_oper, soln_basis_projection_oper_ext,
             mapping_basis);
+
 
     auto metric_cell = dg->high_order_grid->dof_handler_grid.begin_active();
     for (auto soln_cell = dg->dof_handler.begin_active(); soln_cell != dg->dof_handler.end(); ++soln_cell, ++metric_cell) 
@@ -205,6 +207,7 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
                 dg->all_parameters->use_invariant_curl_form);
             dealii::Point<dim,adtype> surf_flux_node;
             const unsigned int n_face_quad_pts  = dg->face_quadrature_collection[poly_degree].size();
+            const std::vector<double> quad_weights = dg->face_quadrature_collection[poly_degree].get_weights();
             bool on_outflow_face = true;
             for (unsigned int iquad=0; iquad<n_face_quad_pts; ++iquad) {
                 for(int idim=0; idim<dim; idim++){
@@ -306,18 +309,167 @@ std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde
                 }
                 // Get entropy-projected surface soln.
                  std::array<adtype,nstate> conservative_vars_quad = pde_physics->compute_conservative_variables_from_entropy_variables (entropy_var_face);    
-                // STORE: 
-                this->pcout << "Storing imposed boundary in icell " << icell << " iquad " << iquad << " ";
-                for (int istate = 0; istate<nstate; ++istate){
-                    pde_physics->imposed_boundary[icell][iquad][istate] = conservative_vars_quad[istate];
-                    this->pcout << pde_physics->imposed_boundary[icell][iquad][istate] << " ";
-                    
-                }
-                this->pcout << std::endl;
+                 if (false){
+                     std::array<adtype,nstate> error_at_quad;
+                    for(int idim=0; idim<dim; idim++){
+                        surf_flux_node[idim] = metric_oper.flux_nodes_surf[iface][idim][iquad];
+                    }
+                     for (int istate = 0; istate<nstate; ++istate){
+                         error_at_quad[istate] = calculate_error_at_quad(conservative_vars_quad, istate, surf_flux_node, pde_physics);
+                     }
+                     //Integrate only density error
+                    //integrated_error += error_at_quad[0] * quad_weights[iquad] * 0.0625;// metric_oper.det_Jac_surf[iquad];
+                    this->pcout << iquad << " ";
+                    this->pcout << error_at_quad[0] << " ";
+                    this->pcout << surf_flux_node[0] << " ";
+                    this->pcout << surf_flux_node[1] << " ";
+                    this->pcout << quad_weights[iquad] << " ";
+                    this->pcout << metric_oper.det_Jac_surf[iquad] << std::endl;
+                 } else{
+                    // STORE: 
+                    this->pcout << "Storing imposed boundary in icell " << icell << " iquad " << iquad << " ";
+                    for (int istate = 0; istate<nstate; ++istate){
+                        pde_physics->imposed_boundary[icell][iquad][istate] = conservative_vars_quad[istate];
+                        this->pcout << pde_physics->imposed_boundary[icell][iquad][istate] << " ";
+                        
+                    }
+                    this->pcout << std::endl;
+                 }
             }
         }
     }
+    if constexpr (std::is_same_v<adtype, double>) {
+        // MPI sum is not defined for AD types. This is OK becuase only integrated error needs to use MPI sum, and it is always double.
+        if (false){
+            //integrated_error = dealii::Utilities::MPI::sum(integrated_error, this->mpi_communicator);
+            //this->pcout << "Error at time " <<  pde_physics->dg_current_time << " is " << std::setprecision(16) << integrated_error << std::endl;
+        }
+    }
 }
+
+template <int dim, int nspecies, int nstate>
+template<typename adtype>
+void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_overintegrated_err_on_surface(std::shared_ptr <DGBase<dim,nspecies,double>> dg,
+        std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, adtype>> pde_physics
+        ) const
+{
+    const int overintegrate = 10;
+    const int poly_degree = this->all_param.flow_solver_param.poly_degree;
+    dealii::QGauss<dim-1> facequad_extra(dg->max_degree+1+overintegrate);
+    const dealii::Mapping<dim> &mapping = (*(dg->high_order_grid->mapping_fe_field));
+    std::array<double,nstate> soln_at_q;
+    dealii::FEFaceValues<dim,dim>    fe_face_values (mapping, dg->fe_collection[poly_degree], facequad_extra, dealii::update_values | dealii::update_JxW_values | dealii::update_quadrature_points);
+    const unsigned int n_face_quad_pts = fe_face_values.n_quadrature_points;
+    std::vector<dealii::types::global_dof_index> dofs_indices (fe_face_values.dofs_per_cell);
+    double l2error = 0.0;
+    std::cout << "About to enter cell loop " << std::endl;
+    for (auto cell = dg->dof_handler.begin_active(); cell!=dg->dof_handler.end(); ++cell) {
+
+        if (!cell->is_locally_owned()) continue;
+
+
+        const int icell = cell->active_cell_index();
+
+        for (unsigned int iface=0; iface<dealii::GeometryInfo<dim>::faces_per_cell; ++iface) {
+            fe_face_values.reinit (cell,iface);
+            cell->get_dof_indices (dofs_indices);
+
+            bool on_outflow_face=true;
+            //Select face
+            for (unsigned int iquad=0; iquad<n_face_quad_pts; ++iquad) {
+                const dealii::Point< dim > quad_physical_pt = fe_face_values.quadrature_point(iquad);
+                //std::cout << "quad pt " << quad_physical_pt[1] << std::endl;
+                //std::cout << std::endl;
+                if ((quad_physical_pt[dim-1] == this->height  && pde_physics->temporal_advection>0 )
+                        ||( quad_physical_pt[dim-1] == 0.0 && pde_physics->temporal_advection<0)) {
+                    //std::cout << "On top face! " << std::endl;
+                } else {
+                    on_outflow_face = false;
+                }
+                    
+            }
+            this->pcout << "Cell " << icell << std::endl;
+            if (!on_outflow_face) {
+                this->pcout << "Not outflow on " << iface << std::endl;
+                continue;
+            }
+            else this->pcout << "Outflow on " << iface << std::endl;
+            //
+            for (unsigned int iquad=0; iquad<n_face_quad_pts; ++iquad) {
+                const dealii::Point< dim > quad_physical_pt = fe_face_values.quadrature_point(iquad);
+
+                std::fill(soln_at_q.begin(), soln_at_q.end(), 0);
+                for (unsigned int idof=0; idof<fe_face_values.dofs_per_cell; ++idof) {
+                    const unsigned int istate = fe_face_values.get_fe().system_to_component_index(idof).first;
+                    soln_at_q[istate] += dg->solution[dofs_indices[idof]] * fe_face_values.shape_value_component(idof, iquad, istate);
+                }
+
+                // Replace with error calculation
+                 std::array<adtype,nstate> error_at_quad;
+                for (unsigned int istate=0; istate<nstate; ++istate){
+                    error_at_quad[istate] = calculate_error_at_quad(soln_at_q, istate, quad_physical_pt, pde_physics);
+                }
+                l2error += error_at_quad[0]*fe_face_values.JxW(iquad);
+
+            }
+            this->pcout << "Cumulative error " << l2error << std::endl;
+        }
+    } 
+    l2error = dealii::Utilities::MPI::sum(l2error, this->mpi_communicator);
+    this->pcout << "Error at time " <<  pde_physics->dg_current_time << " is " << std::setprecision(16) << l2error << std::endl;
+}
+
+template <int dim, int nspecies, int nstate>
+template<typename real>
+real SpacetimeCartesianProblem<dim,nspecies,nstate>::calculate_error_at_quad(
+        const std::array<real,nstate> conservative_soln, 
+        const int istate, 
+        const dealii::Point<dim,real> point, 
+        std::shared_ptr<PHiLiP::Physics::PhysicsBase<dim, nspecies, nstate, real>>  pde_physics) const
+{
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    real y = point[1];
+    
+    real t;
+    if constexpr(dim==2){
+        t = pde_physics->dg_current_time; // if called after the decoupled timeslab loop, this time will correspond to the end time.
+        y = 0;
+    }
+    else if constexpr (dim==3) {
+        this->pcout << "Warning! Not tested!" << std::endl;
+        const real z = point[2];
+        t = z;
+    }
+   
+    real exact_soln = 0;
+    //density
+    if (istate==0) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    //momentum
+    if (istate==1) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    if (istate==2 && dim==3) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    //second unused momentum
+    if (istate==dim) exact_soln = 0; 
+    //energy
+    if (istate==dim+1) exact_soln = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
+    
+    (void) conservative_soln;
+    (void) exact_soln;
+    return abs(exact_soln- conservative_soln[istate]);
+    //return abs(exact_soln);// - conservative_soln[istate]);
+    //return abs(conservative_soln[istate]);
+
+}
+
+/*
+template <int dim, int nspecies, int nstate>
+void SpacetimeCartesianProblem<dim,nspecies,nstate>::calculate_error_at_end(std::shared_ptr <DGBase<dim,nspecies,double>> dg) const 
+{
+
+    std::shared_ptr <DGBaseState<dim,nspecies,nstate,double>> dg_state = std::dynamic_pointer_cast<DGBaseState<dim,nspecies,nstate,double>> (dg);
+    get_surface_solution_for_BC<double>(dg, dg_state->pde_physics_double, true);
+
+}*/
 
 template <int dim, int nspecies, int nstate>
 void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::shared_ptr <DGBase<dim,nspecies,double>> dg) const
@@ -402,6 +554,11 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
    dg_state->pde_physics_rad->dt = this->height;
    dg_state->pde_physics_fad_fad->dt = this->height;
    dg_state->pde_physics_rad_fad->dt = this->height;
+
+   if (dg_state->pde_physics_double->dg_current_time + 0.5*this->height >=  this->all_param.flow_solver_param.final_time) {
+       //Output error to console
+       this->get_overintegrated_err_on_surface(dg, dg_state->pde_physics_double);
+   }
 }
 
 #if PHILIP_DIM>1
