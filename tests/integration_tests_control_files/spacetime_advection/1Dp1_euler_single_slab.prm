@@ -12,7 +12,7 @@ set use_weak_form = false
 
 set overintegration = 0
 
-#set flux_nodes_type = GL
+set flux_nodes_type = GLL
 
 set use_split_form = true
 
@@ -37,7 +37,7 @@ subsection ODE solver
   #set nonlinear_max_iterations = 500
   set nonlinear_max_iterations = 50000
   #set nonlinear_max_iterations = 500
-  set nonlinear_steady_residual_tolerance = 1E-10
+  set nonlinear_steady_residual_tolerance = 1E-12
 
   #set print_iteration_modulo = 100
   set print_iteration_modulo = 1
@@ -53,6 +53,7 @@ end
 subsection linear solver
   set linear_solver_output = quiet
   subsection gmres options
+    set linear_residual_tolerance = 1E-7
     set ilut_atol = 1E-7
   end
 end
@@ -70,11 +71,11 @@ subsection flow_solver
     set flow_case_type = spacetime_cartesian
     #set steady_state = true
     set is_decoupled_spacetime = true
-    set poly_degree = 5
-    set constant_time_step = 0.25
+    set poly_degree = 4
+    set constant_time_step = 0.5
     subsection grid
       set use_gmsh_mesh = true
-      set input_mesh_filename = ../../meshes/slab2D
+      set input_mesh_filename = ../../meshes/slab2D_extracoarse
       subsection gmsh_boundary_IDs
         set use_periodic_BC_in_x = true
         set x_periodic_id_face_1 = 2003
@@ -84,6 +85,6 @@ subsection flow_solver
       #set grid_right_bound = 2.0
       #set number_of_grid_elements_per_dimension = 16
     end
-    set final_time = 0.5
+    set final_time = 2.0
 end
 

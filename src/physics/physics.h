@@ -286,6 +286,10 @@ public:
      *  better way to structure this but I don't have the time
      */
     real dg_current_time=0.0;
+    /// time slab width
+    /** also hard-coded
+     */
+    real dt = 0.0;
 
     // Store a boundary to impose as the external solution
     // Storage as [icell][iquad][istate]

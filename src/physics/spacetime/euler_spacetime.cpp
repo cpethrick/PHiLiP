@@ -616,16 +616,18 @@ std::array<real,nstate> EulerSpacetime<dim,nspecies,nstate,real>::get_hard_coded
         t = z;
     }
    
+    // shorthand
+    const real adv = this->temporal_advection;
     std::array<real,nstate> val = {{0.0}};
     //density
-    val[0] = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    val[0] = 2 + 0.1 * sin(pi * (x + y - adv*2*t));
     //momentum
-    val[1] = 2 + 0.1 * sin(pi * (x + y - 2*t));
-    if (dim==3) val[2] = 2 + 0.1 * sin(pi * (x + y - 2*t));
+    val[1] = 2 + 0.1 * sin(pi * (x + y - adv*2*t));
+    if (dim==3) val[2] = 2 + 0.1 * sin(pi * (x + y - adv*2*t));
     //second unused momentum
     //val[dim] = 0; 
     //energy
-    val[dim+1] = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
+    val[dim+1] = pow(2 + 0.1*sin(pi * (x + y - adv*2*t)),2);
 
     return val;
 }
@@ -649,28 +651,31 @@ get_hard_coded_manufactured_solution_gradient( const dealii::Point<dim,real> &po
         const real z = point[2];
         t = z;
     }
+    // shorthand
+    const real adv = this->temporal_advection;
 
     //density
-    gradient[0][0] = 0.1*pi*cos(pi*(x+y-2*t));
-    gradient[0][1] = 0.1*pi*cos(pi*(x+y-2*t));
-    gradient[0][dim-1] = -0.2*pi*cos(pi*(x+y-2*t));
+    gradient[0][0] = 0.1*pi*cos(pi*(x+y-adv*2*t));
+    //gradient[0][1] = 0.1*pi*cos(pi*(x+y-adv*2*t));
+    gradient[0][1] = -0.2*adv*pi*cos(pi*(x+y-adv*2*t));
     //momentum
-    gradient[1][0] = 0.1*pi*cos(pi*(x+y-2*t));
-    gradient[1][1] = 0.1*pi*cos(pi*(x+y-2*t));
-    gradient[1][dim-1] = -0.2*pi*cos(pi*(x+y-2*t));
+    gradient[1][0] = 0.1*pi*cos(pi*(x+y-adv*2*t));
+    //gradient[1][1] = 0.1*pi*cos(pi*(x+y-adv*2*t));
+    gradient[1][1] = -0.2*adv*pi*cos(pi*(x+y-adv*2*t));
     if (dim==3) {
-        gradient[2][0] = 0.1*pi*cos(pi*(x+y-2*t));
-        gradient[2][1] = 0.1*pi*cos(pi*(x+y-2*t));
-        gradient[2][2] = -0.2*pi*cos(pi*(x+y-2*t));
+        this->pcout << "WARNING NOT CHECKED" << std::endl;
+        gradient[2][0] = 0.1*pi*cos(pi*(x+y-adv*2*t));
+        gradient[2][1] = 0.1*pi*cos(pi*(x+y-adv*2*t));
+        gradient[2][2] = -0.2*adv*pi*cos(pi*(x+y-adv*2*t));
     }
     //second unused momentum
-    gradient[dim][0]=0.0;
-    gradient[dim][1]=0.0;
-    gradient[dim][dim-1]=0.0;
+    gradient[2][0]=0.0;
+    gradient[2][1]=0.0;
+    //gradient[2][1]=0.0;
     //energy
-    gradient[dim+1][0] =  0.02 *pi* cos(pi* (x +y- 2* t)) *(20 + sin(pi* (x+y - 2 *t)));
-    gradient[dim+1][1] =  0.02 *pi* cos(pi* (x +y- 2* t)) *(20 + sin(pi* (x+y - 2 *t)));
-    gradient[dim+1][dim-1] = -0.04*pi*cos(pi* (x +y- 2 *t))* (20 + sin(pi* (x+y - 2 *t)));
+    gradient[3][0] =  0.02 *pi* cos(pi* (x +y- 2*adv* t)) *(20 + sin(pi* (x+y - 2*adv *t)));
+    //`gradient[3][1] =  0.02 *pi* cos(pi* (x +y- 2*adv* t)) *(20 + sin(pi* (x+y - 2*adv *t)));
+    gradient[3][1] = -0.04*adv*pi*cos(pi* (x +y- 2*adv *t))* (20 + sin(pi* (x+y - 2*adv *t)));
     return gradient;
 }
 
@@ -687,7 +692,8 @@ dealii::Point<dim,real> EulerSpacetime<dim,nspecies,nstate,real>::convert_pos_ts
     // Case 2: temporal_advection = -1, TOP face is t=dg_current_time
     // and time +'ve is y (or z) -'ve
     else if (this->temporal_advection < 0) {
-        point_translated[dim-1] = this->dg_current_time - point_translated[dim-1];
+        point_translated[dim-1] = this->dg_current_time +(this->dt - point_translated[dim-1]);
+        this->pcout << "Warning, flow reversal doesn't seem to work..." << std::endl;
     }
 
     return point_translated;
