@@ -192,7 +192,6 @@ boundary_purely_upwind(
         }
 
 #elif PHILIP_DIM==3
-        this->pcout << "here" << " " ;
 
         // Setting constants
         const real pi = dealii::numbers::PI;

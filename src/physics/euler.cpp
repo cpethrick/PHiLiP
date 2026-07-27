@@ -521,11 +521,11 @@ inline real2 Euler<dim,nspecies,nstate,real>
         entropy = log(entropy);
         return entropy;
     } else {
-        this->pcout << "WARNING: Entropy is not defined because " << std::endl 
-                    << "    pressure * pow(density, -gam) < 0 ." << std::endl
-                    << "    Setting entropy = BIG_NUMBER." << std::endl;
-        this->pcout << "Aborting..." << std::endl;
-        std::abort();
+        //this->pcout << "WARNING: Entropy is not defined because " << std::endl 
+        //            << "    pressure * pow(density, -gam) < 0 ." << std::endl
+        //            << "    Setting entropy = BIG_NUMBER." << std::endl;
+        //this->pcout << "Aborting..." << std::endl;
+        //std::abort();
         return (real2)this->BIG_NUMBER;
     }
 
