@@ -405,11 +405,10 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_overintegrated_err_on_s
                 }
 
                 // Replace with error calculation
-                 std::array<adtype,nstate> error_at_quad;
-                for (unsigned int istate=0; istate<nstate; ++istate){
-                    error_at_quad[istate] = calculate_error_at_quad(soln_at_q, istate, quad_physical_pt, pde_physics);
-                }
-                l2error += error_at_quad[0]*fe_face_values.JxW(iquad);
+                adtype error_at_quad;
+                // Only calculate density
+                error_at_quad = calculate_error_at_quad(soln_at_q, 0, quad_physical_pt, pde_physics);
+                l2error += error_at_quad * fe_face_values.JxW(iquad);
 
             }
             this->pcout << "Cumulative error " << l2error << std::endl;
@@ -435,29 +434,57 @@ real SpacetimeCartesianProblem<dim,nspecies,nstate>::calculate_error_at_quad(
     if constexpr(dim==2){
         t = pde_physics->dg_current_time; // if called after the decoupled timeslab loop, this time will correspond to the end time.
         y = 0;
+        real exact_soln = 0;
+        //density
+        if (istate==0) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
+        //momentum
+        if (istate==1) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
+        if (istate==2 && dim==3) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
+        //second unused momentum
+        if (istate==dim) exact_soln = 0; 
+        //energy
+        if (istate==dim+1) exact_soln = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
+        
+        (void) conservative_soln;
+        (void) exact_soln;
+        return abs(exact_soln- conservative_soln[istate]);
+        //return abs(exact_soln);// - conservative_soln[istate]);
+        //return abs(conservative_soln[istate]);
     }
     else if constexpr (dim==3) {
         this->pcout << "Warning! Not tested!" << std::endl;
-        const real z = point[2];
-        t = z;
+        //const real z = point[2];
+        t = pde_physics->dg_current_time; // if called after the decoupled timeslab loop, this time will correspond to the end time.
+        const real A = 0.1;
+        const real rho_infty = 1;
+        const real u_infty = 1;
+        const real v_infty = 1;
+        //const real p_infty = 1;
+
+        const real q_infty = u_infty + v_infty;
+
+
+        // Primitive
+        // std::array<real,nstate> soln_primitive;
+        // soln_primitive[0] = rho_infty + A * sin(0.2*pi * (point[0] + point[1])) ; // exact subtract q_inf * t 
+        // soln_primitive[1] = u_infty;
+        // soln_primitive[2] = v_infty;
+        // soln_primitive[3] = 0; //unused velocity
+        // soln_primitive[nstate-1] = p_infty;
+        //density
+        real exact_soln = 0;
+        if (istate==0) exact_soln = rho_infty + A * sin(0.2*pi * (x + y - q_infty * t));
+        //momentum
+        if (istate==1)  std::abort(); //don't want to reach here
+        if (istate==2 && dim==3)  std::abort();
+        //second unused momentum
+        if (istate==dim) std::abort();
+        //energy
+        if (istate==dim+1) std::abort();
+        
+        return abs(exact_soln- conservative_soln[istate]);
     }
    
-    real exact_soln = 0;
-    //density
-    if (istate==0) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
-    //momentum
-    if (istate==1) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
-    if (istate==2 && dim==3) exact_soln = 2 + 0.1 * sin(pi * (x + y - 2*t));
-    //second unused momentum
-    if (istate==dim) exact_soln = 0; 
-    //energy
-    if (istate==dim+1) exact_soln = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
-    
-    (void) conservative_soln;
-    (void) exact_soln;
-    return abs(exact_soln- conservative_soln[istate]);
-    //return abs(exact_soln);// - conservative_soln[istate]);
-    //return abs(conservative_soln[istate]);
 
 }
 

@@ -193,35 +193,25 @@ boundary_purely_upwind(
 
 #elif PHILIP_DIM==3
 
-        // Setting constants
-        const real pi = dealii::numbers::PI;
-        const real gam = 1.4;
-        const real M_infty = sqrt(2/gam);
-        const real R = 1;
-        const real sigma = 1;
-        const real beta = M_infty * 5 * sqrt(2.0)/4.0/pi * exp(1.0/2.0);
-        const real alpha = pi/4; //rad
+        const double pi = dealii::numbers::PI;
+        const double A = 0.1;
+        const double rho_infty = 1;
+        const double u_infty = 1;
+        const double v_infty = 1;
+        const double p_infty = 1;
 
-        // Centre of the vortex  at t=0
-        const real x0 = 0.0;
-        const real y0 = 0.0;
-        const real x = pos[0] - x0;
-        const real y = pos[1] - y0;
+        //const double q_infty = u_infty + v_infty;
 
-        const real Omega = beta * exp(-0.5/sigma/sigma* (x/R * x/R + y/R * y/R));
-        const real delta_Ux = -y/R * Omega;
-        const real delta_Uy =  x/R * Omega;
-        const real delta_T  = -(gam-1.0)/2.0 * Omega * Omega;
 
         // Primitive
         std::array<real,nstate> soln_primitive;
-        soln_primitive[0] = pow((1 + delta_T), 1.0/(gam-1.0));
-        soln_primitive[1] = M_infty * cos(alpha) + delta_Ux;
-        soln_primitive[2] = M_infty * sin(alpha) + delta_Uy;
+        soln_primitive[0] = rho_infty + A * sin(0.2*pi * (pos[0] + pos[1])) ; // exact subract q_inf * t
+        soln_primitive[1] = u_infty;
+        soln_primitive[2] = v_infty;
         soln_primitive[3] = 0; //unused velocity
-        soln_primitive[nstate-1] = 1.0/gam*pow(1+delta_T, gam/(gam-1.0));
-
+        soln_primitive[nstate-1] = p_infty;
         soln_bc = this->convert_primitive_to_conservative(soln_primitive);
+
 
 #endif
     } else if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && !this->apply_initial_condition  ){

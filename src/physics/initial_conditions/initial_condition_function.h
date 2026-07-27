@@ -750,14 +750,14 @@ public:
  *  Not deriving from EulerBase because there are no primitive-conservative conversions.
  */
 template <int dim, int nspecies, int nstate, typename real>
-class InitialConditionFunction_EulerSpacetimeIsentropic : public InitialConditionFunction<dim,nspecies,nstate,real>
+class InitialConditionFunction_EulerSpacetimeDensityWave : public InitialConditionFunction<dim,nspecies,nstate,real>
 {
 protected:
     using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
     
 public:
     /// Constructor
-    InitialConditionFunction_EulerSpacetimeIsentropic( Parameters::AllParameters const *const param);
+    InitialConditionFunction_EulerSpacetimeDensityWave( Parameters::AllParameters const *const param);
 
     /// Returns zero.
     real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;

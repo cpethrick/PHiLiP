@@ -1576,8 +1576,8 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate, re
 // Modified from other isentropic vortex IC
 // ========================================================
 template <int dim, int nspecies, int nstate, typename real>
-InitialConditionFunction_EulerSpacetimeIsentropic<dim,nspecies,nstate,real>
-::InitialConditionFunction_EulerSpacetimeIsentropic(Parameters::AllParameters const *const param)
+InitialConditionFunction_EulerSpacetimeDensityWave<dim,nspecies,nstate,real>
+::InitialConditionFunction_EulerSpacetimeDensityWave(Parameters::AllParameters const *const param)
     : InitialConditionFunction<dim,nspecies,nstate,real>()
 {
     // Euler object; create using dynamic_pointer_cast and the create_Physics factory
@@ -1587,36 +1587,27 @@ InitialConditionFunction_EulerSpacetimeIsentropic<dim,nspecies,nstate,real>
 } 
 
 template <int dim, int nspecies, int nstate, typename real>
-real InitialConditionFunction_EulerSpacetimeIsentropic<dim,nspecies,nstate, real>
+real InitialConditionFunction_EulerSpacetimeDensityWave<dim,nspecies,nstate, real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
 {
-    // Setting constants
+    // Run on 20x20 domain
     const double pi = dealii::numbers::PI;
-    const double gam = 1.4;
-    const double M_infty = sqrt(2/gam);
-    const double R = 1;
-    const double sigma = 1;
-    const double beta = M_infty * 5 * sqrt(2.0)/4.0/pi * exp(1.0/2.0);
-    const double alpha = pi/4; //rad
+    const double A = 0.1;
+    const double rho_infty = 1;
+    const double u_infty = 1;
+    const double v_infty = 1;
+    const double p_infty = 1;
 
-    // Centre of the vortex  at t=0
-    const double x0 = 0.0;
-    const double y0 = 0.0;
-    const double x = point[0] - x0;
-    const double y = point[1] - y0;
+    //const double q_infty = u_infty + v_infty;
 
-    const double Omega = beta * exp(-0.5/sigma/sigma* (x/R * x/R + y/R * y/R));
-    const double delta_Ux = -y/R * Omega;
-    const double delta_Uy =  x/R * Omega;
-    const double delta_T  = -(gam-1.0)/2.0 * Omega * Omega;
 
     // Primitive
     std::array<real,nstate> soln_primitive;
-    soln_primitive[0] = pow((1 + delta_T), 1.0/(gam-1.0));
-    soln_primitive[1] = M_infty * cos(alpha) + delta_Ux;
-    soln_primitive[2] = M_infty * sin(alpha) + delta_Uy;
+    soln_primitive[0] = rho_infty + A * sin(0.2*pi * (point[0] + point[1])) ; // exact subtract q_inf * t 
+    soln_primitive[1] = u_infty;
+    soln_primitive[2] = v_infty;
     soln_primitive[3] = 0; //unused velocity
-    soln_primitive[nstate-1] = 1.0/gam*pow(1+delta_T, gam/(gam-1.0));
+    soln_primitive[nstate-1] = p_infty;
 
     const std::array<real,nstate> soln_conservative = this->euler_physics->convert_primitive_to_conservative(soln_primitive);
     return soln_conservative[istate];
@@ -1776,7 +1767,7 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
         if constexpr (dim>=2 && nstate==1) return std::make_shared<InitialConditionFunction_Zero<dim, nspecies, nstate,real> > ();
         if constexpr (dim==2 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate,real> > ();
         if constexpr (dim==3 && nstate==dim+2) { 
-            return std::make_shared<InitialConditionFunction_EulerSpacetimeIsentropic<dim,nspecies,nstate,real> > (param);
+            return std::make_shared<InitialConditionFunction_EulerSpacetimeDensityWave<dim,nspecies,nstate,real> > (param);
         }
     } else if (flow_type == FlowCaseEnum::multi_species_vortex_advection) {
         if constexpr ((nspecies==2||nspecies==3) && nstate==dim+nspecies+1) return std::make_shared<InitialConditionFunction_Multispecies_VortexAdvection<dim,nspecies,nstate,real> >(param,false);
@@ -1848,7 +1839,7 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
         template class InitialConditionFunction_EulerSpacetimeManufactured <PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double>;
     #endif 
     #if PHILIP_DIM == 3
-        template class InitialConditionFunction_EulerSpacetimeIsentropic<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double>;
+        template class InitialConditionFunction_EulerSpacetimeDensityWave<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double>;
     #endif
     // functions instantiated for all dim
     template class InitialConditionFunction_Zero <PHILIP_DIM, PHILIP_SPECIES,1, double>;
