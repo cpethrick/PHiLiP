@@ -319,21 +319,21 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_surface_solution_for_BC
                      }
                      //Integrate only density error
                     //integrated_error += error_at_quad[0] * quad_weights[iquad] * 0.0625;// metric_oper.det_Jac_surf[iquad];
-                    this->pcout << iquad << " ";
-                    this->pcout << error_at_quad[0] << " ";
-                    this->pcout << surf_flux_node[0] << " ";
-                    this->pcout << surf_flux_node[1] << " ";
-                    this->pcout << quad_weights[iquad] << " ";
-                    this->pcout << metric_oper.det_Jac_surf[iquad] << std::endl;
+                    //this->pcout << iquad << " ";
+                    //this->pcout << error_at_quad[0] << " ";
+                   // this->pcout << surf_flux_node[0] << " ";
+                    //this->pcout << surf_flux_node[1] << " ";
+                    //this->pcout << quad_weights[iquad] << " ";
+                    //this->pcout << metric_oper.det_Jac_surf[iquad] << std::endl;
                  } else{
                     // STORE: 
                     //this->pcout << "Storing imposed boundary in icell " << icell << " iquad " << iquad << " ";
                     for (int istate = 0; istate<nstate; ++istate){
                         pde_physics->imposed_boundary[icell][iquad][istate] = conservative_vars_quad[istate];
-                        this->pcout << pde_physics->imposed_boundary[icell][iquad][istate] << " ";
+                        //this->pcout << pde_physics->imposed_boundary[icell][iquad][istate] << " ";
                         
                     }
-                    this->pcout << std::endl;
+                    //this->pcout << std::endl;
                  }
             }
         }
