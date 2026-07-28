@@ -327,7 +327,7 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_surface_solution_for_BC
                     this->pcout << metric_oper.det_Jac_surf[iquad] << std::endl;
                  } else{
                     // STORE: 
-                    this->pcout << "Storing imposed boundary in icell " << icell << " iquad " << iquad << " ";
+                    //this->pcout << "Storing imposed boundary in icell " << icell << " iquad " << iquad << " ";
                     for (int istate = 0; istate<nstate; ++istate){
                         pde_physics->imposed_boundary[icell][iquad][istate] = conservative_vars_quad[istate];
                         this->pcout << pde_physics->imposed_boundary[icell][iquad][istate] << " ";
@@ -584,7 +584,8 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
 
    if (dg_state->pde_physics_double->dg_current_time + 0.5*this->height >=  this->all_param.flow_solver_param.final_time) {
        //Output error to console
-       this->get_overintegrated_err_on_surface(dg, dg_state->pde_physics_double);
+       if (dim==2)       this->get_overintegrated_err_on_surface(dg, dg_state->pde_physics_double);
+       else              this->pcout << "Error check needs to be fixed to work in 2D+1!" << std::endl;
    }
 }
 
