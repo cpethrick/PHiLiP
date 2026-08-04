@@ -22,3 +22,26 @@ set_tests_labels(MPI_2D_KELVIN_HELMHOLTZ_INSTABILITY    KELVIN_HELMHOLTZ_INSTABI
                                                         MODERATE
                                                         INTEGRATION_TEST)
 # ----------------------------------------
+
+# =======================================
+# Kelvin Helmholtz Instability -- 2D 
+# =======================================
+# ----------------------------------------
+# - details: [if needed]
+# ----------------------------------------
+configure_file(2D_kelvin_helmoltz_instability_gmsh.prm 2D_kelvin_helmoltz_instability_gmsh.prm COPYONLY)
+add_test(
+    NAME MPI_2D_KELVIN_HELMHOLTZ_INSTABILITY_GMSH
+  COMMAND mpirun -np ${MPIMAX} ${EXECUTABLE_OUTPUT_PATH}/PHiLiP_2D -i ${CMAKE_CURRENT_BINARY_DIR}/2D_kelvin_helmoltz_instability_gmsh.prm
+  WORKING_DIRECTORY ${TEST_OUTPUT_DIR}
+)
+set_tests_labels(MPI_2D_KELVIN_HELMHOLTZ_INSTABILITY    KELVIN_HELMHOLTZ_INSTABILITY
+                                                        2D
+                                                        PARALLEL
+                                                        EULER
+                                                        RUNGE-KUTTA
+                                                        STRONG-SPLIT
+                                                        UNCOLLOCATED
+                                                        MODERATE
+                                                        INTEGRATION_TEST)
+# ----------------------------------------

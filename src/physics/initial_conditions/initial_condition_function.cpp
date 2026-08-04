@@ -713,9 +713,11 @@ template <int dim, int nspecies, int nstate, typename real>
 inline real InitialConditionFunction_KHI<dim,nspecies,nstate,real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
 {
+    const double x = point[0] / 10.0;
+    const double y = point[1] / 10.0;
     const double pi = dealii::numbers::PI;
     
-    const double B = 0.5 * (tanh(15*point[1] + 7.5) - tanh(15*point[1] - 7.5));
+    const double B = 0.5 * (tanh(15*y + 7.5) - tanh(15*y - 7.5));
 
     const double rho1 = 0.5;
     const double rho2 = rho1 * (1 + atwood_number) / (1 - atwood_number);
@@ -724,7 +726,7 @@ inline real InitialConditionFunction_KHI<dim,nspecies,nstate,real>
     soln_primitive[0] = rho1 + B * (rho2-rho1);
     soln_primitive[nstate-1] = 1;
     soln_primitive[1] = B - 0.5;
-    soln_primitive[2] = 0.1 * sin(2 * pi * point[0]);
+    soln_primitive[2] = 0.1 * sin(2 * pi * x);
 
     const std::array<real,nstate> soln_conservative = this->euler_physics->convert_primitive_to_conservative(soln_primitive);
     return soln_conservative[istate];

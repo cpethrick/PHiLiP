@@ -214,10 +214,11 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_surface_solution_for_BC
                     surf_flux_node[idim] = metric_oper.flux_nodes_surf[iface][idim][iquad];
                 }
                 //std::cout << std::endl;
-                if ((surf_flux_node[dim-1] == this->height  && pde_physics->temporal_advection>0 )
-                        ||( surf_flux_node[dim-1] == 0.0 && pde_physics->temporal_advection<0)) {
-                    //std::cout << "On top face! " << std::endl;
+                if ( ((abs(surf_flux_node[dim-1] - this->height) < 1E-13)  && pde_physics->temporal_advection>0 )
+                        ||(( abs(surf_flux_node[dim-1]) <1E-13) && pde_physics->temporal_advection<0)) {
+                    //std::cout << "On top face! coord = " << quad_physical_pt[dim-1] <<  std::endl;
                 } else {
+                    //std::cout << "NOT on top face! coord = " << quad_physical_pt[dim-1] <<  std::endl;
                     on_outflow_face = false;
                 }
                     
