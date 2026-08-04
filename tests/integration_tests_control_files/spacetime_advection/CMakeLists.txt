@@ -145,6 +145,22 @@ add_test(
 #                                                                 MODERATE
 #                                                                 INTEGRATION_TEST)
 set(TEST_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+configure_file(1D_euler_MoLequivalent.prm 1D_euler_MoLequivalent.prm COPYONLY)
+add_test(
+    NAME 1D_EULER_MOL_EQUIVALENT_TO_SPACETIME
+    COMMAND mpirun -n 1 ${EXECUTABLE_OUTPUT_PATH}/PHiLiP_1D -i ${CMAKE_CURRENT_BINARY_DIR}/1D_euler_MoLequivalent.prm
+  WORKING_DIRECTORY ${TEST_OUTPUT_DIR}
+)
+# set_tests_labels(MPI_2D_ADVECTION_EXPLICIT_PERIODIC_ENERGY_LONG ADVECTION_EXPLICIT_PERIODIC
+#                                                                 2D
+#                                                                 PARALLEL
+#                                                                 ADVECTION
+#                                                                 RUNGE-KUTTA
+#                                                                 STRONG
+#                                                                 UNCOLLOCATED
+#                                                                 MODERATE
+#                                                                 INTEGRATION_TEST)
+set(TEST_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 configure_file(2Dp1_euler.prm 2Dp1_euler.prm COPYONLY)
 add_test(
     NAME MPI_2Dp1_EULER

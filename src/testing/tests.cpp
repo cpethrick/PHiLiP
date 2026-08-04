@@ -324,7 +324,7 @@ std::unique_ptr< TestsBase > TestsFactory<dim,nspecies,nstate,MeshType>
         if constexpr (dim>1 && nstate==1 && nspecies==1)  return std::make_unique<GeneralRefinementStudy<dim,nspecies,nstate>>(parameters_input, parameter_handler_input, 
                 GeneralRefinementStudy<dim, nspecies, nstate>::RefinementType::timestep);
     } else if(test_type == Test_enum::general_h_refinement_study) {
-        if constexpr (dim>1 && (nstate==1 || nstate == dim+2) && nspecies==1) {
+        if constexpr ((nstate==1 || nstate == dim+2) && nspecies==1) {
             return std::make_unique<GeneralRefinementStudy<dim,nspecies,nstate>>(parameters_input, parameter_handler_input, 
                 GeneralRefinementStudy<dim,nspecies,nstate>::RefinementType::cell_length);
         }

@@ -256,6 +256,7 @@ int GeneralRefinementStudy<dim, nspecies, nstate>::run_test() const
 
 #if PHILIP_DIM==1
     template class GeneralRefinementStudy<PHILIP_DIM,PHILIP_SPECIES,PHILIP_DIM>;
+    template class GeneralRefinementStudy<PHILIP_DIM,PHILIP_SPECIES,PHILIP_DIM+2>;
 #else
     template class GeneralRefinementStudy<PHILIP_DIM,PHILIP_SPECIES,1>;
     template class GeneralRefinementStudy<PHILIP_DIM,PHILIP_SPECIES,PHILIP_DIM+2>;

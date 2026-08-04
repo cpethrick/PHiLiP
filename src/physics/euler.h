@@ -195,6 +195,10 @@ public:
     virtual std::array<real,nstate> convective_source_term (
         const dealii::Point<dim,real> &pos) const;
 
+    std::array<real,nstate> time_dependent_source_term_Gassner ( 
+        const dealii::Point<dim,real> &pos,
+        const real time) const;
+
 protected:
     /// Check positive quantity and modify it according to handle_non_physical_result()
     /** in PhysicsBase class

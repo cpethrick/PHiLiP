@@ -212,6 +212,32 @@ inline real ExactSolutionFunction_SpacetimeEuler<dim,nspecies,nstate,real>
    
     return value;
 }
+template <int dim, int nspecies, int nstate, typename real>
+ExactSolutionFunction_MoLEuler<dim,nspecies,nstate,real>
+::ExactSolutionFunction_MoLEuler(double time_compare)
+        : ExactSolutionFunction<dim,nspecies,nstate,real>()
+        , t(time_compare)
+{
+}
+
+template <int dim, int nspecies, int nstate, typename real>
+inline real ExactSolutionFunction_MoLEuler<dim,nspecies,nstate,real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    
+    real val = 0;
+    //density
+    if (istate==0) val = 2 + 0.1 * sin(pi * (x - 2*t));
+    //momentum
+    if (istate==1) val = 2 + 0.1 * sin(pi * (x - 2*t));
+    //energy
+    if (istate==2) val = pow(2 + 0.1*sin(pi * (x - 2*t)),2);
+
+    return val;
+   
+}
 
 //=========================================================
 // FLOW SOLVER -- Exact Solution Base Class + Factory
@@ -241,6 +267,8 @@ ExactSolutionFactory<dim,nspecies,nstate, real>::create_ExactSolutionFunction(
     }else if (flow_type == FlowCaseEnum::spacetime_cartesian){
         if constexpr(dim>1 && nstate==1) return std::make_shared<ExactSolutionFunction_SpacetimeCartesian<dim,nspecies,nstate,real> > ();
         if constexpr(dim>1 && nstate==dim+2) return std::make_shared<ExactSolutionFunction_SpacetimeEuler<dim,nspecies,nstate,real> > ();
+    }else if (flow_type == FlowCaseEnum::euler_manufactured_MoL){
+        if constexpr(dim==1 && nstate==dim+2) return std::make_shared<ExactSolutionFunction_MoLEuler<dim,nspecies,nstate,real> > (time_compare);
     } else {
         // Select zero function if there is no exact solution defined
         dealii::ConditionalOStream pcout(std::cout, dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0);

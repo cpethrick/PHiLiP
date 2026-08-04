@@ -166,6 +166,11 @@ FlowSolverFactory<dim,nspecies,nstate>
                 std::shared_ptr<FlowSolverCaseBase<dim,nspecies,nstate>> flow_solver_case = std::make_shared<SpacetimeCartesianProblem<dim,nspecies,nstate>>(parameters_input);
                 return std::make_unique<FlowSolver<dim,nspecies,nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
             }
+        } else if (flow_type == FlowCaseEnum::euler_manufactured_MoL){
+            if constexpr (dim==1 && nstate==dim+2){
+                std::shared_ptr<FlowSolverCaseBase<dim, nspecies, nstate>> flow_solver_case = std::make_shared<Periodic1DUnsteady<dim,nspecies,nstate>>(parameters_input);
+                return std::make_unique<FlowSolver<dim,nspecies,nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
+            }
         }
     }
     else if (nspecies > 1 && nstate==dim+2+nspecies-1) {

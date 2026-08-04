@@ -745,6 +745,24 @@ public:
     real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
 };
 
+/// Initial condition for Euler MoL manufactured solution
+/** Apply initial condition across the entire domain. 
+ *  Not deriving from EulerBase because there are no primitive-conservative conversions.
+ */
+template <int dim, int nspecies, int nstate, typename real>
+class InitialConditionFunction_EulerMoLManufactured : public InitialConditionFunction<dim,nspecies,nstate,real>
+{
+protected:
+    using dealii::Function<dim,real>::value; ///< dealii::Function we are templating on
+    
+public:
+    /// Constructor
+    InitialConditionFunction_EulerMoLManufactured();
+
+    /// Returns zero.
+    real value(const dealii::Point<dim,real> &point, const unsigned int istate = 0) const override;
+};
+
 /// Initial condition for Euler spacetime isentropic vortex
 /** Apply initial condition across the entire domain. 
  *  Not deriving from EulerBase because there are no primitive-conservative conversions.

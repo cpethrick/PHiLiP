@@ -1484,7 +1484,7 @@ real InitialConditionFunction_Multispecies_IsentropicVortex<dim,nspecies,nstate,
 }
 
 // Initial condition for Euler spacetime manufactured solution
-// From Friedrich et al 2019 Eq. 4.4
+// From Gassner 2016(?)
 // ========================================================
 template <int dim, int nspecies, int nstate, typename real>
 InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate,real>
@@ -1514,27 +1514,6 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate, re
 
     // apply a perturbation
     t *= 0.95;
-    /*
-    if (x < 0.3){
-        if (istate==0)
-            return 1;
-        else if (istate == 1)
-            return 0;
-        else if (istate == 2)
-            return 0;
-        else if (istate==3)
-            return 1.0/0.4;
-    } else{
-        if (istate==0)
-            return 1.125;
-        else if (istate==1)
-            return 0;
-        else if (istate==2)
-            return 0;
-        else if (istate==3)
-            return 1.1/0.4;
-    }
-    */
 
     real val = 0;
     //density
@@ -1548,29 +1527,38 @@ real InitialConditionFunction_EulerSpacetimeManufactured<dim,nspecies,nstate, re
     if (istate==dim+1) val = pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
 
     return val;
-    /*
-    const real pi = atan(1.0)*4;
-    const real x = point[0];
-    const real y = 0.95 * point[1]; // Pertubation from exact solution.
-    std::array<real,nstate> soln;
-    soln[0] = 2 + 0.1 * sin(pi * (x-2*y));
-    std::array<real,dim> soln_momentums;
-    soln_momentums[0] = 2 + 0.1 * sin(pi * (x-2*y));
-    if constexpr(dim==3) {
-        soln_momentums [1] = 2 + 0.1 * sin(pi * (x-2*y)); // WARNING : manuf solution may not work in 3D...
-    }
-    // last dim: always zero because we store an additional unused state
-    soln_momentums[dim-1] = 0.0;
-
-    for (int idim=0; idim < dim; ++idim){
-        soln[idim+1] = soln_momentums[idim];
-    }
-    
-    soln[nstate-1] =  pow(2 + 0.1*sin(pi * (x-2*y)),2);
-
-    return soln[istate];
-    */
 }
+
+// Initial condition for Euler spacetime manufactured solution
+// From Friedrich et al 2019 Eq. 4.4
+// ========================================================
+template <int dim, int nspecies, int nstate, typename real>
+InitialConditionFunction_EulerMoLManufactured<dim,nspecies,nstate,real>
+::InitialConditionFunction_EulerMoLManufactured()
+    : InitialConditionFunction<dim,nspecies,nstate,real>()
+{
+    // Nothing to do here yet
+}
+
+template <int dim, int nspecies, int nstate, typename real>
+real InitialConditionFunction_EulerMoLManufactured<dim,nspecies,nstate, real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    const real pi = atan(1)*4;
+    const real x = point[0];
+    const real t = 0; // so that I can copy-paste into exact soln
+    
+    real val = 0;
+    //density
+    if (istate==0) val = 2 + 0.1 * sin(pi * (x - 2*t));
+    //momentum
+    if (istate==1) val = 2 + 0.1 * sin(pi * (x - 2*t));
+    //energy
+    if (istate==2) val = pow(2 + 0.1*sin(pi * (x - 2*t)),2);
+
+    return val;
+}
+
 // ========================================================
 // Initial condition for Euler spacetime isentropic vortex
 // Modified from other isentropic vortex IC
@@ -1769,6 +1757,8 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
         if constexpr (dim==3 && nstate==dim+2) { 
             return std::make_shared<InitialConditionFunction_EulerSpacetimeDensityWave<dim,nspecies,nstate,real> > (param);
         }
+    } else if (flow_type == FlowCaseEnum::euler_manufactured_MoL) {
+        if constexpr (dim==1 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerMoLManufactured<dim,nspecies,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::multi_species_vortex_advection) {
         if constexpr ((nspecies==2||nspecies==3) && nstate==dim+nspecies+1) return std::make_shared<InitialConditionFunction_Multispecies_VortexAdvection<dim,nspecies,nstate,real> >(param,false);
     } else if (flow_type == FlowCaseEnum::multi_species_vortex_advection_high_temp) {

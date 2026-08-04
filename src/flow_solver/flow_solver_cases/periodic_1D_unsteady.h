@@ -20,6 +20,9 @@ public:
     /// Calculate numerical entropy.
     /// Here, is a wrapper for compute_energy. Used by tests.
     double get_numerical_entropy(const std::shared_ptr <DGBase<dim, nspecies, double>> dg) const;
+    
+
+    double get_constant_time_step (std::shared_ptr<DGBase<dim,nspecies,double>> dg) const override;
 protected:
     /// Compute the desired unsteady data and write it to a table
     void compute_unsteady_data_and_write_to_table(

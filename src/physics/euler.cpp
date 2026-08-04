@@ -82,12 +82,34 @@ std::array<real,nstate> Euler<dim,nspecies,nstate,real>
 ::source_term (
     const dealii::Point<dim,real> &pos,
     const std::array<real,nstate> &/*conservative_soln*/,
-    const real /*current_time*/) const
+    const real current_time) const
 {
+    using FlowCaseEnum = Parameters::FlowSolverParam::FlowCaseType;
+    const FlowCaseEnum flow_type = this->all_parameters->flow_solver_param.flow_case_type;
+    if (flow_type == FlowCaseEnum::euler_manufactured_MoL) {
+        return time_dependent_source_term_Gassner( pos, current_time );
+    }
+    (void) current_time;
     std::array<real,nstate> source_term = convective_source_term(pos);
     return source_term;
 }
 
+template <int dim, int nspecies, int nstate, typename real>
+std::array<real,nstate> Euler<dim,nspecies,nstate,real>
+::time_dependent_source_term_Gassner(
+    const dealii::Point<dim,real> &pos,
+    const real time) const
+{         
+    const real x = pos[0];
+    const real pi = atan(1.0)*4;
+    std::array<real,nstate> source_term;
+    source_term[0] =  -pi * 0.1 * cos(pi * (x - 2.0 * time));
+    const real angle = pi * (x - 2.0 * time);
+    source_term[1] = (1.0 / 100.0) * pi * cos(angle) * (5.0 * (-9.0 + 7.0 * gam) + 2.0 * (-1.0 + gam) * sin(angle));
+    source_term[2] = (1.0 / 100.0) * pi * cos(angle) * (-75.0 + 35.0 * gam + 2.0 * (-2.0 + gam) * sin(angle));
+    return source_term;
+
+}
 template <int dim, int nspecies, int nstate, typename real>
 std::array<real,nstate> Euler<dim,nspecies,nstate,real>
 ::get_manufactured_solution_value (

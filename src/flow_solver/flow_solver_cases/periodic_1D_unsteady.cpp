@@ -34,6 +34,23 @@ double Periodic1DUnsteady<dim, nspecies, nstate>::compute_energy(
 }
 
 template <int dim, int nspecies, int nstate>
+double Periodic1DUnsteady<dim,nspecies,nstate>::get_constant_time_step(std::shared_ptr<DGBase<dim,nspecies,double>> dg) const
+{
+    if (this->all_param.flow_solver_param.courant_friedrichs_lewy_number > 0) {
+        const unsigned int number_of_degrees_of_freedom_per_state = dg->dof_handler.n_dofs()/nstate;
+        const double approximate_grid_spacing = (this->all_param.flow_solver_param.grid_right_bound-this->all_param.flow_solver_param.grid_left_bound)/pow(number_of_degrees_of_freedom_per_state,(1.0/dim));
+        const double cfl_number = this->all_param.flow_solver_param.courant_friedrichs_lewy_number;
+        const double time_step = cfl_number * approximate_grid_spacing / 1.0; // assume nondimensional velocity of 1.0
+        return time_step;
+    } else if(this->all_param.flow_solver_param.constant_time_step > 0.0) {
+        // Using constant time step in FlowSolver parameters.
+        return this->all_param.flow_solver_param.constant_time_step;
+    } else {
+        // Using initial time step in ODE parameters.
+        return this->all_param.ode_solver_param.initial_time_step;
+    }
+}
+template <int dim, int nspecies, int nstate>
 double Periodic1DUnsteady<dim, nspecies, nstate>::get_numerical_entropy(
         const std::shared_ptr <DGBase<dim, nspecies, double>> dg
         ) const
@@ -99,6 +116,7 @@ void Periodic1DUnsteady<dim, nspecies, nstate>::compute_unsteady_data_and_write_
 
 #if PHILIP_DIM==1 && PHILIP_SPECIES==1
 template class Periodic1DUnsteady <PHILIP_DIM, PHILIP_SPECIES,PHILIP_DIM>;
+template class Periodic1DUnsteady <PHILIP_DIM, PHILIP_SPECIES,PHILIP_DIM+2>;
 #endif
 
 } // FlowSolver namespace
