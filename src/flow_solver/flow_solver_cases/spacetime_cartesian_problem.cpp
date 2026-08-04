@@ -368,7 +368,7 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_overintegrated_err_on_s
         if (!cell->is_locally_owned()) continue;
 
 
-        const int icell = cell->active_cell_index();
+        //const int icell = cell->active_cell_index();
 
         for (unsigned int iface=0; iface<dealii::GeometryInfo<dim>::faces_per_cell; ++iface) {
             fe_face_values.reinit (cell,iface);
@@ -380,20 +380,21 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::get_overintegrated_err_on_s
                 const dealii::Point< dim > quad_physical_pt = fe_face_values.quadrature_point(iquad);
                 //std::cout << "quad pt " << quad_physical_pt[1] << std::endl;
                 //std::cout << std::endl;
-                if ((quad_physical_pt[dim-1] == this->height  && pde_physics->temporal_advection>0 )
-                        ||( quad_physical_pt[dim-1] == 0.0 && pde_physics->temporal_advection<0)) {
-                    //std::cout << "On top face! " << std::endl;
+                if ( ((abs(quad_physical_pt[dim-1] - this->height) < 1E-13)  && pde_physics->temporal_advection>0 )
+                        ||(( abs(quad_physical_pt[dim-1]) <1E-13) && pde_physics->temporal_advection<0)) {
+                    //std::cout << "On top face! coord = " << quad_physical_pt[dim-1] <<  std::endl;
                 } else {
+                    //std::cout << "NOT on top face! coord = " << quad_physical_pt[dim-1] <<  std::endl;
                     on_outflow_face = false;
                 }
                     
             }
-            this->pcout << "Cell " << icell << std::endl;
+            //this->pcout << "Cell " << icell << std::endl;
             if (!on_outflow_face) {
-                this->pcout << "Not outflow on " << iface << std::endl;
+                //this->pcout << "Not outflow on " << iface << std::endl;
                 continue;
             }
-            else this->pcout << "Outflow on " << iface << std::endl;
+            //else this->pcout << "Outflow on " << iface << std::endl;
             //
             for (unsigned int iquad=0; iquad<n_face_quad_pts; ++iquad) {
                 const dealii::Point< dim > quad_physical_pt = fe_face_values.quadrature_point(iquad);
@@ -452,7 +453,7 @@ real SpacetimeCartesianProblem<dim,nspecies,nstate>::calculate_error_at_quad(
         //return abs(conservative_soln[istate]);
     }
     else if constexpr (dim==3) {
-        this->pcout << "Warning! Not tested!" << std::endl;
+        //this->pcout << "Warning! Not tested!" << std::endl;
         //const real z = point[2];
         t = pde_physics->dg_current_time; // if called after the decoupled timeslab loop, this time will correspond to the end time.
         const real A = 0.1;
@@ -584,7 +585,7 @@ void SpacetimeCartesianProblem<dim,nspecies,nstate>::modify_dg_object(std::share
 
    if (dg_state->pde_physics_double->dg_current_time + 0.5*this->height >=  this->all_param.flow_solver_param.final_time) {
        //Output error to console
-       if (dim==2)       this->get_overintegrated_err_on_surface(dg, dg_state->pde_physics_double);
+       if (dim==2 || dim==3)       this->get_overintegrated_err_on_surface(dg, dg_state->pde_physics_double);
        else              this->pcout << "Error check needs to be fixed to work in 2D+1!" << std::endl;
    }
 }
