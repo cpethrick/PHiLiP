@@ -310,6 +310,7 @@ std::shared_ptr<RKTableauBase<dim,real,MeshType>> ODESolverFactory<dim,nspecies,
     if (rk_method == RKMethodEnum::euler_im)    return std::make_shared<EulerImplicit<dim, real, MeshType>>  (n_rk_stages, "Implicit Euler (implicit)");
     if (rk_method == RKMethodEnum::dirk_2_im)   return std::make_shared<DIRK2Implicit<dim, real, MeshType>>  (n_rk_stages, "2nd order diagonally-implicit (implicit)");
     if (rk_method == RKMethodEnum::dirk_3_im)   return std::make_shared<DIRK3Implicit<dim, real, MeshType>>  (n_rk_stages, "3nd order diagonally-implicit (implicit)");
+    if (rk_method == RKMethodEnum::dirk_4_im)   return std::make_shared<DIRK4Implicit<dim, real, MeshType>>  (n_rk_stages, "4th order diagonally-implicit (implicit)");
 
     //Low storage methods
     const int num_delta = dg_input->all_parameters->ode_solver_param.num_delta;
