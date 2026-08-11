@@ -190,24 +190,24 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::allocate_runge
         }
     }
 }
-// Define a sequence of indices representing the range of nstates
-#define POSSIBLE_NSTATE (1)(2)(3)(4)
+// Define a sequence of indices representing the range of nstages
+#define POSSIBLE_NSTAGE (1)(2)(3)(4)(5)
 
 // using default MeshType = Triangulation
 // 1D: dealii::Triangulation<dim>;
 // Otherwise: dealii::parallel::distributed::Triangulation<dim>;
 
-// Define a macro to instantiate with Meshtype = Triangulation or Shared Triangulation for a specific nstate
-#define INSTANTIATE_TRIA(r, data, nstate) \
-    template class RungeKuttaODESolver<PHILIP_DIM, PHILIP_SPECIES, double, nstate, dealii::Triangulation<PHILIP_DIM> >; \
-    template class RungeKuttaODESolver<PHILIP_DIM, PHILIP_SPECIES, double, nstate, dealii::parallel::shared::Triangulation<PHILIP_DIM> >; 
-BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_TRIA, _, POSSIBLE_NSTATE)
+// Define a macro to instantiate with Meshtype = Triangulation or Shared Triangulation for a specific nstage
+#define INSTANTIATE_TRIA(r, data, nstage) \
+    template class RungeKuttaODESolver<PHILIP_DIM, PHILIP_SPECIES, double, nstage, dealii::Triangulation<PHILIP_DIM> >; \
+    template class RungeKuttaODESolver<PHILIP_DIM, PHILIP_SPECIES, double, nstage, dealii::parallel::shared::Triangulation<PHILIP_DIM> >; 
+BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_TRIA, _, POSSIBLE_NSTAGE)
 
-// Define a macro to instantiate with distributed triangulation for a specific nstate
-#define INSTANTIATE_DISTRIBUTED(r, data, nstate) \
-    template class RungeKuttaODESolver<PHILIP_DIM, PHILIP_SPECIES, double, nstate, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
+// Define a macro to instantiate with distributed triangulation for a specific nstage
+#define INSTANTIATE_DISTRIBUTED(r, data, nstage) \
+    template class RungeKuttaODESolver<PHILIP_DIM, PHILIP_SPECIES, double, nstage, dealii::parallel::distributed::Triangulation<PHILIP_DIM> >;
 #if PHILIP_DIM!=1
-BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_DISTRIBUTED, _, POSSIBLE_NSTATE)
+BOOST_PP_SEQ_FOR_EACH(INSTANTIATE_DISTRIBUTED, _, POSSIBLE_NSTAGE)
 #endif
 } // ODESolver namespace
 } // PHiLiP namespace

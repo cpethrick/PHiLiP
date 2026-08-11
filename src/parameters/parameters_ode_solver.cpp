@@ -288,7 +288,7 @@ void ODESolverParam::parse_parameters (dealii::ParameterHandler &prm)
         }
         else if (rk_method_string == "dirk_4_im"){
             runge_kutta_method = RKMethodEnum::dirk_4_im;
-            n_rk_stages  = 4;
+            n_rk_stages  = 5;
             rk_order = 4;
         }
         else if (rk_method_string == "RK3_2_5F_3SStarPlus"){

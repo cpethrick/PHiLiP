@@ -194,6 +194,9 @@ std::shared_ptr<ODESolverBase<dim,nspecies,real,MeshType>> ODESolverFactory<dim,
         else if (n_rk_stages == 4){
             return std::make_shared<RungeKuttaODESolver<dim,nspecies,real,4,MeshType>>(dg_input,rk_tableau_butcher,RRK_object);
         }
+        else if (n_rk_stages == 5){
+            return std::make_shared<RungeKuttaODESolver<dim,nspecies,real,5,MeshType>>(dg_input,rk_tableau_butcher,RRK_object);
+        }
         else{
             pcout << "Error: invalid number of stages. Aborting..." << std::endl;
             std::abort();
