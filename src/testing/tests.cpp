@@ -321,7 +321,7 @@ std::unique_ptr< TestsBase > TestsFactory<dim,nspecies,nstate,MeshType>
     } else if(test_type == Test_enum::turbulent_channel_flow_quantity_check) {
         if constexpr (dim==3 && nstate==dim+2 && nspecies==1) return std::make_unique<TurbulentChannelFlowUnsteadyQuantityCheck<dim,nspecies,nstate>>(parameters_input,parameter_handler_input);
     } else if(test_type == Test_enum::time_refinement_study) {
-        if constexpr (dim>1 && nstate==1 && nspecies==1)  return std::make_unique<GeneralRefinementStudy<dim,nspecies,nstate>>(parameters_input, parameter_handler_input, 
+        if constexpr (dim>=1 && nstate==1 && nspecies==1)  return std::make_unique<GeneralRefinementStudy<dim,nspecies,nstate>>(parameters_input, parameter_handler_input, 
                 GeneralRefinementStudy<dim, nspecies, nstate>::RefinementType::timestep);
     } else if(test_type == Test_enum::general_h_refinement_study) {
         if constexpr ((nstate==1 || nstate == dim+2) && nspecies==1) {

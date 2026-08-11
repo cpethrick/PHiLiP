@@ -41,6 +41,7 @@ double Periodic1DUnsteady<dim,nspecies,nstate>::get_constant_time_step(std::shar
         const double approximate_grid_spacing = (this->all_param.flow_solver_param.grid_right_bound-this->all_param.flow_solver_param.grid_left_bound)/pow(number_of_degrees_of_freedom_per_state,(1.0/dim));
         const double cfl_number = this->all_param.flow_solver_param.courant_friedrichs_lewy_number;
         const double time_step = cfl_number * approximate_grid_spacing / 1.0; // assume nondimensional velocity of 1.0
+        this->pcout << "Setting time_step = " << time_step << " corresponding to CFL = " << cfl_number << "at assumed v = 1.0" << std::endl; 
         return time_step;
     } else if(this->all_param.flow_solver_param.constant_time_step > 0.0) {
         // Using constant time step in FlowSolver parameters.

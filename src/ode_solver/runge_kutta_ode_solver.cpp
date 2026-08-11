@@ -35,6 +35,7 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::calculate_stag
     
     //implicit solve if there is a nonzero diagonal element
     if (!this->butcher_tableau_aii_is_zero[istage]){
+        this->dg->set_current_time(this->current_time + this->butcher_tableau->get_c(istage)*dt);
         /* // AD version - keeping in comments as it may be useful for future testing
         // Solve (M/dt - dRdW) / a_ii * dw = R
         // w = w + dw
@@ -64,7 +65,7 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::calculate_stag
             int n_newton_iterations = 0;
             if (istage==0)
                 n_newton_iterations = 5; // assemble residual at beginning of step
-            const double scale = 1E-3;
+            const double scale = 1E-8;
             bool linsolve_failed = false;
             while( rhs.linfty_norm() > scale*(this->rk_stage[istage].linfty_norm()+scale) )
             {
@@ -113,7 +114,6 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::calculate_stag
             this->rk_stage[istage] = this->solver.current_solution_estimate;
         }
     } // u_n + dt * sum(a_ij * k_j) <explicit> + dt * a_ii * u^(istage) <implicit>
-    soln_stored[istage] = this->rk_stage[istage];
     
     // If using the entropy formulation of RRK, solutions must be stored.
     // Call store_stage_solutions before overwriting rk_stage with the derivative.
