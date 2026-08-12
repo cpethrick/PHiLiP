@@ -160,7 +160,7 @@ FlowSolverFactory<dim,nspecies,nstate>
                 std::shared_ptr<FlowSolverCaseBase<dim, nspecies, nstate>> flow_solver_case = std::make_shared<Airfoil_3D_LES<dim,nspecies,nstate>>(parameters_input);
                 return std::make_unique<FlowSolver<dim,nspecies,nstate>>(parameters_input, flow_solver_case, parameter_handler_input);
             }
-        } else if (flow_type == FlowCaseEnum::spacetime_cartesian) {
+        } else if (flow_type == FlowCaseEnum::spacetime_cartesian || flow_type == FlowCaseEnum::spacetime_cartesian_KHI) {
             if constexpr ((dim>=2 && nstate==1) // Linear advection
                     || (dim>=2 && nstate == dim+2)) { //Euler
                 std::shared_ptr<FlowSolverCaseBase<dim,nspecies,nstate>> flow_solver_case = std::make_shared<SpacetimeCartesianProblem<dim,nspecies,nstate>>(parameters_input);

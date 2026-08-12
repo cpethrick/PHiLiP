@@ -42,6 +42,7 @@ public:
         astrophysical_jet,
         strong_vortex_shock_wave,
         spacetime_cartesian,
+        spacetime_cartesian_KHI,
         euler_manufactured_MoL,
         multi_species_vortex_advection,
         multi_species_vortex_advection_high_temp,

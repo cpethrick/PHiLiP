@@ -47,6 +47,7 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           " astrophysical_jet | "
                           " strong_vortex_shock_wave | "
                           " spacetime_cartesian | "
+                          " spacetime_cartesian_KHI | "
                           " euler_manufactured_MoL | "
                           " multi_species_vortex_advection |"
                           " multi_species_vortex_advection_high_temp | "
@@ -82,6 +83,7 @@ void FlowSolverParam::declare_parameters(dealii::ParameterHandler &prm)
                           " astrophysical_jet | "
                           " strong_vortex_shock_wave | "
                           " spacetime_cartesian | "
+                          " spacetime_cartesian_KHI | "
                           " euler_manufactured_MoL | "
                           " turbulent_airfoil_3D | "
                           " multi_species_vortex_advection | "
@@ -561,6 +563,7 @@ void FlowSolverParam::parse_parameters(dealii::ParameterHandler &prm)
         else if (flow_case_type_string == "astrophysical_jet")          {flow_case_type = astrophysical_jet;}
         else if (flow_case_type_string == "strong_vortex_shock_wave")   {flow_case_type = strong_vortex_shock_wave;}
         else if (flow_case_type_string == "spacetime_cartesian")        {flow_case_type = spacetime_cartesian;}
+        else if (flow_case_type_string == "spacetime_cartesian_KHI")    {flow_case_type = spacetime_cartesian_KHI;}
         else if (flow_case_type_string == "euler_manufactured_MoL")     {flow_case_type = euler_manufactured_MoL;}
         // Multispecies Tests
         else if (flow_case_type_string == "multi_species_vortex_advection")            {flow_case_type = multi_species_vortex_advection;}

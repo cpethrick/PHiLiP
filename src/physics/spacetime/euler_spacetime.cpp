@@ -1,6 +1,7 @@
 #include "ADTypes.hpp"
 
 #include "euler_spacetime.h"
+#include "parameters/all_parameters.h"
 
 namespace PHiLiP {
 namespace Physics {
@@ -150,7 +151,7 @@ boundary_purely_upwind(
         // normal in temporal dimension = -1: this boundary will be pure upwinding
         // of a Dirichlet boundary
         const real pi = atan(1.0)*4;
-        
+
         const real x = pos[0];
         const real y = (dim == 2) ? 0 : pos[1];
         const real t = pos[dim-1];
@@ -172,46 +173,69 @@ boundary_purely_upwind(
         for (int idim=0; idim < dim; ++idim){
             soln_bc[idim+1] = soln_momentums[idim];
         }
-        
+
         soln_bc[nstate-1] =  pow(2 + 0.1*sin(pi * (x + y - 2*t)),2);
         /*
-        if (x < 0.3){
-                soln_bc[0]= 1;
-                soln_bc[1]= 0;
-                soln_bc[2]= 0;
-                soln_bc[3] =  1.0/0.4;
-        } else{
-                soln_bc[0]= 1.125;
-                soln_bc[1]= 0;
-                soln_bc[2]= 0;
-                soln_bc[3] =  1.1/0.4;
-        }
-*/
+           if (x < 0.3){
+           soln_bc[0]= 1;
+           soln_bc[1]= 0;
+           soln_bc[2]= 0;
+           soln_bc[3] =  1.0/0.4;
+           } else{
+           soln_bc[0]= 1.125;
+           soln_bc[1]= 0;
+           soln_bc[2]= 0;
+           soln_bc[3] =  1.1/0.4;
+           }
+           */
         for (int istate = 0; istate < nstate;  ++istate){
             soln_grad_bc[istate] = 0;
         }
 
 #elif PHILIP_DIM==3
 
-        const double pi = dealii::numbers::PI;
-        const double A = 0.1;
-        const double rho_infty = 1;
-        const double u_infty = 1;
-        const double v_infty = 1;
-        const double p_infty = 1;
+        using FlowCaseEnum = Parameters::FlowSolverParam::FlowCaseType;
+        const FlowCaseEnum flow_type = this->all_parameters->flow_solver_param.flow_case_type;
+        if (flow_type == FlowCaseEnum::spacetime_cartesian) {
+            const double pi = dealii::numbers::PI;
+            const double A = 0.1;
+            const double rho_infty = 1;
+            const double u_infty = 1;
+            const double v_infty = 1;
+            const double p_infty = 1;
 
-        //const double q_infty = u_infty + v_infty;
+            //const double q_infty = u_infty + v_infty;
 
 
-        // Primitive
-        std::array<real,nstate> soln_primitive;
-        soln_primitive[0] = rho_infty + A * sin(0.2*pi * (pos[0] + pos[1])) ; // exact subract q_inf * t
-        soln_primitive[1] = u_infty;
-        soln_primitive[2] = v_infty;
-        soln_primitive[3] = 0; //unused velocity
-        soln_primitive[nstate-1] = p_infty;
-        soln_bc = this->convert_primitive_to_conservative(soln_primitive);
+            // Primitive
+            std::array<real,nstate> soln_primitive;
+            soln_primitive[0] = rho_infty + A * sin(0.2*pi * (pos[0] + pos[1])) ; // exact subract q_inf * t
+            soln_primitive[1] = u_infty;
+            soln_primitive[2] = v_infty;
+            soln_primitive[3] = 0; //unused velocity
+            soln_primitive[nstate-1] = p_infty;
+            soln_bc = this->convert_primitive_to_conservative(soln_primitive);
+        } else if (flow_type == FlowCaseEnum::spacetime_cartesian_KHI) {
+            const real pi = dealii::numbers::PI;
 
+            const real x = pos[0] / 10;
+            const real y = pos[1] / 10;
+
+            const real B = 0.5 * (tanh(15*y + 7.5) - tanh(15*y - 7.5));
+
+            const real atwood_number = 0.333333333333333333333;
+
+            const real rho1 = 0.5;
+            const real rho2 = rho1 * (1 + atwood_number) / (1 - atwood_number);
+
+            std::array<real,nstate> soln_primitive;
+            soln_primitive[0] = rho1 + B * (rho2-rho1);
+            soln_primitive[1] = B - 0.5;
+            soln_primitive[2] = 0.1 * sin(2 * pi * x);
+            soln_primitive[3] = 0;
+            soln_primitive[nstate-1] = 1;
+            soln_bc = this->convert_primitive_to_conservative(soln_primitive);
+        }
 
 #endif
     } else if (  (abs(normal_int[dim-1]*this->temporal_advection+1) < 1E-14)  && !this->apply_initial_condition  ){

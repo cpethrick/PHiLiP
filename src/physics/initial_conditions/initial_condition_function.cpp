@@ -1604,6 +1604,49 @@ real InitialConditionFunction_EulerSpacetimeDensityWave<dim,nspecies,nstate, rea
 
 }
 // ========================================================
+// Initial condition for Euler spacetime KHI
+// Modified from other KHI IC 
+// run on grid extending [-10,10]x[-10,10]
+// ========================================================
+template <int dim, int nspecies, int nstate, typename real>
+InitialConditionFunction_EulerSpacetimeKHI<dim,nspecies,nstate,real>
+::InitialConditionFunction_EulerSpacetimeKHI(Parameters::AllParameters const *const param)
+    : InitialConditionFunction<dim,nspecies,nstate,real>()
+{
+    // Euler object; create using dynamic_pointer_cast and the create_Physics factory
+    // This test should only be used for Euler
+    this->euler_physics = std::dynamic_pointer_cast<Physics::Euler<dim,nspecies,dim+2,double>>(
+                Physics::PhysicsFactory<dim,nspecies,dim+2,double>::create_Physics(param));
+} 
+
+template <int dim, int nspecies, int nstate, typename real>
+real InitialConditionFunction_EulerSpacetimeKHI<dim,nspecies,nstate, real>
+::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
+{
+    // Run on 20x20 domain
+    const double pi = dealii::numbers::PI;
+    const double A = 0.1;
+    const double rho_infty = 1;
+    const double u_infty = 1;
+    const double v_infty = 1;
+    const double p_infty = 1;
+
+    //const double q_infty = u_infty + v_infty;
+
+
+    // Primitive
+    std::array<real,nstate> soln_primitive;
+    soln_primitive[0] = rho_infty + A * sin(0.2*pi * (point[0] + point[1])) ; // exact subtract q_inf * t 
+    soln_primitive[1] = u_infty;
+    soln_primitive[2] = v_infty;
+    soln_primitive[3] = 0; //unused velocity
+    soln_primitive[nstate-1] = p_infty;
+
+    const std::array<real,nstate> soln_conservative = this->euler_physics->convert_primitive_to_conservative(soln_primitive);
+    return soln_conservative[istate];
+
+}
+// ========================================================
 // ZERO INITIAL CONDITION
 // ========================================================
 template <int dim, int nspecies, int nstate, typename real>
@@ -1759,6 +1802,10 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
         if constexpr (dim==3 && nstate==dim+2) { 
             return std::make_shared<InitialConditionFunction_EulerSpacetimeDensityWave<dim,nspecies,nstate,real> > (param);
         }
+    } else if (flow_type == FlowCaseEnum::spacetime_cartesian_KHI) {
+        if constexpr (dim==3 && nstate==dim+2) { 
+            return std::make_shared<InitialConditionFunction_EulerSpacetimeDensityWave<dim,nspecies,nstate,real> > (param);
+        }
     } else if (flow_type == FlowCaseEnum::euler_manufactured_MoL) {
         if constexpr (dim==1 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerMoLManufactured<dim,nspecies,nstate,real> > ();
     } else if (flow_type == FlowCaseEnum::multi_species_vortex_advection) {
@@ -1832,6 +1879,7 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
     #endif 
     #if PHILIP_DIM == 3
         template class InitialConditionFunction_EulerSpacetimeDensityWave<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double>;
+        template class InitialConditionFunction_EulerSpacetimeKHI<PHILIP_DIM, PHILIP_SPECIES, PHILIP_DIM+2, double>;
     #endif
     // functions instantiated for all dim
     template class InitialConditionFunction_Zero <PHILIP_DIM, PHILIP_SPECIES,1, double>;
