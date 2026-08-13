@@ -1623,24 +1623,26 @@ template <int dim, int nspecies, int nstate, typename real>
 real InitialConditionFunction_EulerSpacetimeKHI<dim,nspecies,nstate, real>
 ::value(const dealii::Point<dim,real> &point, const unsigned int istate) const
 {
-    // Run on 20x20 domain
     const double pi = dealii::numbers::PI;
-    const double A = 0.1;
-    const double rho_infty = 1;
-    const double u_infty = 1;
-    const double v_infty = 1;
-    const double p_infty = 1;
 
-    //const double q_infty = u_infty + v_infty;
+    const real x = point[0] / 10;
+    const real y = point[1] / 10;
+
+    const double B = 0.5 * (tanh(15*y + 7.5) - tanh(15*y - 7.5));
 
 
-    // Primitive
+    const double atwood_number = 0.33333333333333333333333;
+
+    const double rho1 = 0.5;
+    const double rho2 = rho1 * (1 + atwood_number) / (1 - atwood_number);
+
     std::array<real,nstate> soln_primitive;
-    soln_primitive[0] = rho_infty + A * sin(0.2*pi * (point[0] + point[1])) ; // exact subtract q_inf * t 
-    soln_primitive[1] = u_infty;
-    soln_primitive[2] = v_infty;
-    soln_primitive[3] = 0; //unused velocity
-    soln_primitive[nstate-1] = p_infty;
+
+    soln_primitive[0] = rho1 + B * (rho2-rho1);
+    soln_primitive[1] = B - 0.5;
+    soln_primitive[2] = 0.1 * sin(2 * pi * x);
+    soln_primitive[3] = 0;
+    soln_primitive[nstate-1] = 1;
 
     const std::array<real,nstate> soln_conservative = this->euler_physics->convert_primitive_to_conservative(soln_primitive);
     return soln_conservative[istate];

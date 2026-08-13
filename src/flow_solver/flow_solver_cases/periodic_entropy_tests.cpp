@@ -42,7 +42,9 @@ double PeriodicEntropyTests<dim,nspecies,nstate>::get_constant_time_step(std::sh
         constant_time_step = CFL * approximate_grid_spacing / max_wave_speed;
         */
         // TEMP using same as is defined in periodic turbulence for consistency with some existing results
-        const double constant_time_step = this->all_param.flow_solver_param.courant_friedrichs_lewy_number * approximate_grid_spacing;
+        double constant_time_step = this->all_param.flow_solver_param.courant_friedrichs_lewy_number * approximate_grid_spacing;
+        if ( this->all_param.flow_solver_param.constant_time_step > 0.0) 
+            constant_time_step = this->all_param.flow_solver_param.constant_time_step;
         return constant_time_step;
     } else{
         this->pcout << "Timestep size has not been defined in periodic_entropy_tests for this flow_case_type. Aborting..." << std::endl;
