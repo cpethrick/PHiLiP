@@ -72,7 +72,6 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::calculate_stag
                 this->dg->solution = Y_guess;
                 if(n_newton_iterations > 4)
                 {
-                    std::cout << "HERE" << std::endl;
                     this->dg->assemble_residual(true);
                     this->dg->system_matrix *= -dt*butcher_tableau->get_a(istage,istage);
                     this->dg->add_mass_matrices(1.0);
@@ -120,7 +119,6 @@ void RungeKuttaODESolver<dim,nspecies,real,n_rk_stages,MeshType>::calculate_stag
     this->relaxation_runge_kutta->store_stage_solutions(istage, this->rk_stage[istage]);
 
     this->dg->solution = this->rk_stage[istage];
-    std::cout << "#################Done step " << this->current_time << std::endl;
 
 }
 
