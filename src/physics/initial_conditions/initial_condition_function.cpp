@@ -1806,7 +1806,7 @@ InitialConditionFactory<dim,nspecies,nstate, real>::create_InitialConditionFunct
         }
     } else if (flow_type == FlowCaseEnum::spacetime_cartesian_KHI) {
         if constexpr (dim==3 && nstate==dim+2) { 
-            return std::make_shared<InitialConditionFunction_EulerSpacetimeDensityWave<dim,nspecies,nstate,real> > (param);
+            return std::make_shared<InitialConditionFunction_EulerSpacetimeKHI<dim,nspecies,nstate,real> > (param);
         }
     } else if (flow_type == FlowCaseEnum::euler_manufactured_MoL) {
         if constexpr (dim==1 && nstate==dim+2) return std::make_shared<InitialConditionFunction_EulerMoLManufactured<dim,nspecies,nstate,real> > ();
